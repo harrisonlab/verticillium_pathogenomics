@@ -33,7 +33,7 @@ Analyses performed on these genomes involved BLAST searching for:
 ```
 ```bash
   # For new sequencing run
-  RawDat=/home/groups/harrisonlab/raw_data/raw_seq/raw_reads/160412_M04465_0010-AMLCU    
+  RawDat=/home/groups/harrisonlab/raw_data/raw_seq/raw_reads/160404_M004465_0008-ALVUT    
   Species="V.dahliae"
   Strain="12008"
   mkdir -p raw_dna/paired/$Species/$Strain/F
