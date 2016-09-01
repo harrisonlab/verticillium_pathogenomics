@@ -1,7 +1,19 @@
 # Verticillium_pathogenomics
 
 Documentation of identification of pathogenicity genes in verticillium
+Note - all this work was performed in the directory:
+/home/groups/harrisonlab/project_files/verticclium_dahliae/pathogenomics
 
+The following is a summary of the work presented in this Readme.
+
+The following processes were applied to Fusarium genomes prior to analysis:
+Data qc
+Genome assembly
+Repeatmasking
+Gene prediction
+Functional annotation
+
+Analyses performed on these genomes involved BLAST searching for:
 
 
 
@@ -19,7 +31,16 @@ Documentation of identification of pathogenicity genes in verticillium
 
   cat $OutDir/*/Analysis_Results/*.subreads.fastq > $OutDir/extracted/concatenated_pacbio.fastq
 ```
-
+```bash
+  # For new sequencing run
+  RawDat=/home/groups/harrisonlab/raw_data/raw_seq/raw_reads/160412_M04465_0010-AMLCU    
+  Species="V.dahliae"
+  Strain="12008"
+  mkdir -p raw_dna/paired/$Species/$Strain/F
+  mkdir -p raw_dna/paired/$Species/$Strain/R
+  cp $RawDat/Vd12008_S1_L001_R1_001.fastq.gz raw_dna/paired/$Species/$Strain/F/.
+  cp $RawDat/Vd12008_S1_L001_R2_001.fastq.gz raw_dna/paired/$Species/$Strain/R/.
+```
 ## Assembly
 
 ### Canu assembly
@@ -197,8 +218,8 @@ Assembly stats were collected using quast
 # Repeatmasking
 
 Repeat masking was performed and used the following programs:
-	Repeatmasker
-	Repeatmodeler
+  Repeatmasker
+  Repeatmodeler
 
 The best assemblies were used to perform repeatmasking
 
