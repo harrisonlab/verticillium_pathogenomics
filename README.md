@@ -86,28 +86,27 @@ Data quality was visualised once again following trimming:
     qsub $ProgDir/run_fastqc.sh $RawData
   done
 ```
-
 ## Assembly
 
 ### Canu assembly
 
 ```bash
-for Reads in $(ls raw_dna/pacbio/*/*/extracted/concatenated_pacbio.fastq); do
-  GenomeSz="35m"
-  Strain=$(echo $Reads | rev | cut -f3 -d '/' | rev)
-  Organism=$(echo $Reads | rev | cut -f4 -d '/' | rev)
-  Prefix="$Strain"_canu
-  OutDir="assembly/canu/$Organism/$Strain"
-  ProgDir=~/git_repos/tools/seq_tools/assemblers/canu
-  qsub $ProgDir/submit_canu.sh $Reads $GenomeSz $Prefix $OutDir
-done
+  for Reads in $(ls raw_dna/pacbio/*/*/extracted/concatenated_pacbio.fastq); do
+    GenomeSz="35m"
+    Strain=$(echo $Reads | rev | cut -f3 -d '/' | rev)
+    Organism=$(echo $Reads | rev | cut -f4 -d '/' | rev)
+    Prefix="$Strain"_canu
+    OutDir="assembly/canu/$Organism/$Strain"
+    ProgDir=~/git_repos/tools/seq_tools/assemblers/canu
+    qsub $ProgDir/submit_canu.sh $Reads $GenomeSz $Prefix $OutDir
+  done
 ```
 
 
 Assembly stats were collected using quast
 
 ```bash
-  ProgDir=/home/armita/git_repos/tools/seq_tools/assemblers/assembly_qc/quast
+  ProgDir=/home/fanron/git_repos/tools/seq_tools/assemblers/assembly_qc/quast
   for Assembly in $(ls assembly/canu/*/*/*_canu.contigs.fasta); do
     Strain=$(echo $Assembly | rev | cut -f2 -d '/' | rev)
     Organism=$(echo $Assembly | rev | cut -f3 -d '/' | rev)  
