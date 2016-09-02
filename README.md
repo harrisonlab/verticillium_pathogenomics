@@ -87,8 +87,6 @@ Data quality was visualised once again following trimming:
   done
 ```
 
-
-
 ## Assembly
 
 ### Canu assembly
@@ -157,8 +155,8 @@ Assembly stats were collected using quast
   qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
 ```
 
-<!--
-After investigation it was found that contig_17 should be split.
+
+<!-- After investigation it was found that contig_17 should be split.
 
 ```bash
   ProgDir=~/git_repos/tools/seq_tools/assemblers/assembly_qc/remove_contaminants
@@ -172,8 +170,8 @@ After investigation it was found that contig_17 should be split.
     $ProgDir/remove_contaminants.py --inp $Assembly --out $OutDir/"$Strain"_canu_contigs_modified.fasta --coord_file tmp.csv
   done
   rm tmp.csv
-```
- -->
+``` -->
+ 
 
 
 ### Spades Assembly
