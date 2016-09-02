@@ -116,7 +116,7 @@ Assembly stats were collected using quast
 ```
 
 
-Assemblies were polished using Pilon
+Polish assemblies using Pilon
 
 ```bash
   for Assembly in $(ls assembly/canu/*/*/*_canu.contigs.fasta); do
