@@ -119,16 +119,16 @@ Assembly stats were collected using quast
 Assemblies were polished using Pilon
 
 ```bash
-  for Assembly in $(ls assembly/canu/*/*/*_canu.contigs.fasta); do
-    Organism=$(echo $Assembly | rev | cut -f3 -d '/' | rev)
-    Strain=$(echo $Assembly | rev | cut -f2 -d '/' | rev)
-    IlluminaDir=$(ls -d qc_dna/paired/$Organism/$Strain)
-    TrimF1_Read=$(ls $IlluminaDir/F/*_trim.fq.gz);
-    TrimR1_Read=$(ls $IlluminaDir/R/*_trim.fq.gz);
-    OutDir=assembly/canu/$Organism/$Strain/polished
-    ProgDir=/home/armita/git_repos/tools/seq_tools/assemblers/pilon
-    qsub $ProgDir/sub_pilon.sh $Assembly $TrimF1_Read $TrimR1_Read $OutDir
-  done
+for Assembly in $(ls assembly/canu/*/*/*_canu.contigs.fasta); do
+Organism=$(echo $Assembly | rev | cut -f3 -d '/' | rev)
+Strain=$(echo $Assembly | rev | cut -f2 -d '/' | rev)
+IlluminaDir=$(ls -d qc_dna/paired/$Organism/$Strain)
+TrimF1_Read=$(ls $IlluminaDir/F/*_trim.fq.gz);
+TrimR1_Read=$(ls $IlluminaDir/R/*_trim.fq.gz);
+OutDir=assembly/canu/$Organism/$Strain/polished
+ProgDir=/home/fanron/git_repos/tools/seq_tools/assemblers/pilon
+qsub $ProgDir/sub_pilon.sh $Assembly $TrimF1_Read $TrimR1_Read $OutDir
+done
 ```
 
 
