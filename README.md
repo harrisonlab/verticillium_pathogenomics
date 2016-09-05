@@ -63,7 +63,7 @@ Trimming was performed on data to trim adapters from
 sequences and remove poor quality data. This was done with fastq-mcf
 
 
-Trimming was first performed on all strains that had a single run of data:
+Trimming was first performed on the strain that had a single run of data:
 
 ```bash
   for StrainPath in $(ls -d raw_dna/paired/*/*); do
@@ -137,8 +137,8 @@ After investigation, it was found that contigs didnt need to be split.
 Assembly stats were collected using quast
 
 ```bash
-  ProgDir=/home/armita/git_repos/tools/seq_tools/assemblers/assembly_qc/quast
-  for Assembly in $(ls assembly/canu-1.3/F.oxysporum_fsp_cepae/Fus2_canu/pilon/pilon.fasta); do
+ProgDir=/home/fanron/git_repos/tools/seq_tools/assemblers/assembly_qc/quast
+  for Assembly in $(ls assembly/canu/V.dahliae/12008/polished/pilon.fasta); do
     Strain=$(echo $Assembly | rev | cut -f2 -d '/' | rev)
     Organism=$(echo $Assembly | rev | cut -f3 -d '/' | rev)  
     OutDir=assembly/canu/$Organism/$Strain/pilon
@@ -147,10 +147,10 @@ Assembly stats were collected using quast
 ```
 
 ```bash
-  Assembly=assembly/canu-1.3/F.oxysporum_fsp_cepae/Fus2_canu/pilon/pilon.fasta
-  Reads=raw_dna/pacbio/F.oxysporum_fsp_cepae/Fus2/extracted/concatenated_pacbio.fastq
-  OutDir=analysis/genome_alignment/bwa/F.oxysporum_fsp_cepae/Fus2/vs_Fus2
-  ProgDir=/home/armita/git_repos/tools/seq_tools/genome_alignment/bwa
+  Assembly=assembly/canu/V.dahliae/12008/polished/pilon.fasta
+  Reads=raw_dna/pacbio/V.dahliae/12008/extracted/concatenated_pacbio.fastq
+  OutDir=analysis/genome_alignment/bwa/V.dahliae/12008/vs_Fus2
+  ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/bwa
   qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
 ```
 
