@@ -137,10 +137,10 @@ After investigation, it was found that contigs didnt need to be split.
 Assembly stats were collected using quast
 
 ```bash
-ProgDir=/home/fanron/git_repos/tools/seq_tools/assemblers/assembly_qc/quast
+  ProgDir=/home/fanron/git_repos/tools/seq_tools/assemblers/assembly_qc/quast
   for Assembly in $(ls assembly/canu/V.dahliae/12008/polished/pilon.fasta); do
-    Strain=$(echo $Assembly | rev | cut -f2 -d '/' | rev)
-    Organism=$(echo $Assembly | rev | cut -f3 -d '/' | rev)  
+    Strain=$(echo $Assembly | rev | cut -f3 -d '/' | rev)
+    Organism=$(echo $Assembly | rev | cut -f4 -d '/' | rev)  
     OutDir=assembly/canu/$Organism/$Strain/pilon
     qsub $ProgDir/sub_quast.sh $Assembly $OutDir
   done
@@ -185,7 +185,7 @@ ProgDir=/home/fanron/git_repos/tools/seq_tools/assemblers/assembly_qc/quast
     OutDir=assembly/spades_pacbio/$Organism/"$Strain"
     echo $TrimR1_Read
     echo $TrimR1_Read
-    ProgDir=/home/armita/git_repos/tools/seq_tools/assemblers/spades
+    ProgDir=/home/fanron/git_repos/tools/seq_tools/assemblers/spades
     qsub $ProgDir/sub_spades_pacbio.sh $PacBioDat $TrimF1_Read $TrimR1_Read $OutDir 20
   done
 ```
