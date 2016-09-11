@@ -190,13 +190,13 @@ Assembly stats were collected using quast
   done
 ```
 
-Contigs shorter thaan 500bp were removed from the assembly
+Contigs shorter thaann 500bp were removed from the assembly
 
 ```bash
   for Contigs in $(ls assembly/spades_pacbio/*/*/contigs.fasta); do
     AssemblyDir=$(dirname $Contigs)
     mkdir $AssemblyDir/filtered_contigs
-    FilterDir=/home/armita/git_repos/tools/seq_tools/assemblers/abyss
+    FilterDir=/home/fanron/git_repos/tools/seq_tools/assemblers/abyss
     $FilterDir/filter_abyss_contigs.py $Contigs 500 > $AssemblyDir/filtered_contigs/contigs_min_500bp.fasta
   done
 ```
@@ -206,12 +206,13 @@ Contigs shorter thaan 500bp were removed from the assembly
 
 ```bash
   for PacBioAssembly in $(ls assembly/canu/*/*/polished/pilon.fasta); do
-    Organism=$(echo $PacBioAssembly | rev | cut -f4 -d '/' | rev)
-    Strain=$(echo $PacBioAssembly | rev | cut -f3 -d '/' | rev)
-    HybridAssembly=$(ls assembly/spades_pacbio/$Organism/$Strain/contigs.fasta)
-    OutDir=assembly/merged_canu_spades/$Organism/$Strain
-    ProgDir=/home/armita/git_repos/tools/seq_tools/assemblers/quickmerge
-    qsub $ProgDir/sub_quickmerge.sh $PacBioAssembly $HybridAssembly $OutDir
+  Organism=$(echo $PacBioAssembly | rev | cut -f4 -d '/' | rev)
+  Strain=$(echo $PacBioAssembly | rev | cut -f3 -d '/' | rev)
+  HybridAssembly=$(ls assembly/spades_pacbio/$Organism/$Strain/contigs.fasta)
+  OutDir=assembly/merged_canu_spades/$Organism/$Strain
+  ProgDir=/home/fanron/git_repos/tools/seq_tools/assemblers/quickmerge
+  echo $HybridAssembly
+  qsub $ProgDir/sub_quickmerge.sh $PacBioAssembly $HybridAssembly $OutDir
   done
 ```
 
@@ -219,14 +220,14 @@ This merged assembly was polished using Pilon
 
 ```bash
   for Assembly in $(ls assembly/merged_canu_spades/*/*/merged.fasta); do
-    Organism=$(echo $Assembly | rev | cut -f3 -d '/' | rev)
-    Strain=$(echo $Assembly | rev | cut -f2 -d '/' | rev)
-    IlluminaDir=$(ls -d qc_dna/paired/$Organism/$Strain)
-    TrimF1_Read=$(ls $IlluminaDir/F/*_trim.fq.gz);
-    TrimR1_Read=$(ls $IlluminaDir/R/*_trim.fq.gz);
-    OutDir=assembly/merged_canu_spades/$Organism/$Strain/polished
-    ProgDir=/home/armita/git_repos/tools/seq_tools/assemblers/pilon
-    qsub $ProgDir/sub_pilon.sh $Assembly $TrimF1_Read $TrimR1_Read $OutDir
+  Organism=$(echo $Assembly | rev | cut -f3 -d '/' | rev)
+  Strain=$(echo $Assembly | rev | cut -f2 -d '/' | rev)
+  IlluminaDir=$(ls -d qc_dna/paired/$Organism/$Strain)
+  TrimF1_Read=$(ls $IlluminaDir/F/*_trim.fq.gz);
+  TrimR1_Read=$(ls $IlluminaDir/R/*_trim.fq.gz);
+  OutDir=assembly/merged_canu_spades/$Organism/$Strain/polished
+  ProgDir=/home/fanron/git_repos/tools/seq_tools/assemblers/pilon
+  qsub $ProgDir/sub_pilon.sh $Assembly $TrimF1_Read $TrimR1_Read $OutDir
   done
 ```
 
