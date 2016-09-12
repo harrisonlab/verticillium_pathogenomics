@@ -259,6 +259,7 @@ Assembly stats were collected using quast
   done
 ```
 Assembly                   12008_contigs_renamed
+
 contigs (>= 0 bp)        104                             
 contigs (>= 1000 bp)     104                                        
 Total length (>= 0 bp)     35100962                              
