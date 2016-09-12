@@ -259,11 +259,11 @@ Assembly stats were collected using quast
   done
 ```
 Assembly                   12008_contigs_renamed
-# contigs (>= 0 bp)        104                             
-# contigs (>= 1000 bp)     104                                        
+contigs (>= 0 bp)        104                             
+contigs (>= 1000 bp)     104                                        
 Total length (>= 0 bp)     35100962                              
 Total length (>= 1000 bp)  35100962                                   
-# contigs                  104                                         
+contigs                  104                                         
 Largest contig             2438101                                   
 Total length               35100962                                
 GC (%)                     54.53                  
@@ -271,7 +271,7 @@ N50                        746680
 N75                        389743                                     
 L50                        16                                               
 L75                        32                                               
-# N's per 100 kbp          0.00                   
+N's per 100 kbp          0.00                   
 
 
 
