@@ -286,28 +286,35 @@ The best assemblies were used to perform repeatmasking
 
 ```bash
   ProgDir=/home/fanron/git_repos/tools/seq_tools/repeat_masking
-  for BestAss in $(ls assembly/merged_canu_spades/*/*/polished/pilon.fasta); do
+  for BestAss in $(ls assembly/merged_canu_spades/*/*/filtered_contigs/12008_contigs_renamed.fasta)
+  do
     qsub $ProgDir/rep_modeling.sh $BestAss
     qsub $ProgDir/transposonPSI.sh $BestAss
   done
 ```
 
+
+
+
+
+
+
 The number of bases masked by transposonPSI and Repeatmasker were summarised
 using the following commands:
 
 ```bash
-  for RepDir in $(ls -d repeat_masked/V.*/*/filtered_contigs_repmask | grep '12008'); do
-    Strain=$(echo $RepDir | rev | cut -f2 -d '/' | rev)
-    Organism=$(echo $RepDir | rev | cut -f3 -d '/' | rev)  
-    RepMaskGff=$(ls $RepDir/*_contigs_hardmasked.gff)
-    TransPSIGff=$(ls $RepDir/*_contigs_unmasked.fa.TPSI.allHits.chains.gff3)
-    printf "$Organism\t$Strain\n"
-    printf "The number of bases masked by RepeatMasker:\t"
-    sortBed -i $RepMaskGff | bedtools merge | awk -F'\t' 'BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}'
-    printf "The number of bases masked by TransposonPSI:\t"
-    sortBed -i $TransPSIGff | bedtools merge | awk -F'\t' 'BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}'
-    printf "The total number of masked bases are:\t"
-    cat $RepMaskGff $TransPSIGff | sortBed | bedtools merge | awk -F'\t' 'BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}'
-    echo
-  done
+for RepDir in $(ls -d repeat_masked/V.*/*/polished_repmask | grep '12008'); do
+Strain=$(echo $RepDir | rev | cut -f2 -d '/' | rev)
+Organism=$(echo $RepDir | rev | cut -f3 -d '/' | rev)  
+RepMaskGff=$(ls $RepDir/*_contigs_hardmasked.gff)
+TransPSIGff=$(ls $RepDir/*_contigs_unmasked.fa.TPSI.allHits.chains.gff3)
+printf "$Organism\t$Strain\n"
+printf "The number of bases masked by RepeatMasker:\t"
+sortBed -i $RepMaskGff | bedtools merge | awk -F'\t' 'BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}'
+printf "The number of bases masked by TransposonPSI:\t"
+sortBed -i $TransPSIGff | bedtools merge | awk -F'\t' 'BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}'
+printf "The total number of masked bases are:\t"
+cat $RepMaskGff $TransPSIGff | sortBed | bedtools merge | awk -F'\t' 'BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}'
+echo
+done
 ```
