@@ -149,7 +149,7 @@ Assembly stats were collected using quast
 ```bash
   Assembly=assembly/canu/V.dahliae/12008/polished/pilon.fasta
   Reads=raw_dna/pacbio/V.dahliae/12008/extracted/concatenated_pacbio.fastq
-  OutDir=analysis/genome_alignment/bwa/V.dahliae/12008/vs_Fus2
+  OutDir=analysis/genome_alignment/bwa/V.dahliae/12008/
   ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/bwa
   qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
 ```
@@ -285,25 +285,19 @@ Repeat masking was performed and used the following programs:
 The best assemblies were used to perform repeatmasking
 
 ```bash
-  ProgDir=/home/fanron/git_repos/tools/seq_tools/repeat_masking
-  for BestAss in $(ls assembly/merged_canu_spades/*/*/filtered_contigs/12008_contigs_renamed.fasta)
-  do
-    qsub $ProgDir/rep_modeling.sh $BestAss
-    qsub $ProgDir/transposonPSI.sh $BestAss
-  done
+ProgDir=/home/fanron/git_repos/tools/seq_tools/repeat_masking
+for BestAss in $(ls assembly/merged_canu_spades/*/*/filtered_contigs/12008_contigs_renamed.fasta)
+do
+qsub $ProgDir/rep_modeling.sh $BestAss
+qsub $ProgDir/transposonPSI.sh $BestAss
+done
 ```
-
-
-
-
-
-
 
 The number of bases masked by transposonPSI and Repeatmasker were summarised
 using the following commands:
 
 ```bash
-for RepDir in $(ls -d repeat_masked/V.*/*/polished_repmask | grep '12008'); do
+for RepDir in $(ls -d repeat_masked/V.*/*/filtered_contigs_repmask | grep '12008'); do
 Strain=$(echo $RepDir | rev | cut -f2 -d '/' | rev)
 Organism=$(echo $RepDir | rev | cut -f3 -d '/' | rev)  
 RepMaskGff=$(ls $RepDir/*_contigs_hardmasked.gff)
@@ -318,3 +312,13 @@ cat $RepMaskGff $TransPSIGff | sortBed | bedtools merge | awk -F'\t' 'BEGIN{SUM=
 echo
 done
 ```
+
+
+
+# Checking PacBio coverage against 12008 contigs
+
+Assembly=assembly/merged_canu_spades/V.dahliae/12008/filtered_contigs/12008_contigs_renamed.fasta
+Reads=raw_dna/pacbio/V.dahliae/12008/extracted/concatenated_pacbio.fastq
+OutDir=analysis/genome_alignment/bwa/Verticillium/12008/vs_12008
+ProgDir=/home/adamst/git_repos/tools/seq_tools/genome_alignment/bwa
+qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
