@@ -149,7 +149,7 @@ Assembly stats were collected using quast
 ```bash
   Assembly=assembly/canu/V.dahliae/12008/polished/pilon.fasta
   Reads=raw_dna/pacbio/V.dahliae/12008/extracted/concatenated_pacbio.fastq
-  OutDir=analysis/genome_alignment/bwa/V.dahliae/12008/
+  OutDir=analysis/genome_alignment/bwa/Verticillium/12008/canu
   ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/bwa
   qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
 ```
@@ -288,8 +288,11 @@ The best assemblies were used to perform repeatmasking
 ProgDir=/home/fanron/git_repos/tools/seq_tools/repeat_masking
 for BestAss in $(ls assembly/merged_canu_spades/*/*/filtered_contigs/12008_contigs_renamed.fasta)
 do
-qsub $ProgDir/rep_modeling.sh $BestAss
-qsub $ProgDir/transposonPSI.sh $BestAss
+Organism=$(echo $BestAss | rev | cut -d "/" -f4 | rev)
+Strain=$(echo $BestAss | rev | cut -d "/" -f3 | rev)
+OutDir=repeat_masked/$Orgasnism/$Strain/filtered_contigs_repmask
+qsub $ProgDir/rep_modeling.sh $BestAss $OutDir
+qsub $ProgDir/transposonPSI.sh $BestAss $OutDir
 done
 ```
 
@@ -297,28 +300,50 @@ The number of bases masked by transposonPSI and Repeatmasker were summarised
 using the following commands:
 
 ```bash
-for RepDir in $(ls -d repeat_masked/V.*/*/filtered_contigs_repmask | grep '12008'); do
-Strain=$(echo $RepDir | rev | cut -f2 -d '/' | rev)
-Organism=$(echo $RepDir | rev | cut -f3 -d '/' | rev)  
-RepMaskGff=$(ls $RepDir/*_contigs_hardmasked.gff)
-TransPSIGff=$(ls $RepDir/*_contigs_unmasked.fa.TPSI.allHits.chains.gff3)
-printf "$Organism\t$Strain\n"
-printf "The number of bases masked by RepeatMasker:\t"
-sortBed -i $RepMaskGff | bedtools merge | awk -F'\t' 'BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}'
-printf "The number of bases masked by TransposonPSI:\t"
-sortBed -i $TransPSIGff | bedtools merge | awk -F'\t' 'BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}'
-printf "The total number of masked bases are:\t"
-cat $RepMaskGff $TransPSIGff | sortBed | bedtools merge | awk -F'\t' 'BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}'
-echo
-done
+  for RepDir in $(ls -d repeat_masked/V.*/*/filtered_contigs_repmask | grep '12008'); do
+    Strain=$(echo $RepDir | rev | cut -f2 -d '/' | rev)
+    Organism=$(echo $RepDir | rev | cut -f3 -d '/' | rev)  
+    RepMaskGff=$(ls $RepDir/*_contigs_hardmasked.gff)
+    TransPSIGff=$(ls repeat_masked/12008/filtered_contigs_repmask/*_contigs_unmasked.fa.TPSI.allHits.chains.gff3)
+    printf "$Organism\t$Strain\n"
+    printf "The number of bases masked by RepeatMasker:\t"
+    sortBed -i $RepMaskGff | bedtools merge | awk -F'\t' 'BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}'
+    printf "The number of bases masked by TransposonPSI:\t"
+    sortBed -i $TransPSIGff | bedtools merge | awk -F'\t' 'BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}'
+    printf "The total number of masked bases are:\t"
+    cat $RepMaskGff $TransPSIGff | sortBed | bedtools merge | awk -F'\t' 'BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}'
+    echo
+  done
 ```
+V.dahliae       12008
+The number of bases masked by RepeatMasker:     3167527
+The number of bases masked by TransposonPSI:    859780
+The total number of masked bases are:   3246323
+
+
 
 
 
 # Checking PacBio coverage against 12008 contigs
 
-Assembly=assembly/merged_canu_spades/V.dahliae/12008/filtered_contigs/12008_contigs_renamed.fasta
-Reads=raw_dna/pacbio/V.dahliae/12008/extracted/concatenated_pacbio.fastq
-OutDir=analysis/genome_alignment/bwa/Verticillium/12008/vs_12008
-ProgDir=/home/adamst/git_repos/tools/seq_tools/genome_alignment/bwa
-qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
+Merged canu spades assembly
+
+    Assembly=assembly/merged_canu_spades/V.dahliae/12008/filtered_contigs/12008_contigs_renamed.fasta
+    Reads=raw_dna/pacbio/V.dahliae/12008/extracted/concatenated_pacbio.fastq
+    OutDir=analysis/genome_alignment/bwa/Verticillium/12008/vs_12008
+    ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/bwa
+    qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
+
+Canu assembly
+    Assembly=assembly/canu/V.dahliae/12008/polished/pilon.fasta
+    Reads=raw_dna/pacbio/V.dahliae/12008/extracted/concatenated_pacbio.fastq
+    OutDir=analysis/genome_alignment/bwa/Verticillium/12008/vs_12008
+    ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/bwa
+    qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
+
+Spades assembly
+    Assembly=assembly/spades_pacbio/V.dahliae/12008/filtered_contigs/contigs_min_500bp.fasta
+    Reads=raw_dna/pacbio/V.dahliae/12008/extracted/concatenated_pacbio.fastq
+    OutDir=analysis/genome_alignment/bwa/Verticillium/12008/vs_spades_assembly
+    ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/bwa
+    qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
