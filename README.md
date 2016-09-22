@@ -335,6 +335,7 @@ Merged canu spades assembly
     qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
 
 Canu assembly
+
     Assembly=assembly/canu/V.dahliae/12008/polished/pilon.fasta
     Reads=raw_dna/pacbio/V.dahliae/12008/extracted/concatenated_pacbio.fastq
     OutDir=analysis/genome_alignment/bwa/Verticillium/12008/vs_12008
@@ -342,6 +343,7 @@ Canu assembly
     qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
 
 Spades assembly
+
     Assembly=assembly/spades_pacbio/V.dahliae/12008/filtered_contigs/contigs_min_500bp.fasta
     Reads=raw_dna/pacbio/V.dahliae/12008/extracted/concatenated_pacbio.fastq
     OutDir=analysis/genome_alignment/bwa/Verticillium/12008/vs_spades_assembly
