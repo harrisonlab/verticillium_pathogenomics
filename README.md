@@ -43,7 +43,7 @@ Analyses performed on these genomes involved BLAST searching for:
 ```
 
 
-#Data qc
+## Data qc
 
 programs:
   fastqc
@@ -145,15 +145,15 @@ Assembly stats were collected using quast
     qsub $ProgDir/sub_quast.sh $Assembly $OutDir
   done
 ```
+Checking PacBio coverage against Canu assembly 
 
 ```bash
   Assembly=assembly/canu/V.dahliae/12008/polished/pilon.fasta
   Reads=raw_dna/pacbio/V.dahliae/12008/extracted/concatenated_pacbio.fastq
-  OutDir=analysis/genome_alignment/bwa/Verticillium/12008/canu
+  OutDir=analysis/genome_alignment/bwa/Verticillium/12008/vs_12008
   ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/bwa
   qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
 ```
-
 
 <!-- After investigation it was found that contig_17 should be split.
 
@@ -171,8 +171,6 @@ Assembly stats were collected using quast
   rm tmp.csv
 ``` -->
  
-
-
 ### Spades Assembly
 
 ```bash
@@ -201,6 +199,15 @@ Contigs shorter thaan 500bp were removed from the assembly
   done
 ```
 
+Checking PacBio coverage against Spades assembly 
+
+```bash
+  Assembly=assembly/spades_pacbio/V.dahliae/12008/filtered_contigs/contigs_min_500bp.fasta
+  Reads=raw_dna/pacbio/V.dahliae/12008/extracted/concatenated_pacbio.fastq
+  OutDir=analysis/genome_alignment/bwa/Verticillium/12008/vs_spades_assembly
+  ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/bwa
+  qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
+```
 
 ## Merging pacbio and hybrid assemblies
 
@@ -213,7 +220,7 @@ Contigs shorter thaan 500bp were removed from the assembly
     OutDir=assembly/merged_canu_spades/$Organism/"$Strain"
     ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/assemblers/quickmerge
     qsub $ProgDir/sub_quickmerge.sh $PacBioAssembly $HybridAssembly $OutDir $AnchorLength
-    done
+  done
 ```
 
 This merged assembly was polished using Pilon
@@ -230,7 +237,6 @@ This merged assembly was polished using Pilon
     qsub $ProgDir/sub_pilon.sh $Assembly $TrimF1_Read $TrimR1_Read $OutDir
   done
 ```
-
 
 Contigs were renamed in accordance with ncbi recomendations.
 
@@ -258,25 +264,36 @@ Assembly stats were collected using quast
     qsub $ProgDir/sub_quast.sh $Assembly $OutDir
   done
 ```
-Assembly                   12008_contigs_renamed
 
-contigs (>= 0 bp)        104                             
-contigs (>= 1000 bp)     104                                        
-Total length (>= 0 bp)     35100962                              
-Total length (>= 1000 bp)  35100962                                   
-contigs                  104                                         
-Largest contig             2438101                                   
-Total length               35100962                                
-GC (%)                     54.53                  
-N50                        746680                                    
-N75                        389743                                     
-L50                        16                                               
-L75                        32                                               
-N's per 100 kbp          0.00                   
+Assembly                     12008_contigs_renamed
+
+contigs (>= 0 bp)          104                             
+contigs (>= 1000 bp)       104                                        
+Total length (>= 0 bp)       35100962                              
+Total length (>= 1000 bp)    35100962                                   
+contigs                     104                                         
+Largest contig               2438101                                   
+Total length                 35100962                                
+GC (%)                       54.53                  
+N50                          746680                                    
+N75                          389743                                     
+L50                          16                                               
+L75                          32                                               
+N's per 100 kbp             0.00                   
 
 
+Checking PacBio coverage against Spades assembly
 
-# Repeatmasking
+```bash
+  Assembly=assembly/merged_canu_spades/V.dahliae/12008/filtered_contigs/12008_contigs_renamed.fasta
+  Reads=raw_dna/pacbio/V.dahliae/12008/extracted/concatenated_pacbio.fastq
+  OutDir=analysis/genome_alignment/bwa/Verticillium/12008/vs_12008
+  ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/bwa
+  qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
+```
+
+
+##Repeatmasking
 
 Repeat masking was performed and used the following programs:
   Repeatmasker
@@ -285,15 +302,14 @@ Repeat masking was performed and used the following programs:
 The best assemblies were used to perform repeatmasking
 
 ```bash
-ProgDir=/home/fanron/git_repos/tools/seq_tools/repeat_masking
-for BestAss in $(ls assembly/merged_canu_spades/*/*/filtered_contigs/12008_contigs_renamed.fasta)
-do
-Organism=$(echo $BestAss | rev | cut -d "/" -f4 | rev)
-Strain=$(echo $BestAss | rev | cut -d "/" -f3 | rev)
-OutDir=repeat_masked/$Orgasnism/$Strain/filtered_contigs_repmask
-qsub $ProgDir/rep_modeling.sh $BestAss $OutDir
-qsub $ProgDir/transposonPSI.sh $BestAss $OutDir
-done
+  ProgDir=/home/fanron/git_repos/tools/seq_tools/repeat_masking
+  for BestAss in $(ls assembly/merged_canu_spades/*/*/filtered_contigs/12008_contigs_renamed.fasta); do
+    Organism=$(echo $BestAss | rev | cut -d "/" -f4 | rev)
+    Strain=$(echo $BestAss | rev | cut -d "/" -f3 | rev)
+    OutDir=repeat_masked/$Organism/$Strain/filtered_contigs_repmask
+    qsub $ProgDir/rep_modeling.sh $BestAss $OutDir
+    qsub $ProgDir/transposonPSI.sh $BestAss $OutDir
+  done
 ```
 
 The number of bases masked by transposonPSI and Repeatmasker were summarised
@@ -304,7 +320,7 @@ using the following commands:
     Strain=$(echo $RepDir | rev | cut -f2 -d '/' | rev)
     Organism=$(echo $RepDir | rev | cut -f3 -d '/' | rev)  
     RepMaskGff=$(ls $RepDir/*_contigs_hardmasked.gff)
-    TransPSIGff=$(ls repeat_masked/12008/filtered_contigs_repmask/*_contigs_unmasked.fa.TPSI.allHits.chains.gff3)
+    TransPSIGff=$(ls $RepDir/*_contigs_unmasked.fa.TPSI.allHits.chains.gff3)
     printf "$Organism\t$Strain\n"
     printf "The number of bases masked by RepeatMasker:\t"
     sortBed -i $RepMaskGff | bedtools merge | awk -F'\t' 'BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}'
@@ -315,37 +331,14 @@ using the following commands:
     echo
   done
 ```
-V.dahliae       12008
-The number of bases masked by RepeatMasker:     3167527
-The number of bases masked by TransposonPSI:    859780
-The total number of masked bases are:   3246323
+  V.dahliae       12008
+  The number of bases masked by RepeatMasker:     3014429
+  The number of bases masked by TransposonPSI:    859780
+  The total number of masked bases are:   3161584
 
 
 
 
 
-# Checking PacBio coverage against 12008 contigs
 
-Merged canu spades assembly
 
-    Assembly=assembly/merged_canu_spades/V.dahliae/12008/filtered_contigs/12008_contigs_renamed.fasta
-    Reads=raw_dna/pacbio/V.dahliae/12008/extracted/concatenated_pacbio.fastq
-    OutDir=analysis/genome_alignment/bwa/Verticillium/12008/vs_12008
-    ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/bwa
-    qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
-
-Canu assembly
-
-    Assembly=assembly/canu/V.dahliae/12008/polished/pilon.fasta
-    Reads=raw_dna/pacbio/V.dahliae/12008/extracted/concatenated_pacbio.fastq
-    OutDir=analysis/genome_alignment/bwa/Verticillium/12008/vs_12008
-    ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/bwa
-    qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
-
-Spades assembly
-
-    Assembly=assembly/spades_pacbio/V.dahliae/12008/filtered_contigs/contigs_min_500bp.fasta
-    Reads=raw_dna/pacbio/V.dahliae/12008/extracted/concatenated_pacbio.fastq
-    OutDir=analysis/genome_alignment/bwa/Verticillium/12008/vs_spades_assembly
-    ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/bwa
-    qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
