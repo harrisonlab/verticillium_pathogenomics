@@ -405,7 +405,7 @@ less gene_pred/cegma/cegma_results_dna_summary.txt
 #    %Ortho = percentage of detected CEGS that have more than 1 ortholog   #
 There are 237 complete and 7 partial core eukaryotic genes (out of total 248 genes) present in my assembly
 
-#Gene prediction
+## Gene prediction
 
   make folders for RNA_seq data
 
