@@ -407,6 +407,7 @@ There are 237 complete and 7 partial core eukaryotic genes (out of total 248 gen
 
 ## Gene prediction
 
+
   make folders for RNA_seq data
 
   mkdir -p raw_rna/paired/V.dahiae/12008PDA/F
@@ -506,6 +507,7 @@ cufflinks was running.
 81.5% overall read mapping rate.
 72.8% concordant pair alignment rate.
 
+
 ```bash
   for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
     Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
@@ -528,22 +530,248 @@ cufflinks was running.
 lignments were concatenated prior to running cufflinks:
 Cufflinks was run to produce the fragment length and stdev statistics:
 
+if run the commands in a node other than cluster, using the script:
+
 ```bash
-# qlogin -pe smp 8 -l virtual_free=1
+qlogin -pe smp 8 -l virtual_free=1G
 ```
 ```bash
-  for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
-    Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
-    Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
-    echo "$Organism - $Strain"
-    for AcceptedHits in $(ls alignment/$Organism/$Strain/*/accepted_hits.bam); do
-      Timepoint=$(echo $AcceptedHits | rev | cut -f2 -d '/' | rev)
-      echo $Timepoint
-      OutDir=gene_pred/cufflinks/$Organism/$Strain/"$Timepoint"_prelim
-      ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
-      qsub $ProgDir/sub_cufflinks.sh $AcceptedHits $OutDir
-      # cufflinks -o $OutDir/cufflinks -p 8 --max-intron-length 4000 $AcceptedHits 2>&1 | tee $OutDir/cufflinks/cufflinks.log
-    done
-  done
+for Assembly in $(ls /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics/repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
+Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
+echo "$Organism - $Strain"
+for AcceptedHits in $(ls /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics/alignment/$Organism/$Strain/*/accepted_hits.bam); do
+Timepoint=$(echo $AcceptedHits | rev | cut -f2 -d '/' | rev)
+echo $Timepoint
+OutDir=/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics/gene_pred/cufflinks/$Organism/$Strain/"$Timepoint"_prelim
+ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
+# qsub $ProgDir/sub_cufflinks.sh $AcceptedHits $OutDir
+cufflinks -o $OutDir/cufflinks -p 8 --max-intron-length 4000 $AcceptedHits 2>&1 | tee $OutDir/cufflinks/cufflinks.log
+done
+done
 ```
 
+
+if run the commands on cluster other than a node:
+
+```bash
+# qlogin -pe smp 8 -l virtual_free=1G
+```
+```bash
+for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
+Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
+echo "$Organism - $Strain"
+for AcceptedHits in $(ls alignment/$Organism/$Strain/*/accepted_hits.bam); do
+Timepoint=$(echo $AcceptedHits | rev | cut -f2 -d '/' | rev)
+echo $Timepoint
+OutDir=gene_pred/cufflinks/$Organism/$Strain/"$Timepoint"_prelim
+ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
+qsub $ProgDir/sub_cufflinks.sh $AcceptedHits $OutDir
+# cufflinks -o $OutDir/cufflinks -p 8 --max-intron-length 4000 $AcceptedHits 2>&1 | tee $OutDir/cufflinks/cufflinks.log
+done
+done
+```
+12008PDA
+> Processed 18229 loci.                        [*************************] 100%
+> Map Properties:
+>       Normalized Map Mass: 11153744.78
+>       Raw Map Mass: 11153744.78
+>       Fragment Length Distribution: Empirical (learned)
+>                     Estimated Mean: 233.34
+>                  Estimated Std Dev: 59.60
+[17:30:39] Assembling transcripts and estimating abundances.
+> Processed 18364 loci.                        [*************************] 100%
+The Estimated Mean: 233.34 allowed calculation of of the mean insert gap to be
+-127bp 233-(180*2) where 180? was the mean read length. This was provided to tophat
+on a second run (as the -r option) along with the fragment length stdev to
+increase the accuracy of mapping.
+
+
+12008CD
+> Processed 17114 loci.                        [*************************] 100%
+> Map Properties:
+>       Normalized Map Mass: 8310303.37
+>       Raw Map Mass: 8310303.37
+>       Fragment Length Distribution: Empirical (learned)
+>                     Estimated Mean: 224.61
+>                  Estimated Std Dev: 62.76
+[14:44:25] Assembling transcripts and estimating abundances.
+> Processed 17260 loci.                        [*************************] 100%
+
+The Estimated Mean: 224.61 allowed calculation of of the mean insert gap to be
+-125bp 225-(175*2) where 175? was the mean read length. This was provided to tophat
+on a second run (as the -r option) along with the fragment length stdev to
+increase the accuracy of mapping.
+
+
+Then Rnaseq data was aligned to each genome assembly:
+
+```bash
+for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
+Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
+echo "$Organism - $Strain"
+for RNADir in $(ls -d qc_rna/paired/*/12008PDA | grep -v -e '_rep'); do
+Timepoint=$(echo $RNADir | rev | cut -f1 -d '/' | rev)
+echo "$Timepoint"
+FileF=$(ls $RNADir/F/*_trim.fq.gz)
+FileR=$(ls $RNADir/R/*_trim.fq.gz)
+OutDir=alignment/$Organism/$Strain/$Timepoint
+InsertGap='-127'
+InsertStdDev='60'
+Jobs=$(qstat | grep 'tophat' | grep 'qw' | wc -l)
+while [ $Jobs -gt 1 ]; do
+sleep 10
+printf "."
+Jobs=$(qstat | grep 'tophat' | grep 'qw' | wc -l)
+done
+printf "\n"
+ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
+qsub $ProgDir/tophat_alignment.sh $Assembly $FileF $FileR $OutDir $InsertGap $InsertStdDev
+done
+done
+
+  cd alignment/repeat_masked/
+  mkdir 12008PDA_accurate
+  cp -r 12008PDA/* 12008PDA_accurate/
+```
+81.5% overall read mapping rate.
+72.8% concordant pair alignment rate.
+
+
+```bash
+for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
+Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
+echo "$Organism - $Strain"
+for RNADir in $(ls -d qc_rna/paired/*/12008CD | grep -v -e '_rep'); do
+Timepoint=$(echo $RNADir | rev | cut -f1 -d '/' | rev)
+echo "$Timepoint"
+FileF=$(ls $RNADir/F/*_trim.fq.gz)
+FileR=$(ls $RNADir/R/*_trim.fq.gz)
+OutDir=alignment/$Organism/$Strain/$Timepoint
+InsertGap='-125'
+InsertStdDev='63'
+Jobs=$(qstat | grep 'tophat' | grep 'qw' | wc -l)
+while [ $Jobs -gt 1 ]; do
+sleep 10
+printf "."
+Jobs=$(qstat | grep 'tophat' | grep 'qw' | wc -l)
+done
+printf "\n"
+ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
+qsub $ProgDir/tophat_alignment.sh $Assembly $FileF $FileR $OutDir $InsertGap $InsertStdDev
+done
+done
+
+  cd alignment/repeat_masked/
+  mkdir 12008CD_accurate
+  cp -r 12008CD/* 12008CD_accurate/
+```
+
+80.4% overall read mapping rate.
+70.9% concordant pair alignment rate.
+
+#### Braker prediction
+
+Before braker predictiction was performed, I double checked that I had the genemark key in my user area and copied it over from the genemark install directory:
+
+```bash
+ls ~/.gm_key
+cp /home/armita/prog/genemark/gm_key_64 ~/.gm_key
+```
+```bash
+    #for Assembly in $(ls repeat_masked/N.ditissima/R0905_pacbio_canu/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+    #Jobs=$(qstat | grep 'tophat' | grep -w 'r' | wc -l)
+    #while [ $Jobs -gt 1 ]; do
+    #sleep 10
+    #printf "."
+    #Jobs=$(qstat | grep 'tophat' | grep -w 'r' | wc -l)
+    #done
+    #printf "\n"
+    #Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
+    #Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
+    #echo "$Organism - $Strain"
+    #mkdir -p alignment/$Organism/$Strain/concatenated
+    #samtools merge -f alignment/$Organism/$Strain/concatenated/concatenated.bam \
+    #alignment/$Organism/R0905_pacbio_canu/R0905/accepted_hits.bam
+    #OutDir=gene_pred/braker/$Organism/"$Strain"_braker_first
+    #AcceptedHits=alignment/$Organism/$Strain/concatenated/concatenated.bam
+    #GeneModelName="$Organism"_"$Strain"_braker_first
+    #rm -r /home/gomeza/prog/augustus-3.1/config/species/"$Organism"_"$Strain"_braker_first
+    #ProgDir=/home/gomeza/git_repos/emr_repos/tools/gene_prediction/braker1
+    #qsub $ProgDir/sub_braker_fungi.sh $Assembly $OutDir $AcceptedHits $GeneModelName
+    #done
+```
+
+Braker predictiction was performed using softmasked genome, not unmasked one.
+
+```bash
+for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+Jobs=$(qstat | grep 'tophat' | grep -w 'r' | wc -l)
+while [ $Jobs -gt 1 ]; do
+sleep 10
+printf "."
+Jobs=$(qstat | grep 'tophat' | grep -w 'r' | wc -l)
+done
+printf "\n"
+Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
+Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
+echo "$Organism - $Strain"
+OutDir=gene_pred/braker/$Organism/"$Strain"_PDA_braker_fourth
+AcceptedHits=alignment/repeat_masked/12008PDA_accurate/accepted_hits.bam
+GeneModelName="$Organism"_"$Strain"_braker_fourth
+rm -r /home/gomeza/prog/augustus-3.1/config/species/"$Organism"_"$Strain"_braker_fourth
+ProgDir=/home/fanron/git_repos/tools/gene_prediction/braker1
+qsub $ProgDir/sub_braker_fungi.sh $Assembly $OutDir $AcceptedHits $GeneModelName
+done
+```
+
+
+```bash
+for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+Jobs=$(qstat | grep 'tophat' | grep -w 'r' | wc -l)
+while [ $Jobs -gt 1 ]; do
+sleep 10
+printf "."
+Jobs=$(qstat | grep 'tophat' | grep -w 'r' | wc -l)
+done
+printf "\n"
+Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
+Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
+echo "$Organism - $Strain"
+OutDir=gene_pred/braker/$Organism/"$Strain"_CD_braker_fourth
+AcceptedHits=alignment/repeat_masked/12008CD_accurate/accepted_hits.bam
+GeneModelName="$Organism"_"$Strain"_braker_fourth_CD
+rm -r /home/gomeza/prog/augustus-3.1/config/species/"$Organism"_"$Strain"_braker_fourth_CD
+ProgDir=/home/fanron/git_repos/tools/gene_prediction/braker1
+qsub $ProgDir/sub_braker_fungi.sh $Assembly $OutDir $AcceptedHits $GeneModelName
+done
+```
+
+Fasta and gff files were extracted from Braker1 output.
+
+```bash
+for File in $(ls gene_pred/braker/V.dahliae/12008_PDA_braker_fourth/*/augustus.gff); do
+getAnnoFasta.pl $File
+OutDir=$(dirname $File)
+echo "##gff-version 3" > $OutDir/augustus_extracted.gff
+cat $File | grep -v '#' >> $OutDir/augustus_extracted.gff
+done
+```
+
+The relationship between gene models and aligned reads was investigated. To do
+this aligned reads needed to be sorted and indexed:
+
+Note - IGV was used to view aligned reads against the Fus2 genome on my local
+machine.
+
+```bash
+#InBam=alignment/N.ditissima/R0905_pacbio_canu/concatenated/concatenated.bam
+#ViewBam=alignment/N.ditissima/R0905_pacbio_canu/concatenated/concatenated_view.bam
+#SortBam=alignment/N.ditissima/R0905_pacbio_canu/concatenated/concatenated_sorted
+#samtools view -b $InBam > $ViewBam
+#samtools sort $ViewBam $SortBam
+#samtools index $SortBam.bam
+```
