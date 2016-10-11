@@ -530,6 +530,7 @@ cufflinks was running.
 lignments were concatenated prior to running cufflinks:
 Cufflinks was run to produce the fragment length and stdev statistics:
 
+
 if run the commands in a node other than cluster, using the script:
 
 ```bash
@@ -800,20 +801,26 @@ therefore features can not be restricted by strand when they are intersected.
     qsub $ProgDir/sub_cufflinks.sh $AcceptedHits $OutDir
     done
 ```
-```bash
+```bash 
 for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
-    Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
-    Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
-    echo "$Organism - $Strain"
-    OutDir=gene_pred/cufflinks/$Organism/$Strain/concatenated_prelim
-    mkdir -p $OutDir
-    AcceptedHits=alignment/$Organism/$Strain/concatenated/concatenated.bam
-    ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
-    qsub $ProgDir/sub_cufflinks.sh $AcceptedHits $OutDir
-    done
+Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
+Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
+echo "$Organism - $Strain"
+OutDir=gene_pred/cufflinks/$Organism/$Strain/concatenated_prelim
+mkdir -p $OutDir
+AcceptedHits=alignment/$Organism/$Strain/concatenated/concatenated.bam
+ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
+qsub $ProgDir/sub2_cufflinks.sh $AcceptedHits $OutDir
+done
 ```
 
-Secondly, genes were predicted using CodingQuary:
+
+
+
+
+
+
+Secondly, genes were predicted using CodingQuary: 未做
 
 ```bash
     for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
@@ -831,7 +838,7 @@ Then, additional transcripts were added to Braker gene models, when CodingQuary
 genes were predicted in regions of the genome, not containing Braker gene
 models:
 
-```bash
+```bash 未做
   # for BrakerGff in $(ls gene_pred/braker/F.*/*_braker_new/*/augustus.gff3 | grep -w -e 'Fus2'); do
 for BrakerGff in $(ls gene_pred/braker/V.*/12008_braker_sixth/*/augustus.gff3); do
 Strain=$(echo $BrakerGff| rev | cut -d '/' -f3 | rev | sed 's/_braker_sixth//g')
@@ -884,18 +891,16 @@ cat $DirPath/final_genes_combined.pep.fasta | grep '>' | wc -l;
 echo "";
 done
 ```
-
 gene_pred/codingquary/V.dahliae/12008/final_CD
 9871
 704
 10575
-
 gene_pred/codingquary/V.dahliae/12008/final_PDA
 9871
 585
 10456
 
-```bash
+```bash 未做
 for DirPath in $(ls -d gene_pred/codingquary/V.*/*/final); do
 echo $DirPath;
 cat $DirPath/final_genes_Braker.pep.fasta | grep '>' | wc -l;
@@ -926,7 +931,7 @@ the P. infestans genome. Additional functionality was added to this script by
 also printing ORFs in .gff format.
 
 
-```bash
+```bash 已做
   ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
   for Genome in $(ls repeat_masked/*/*/*/*_contigs_unmasked.fa | grep -w -e '12008'); do
     qsub $ProgDir/run_ORF_finder.sh $Genome
@@ -935,7 +940,7 @@ also printing ORFs in .gff format.
 The Gff files from the the ORF finder are not in true Gff3 format. These were
 corrected using the following commands:
 
-```bash
+```bash已做
   ProgDir=~/git_repos/tools/seq_tools/feature_annotation
   for ORF_Gff in $(ls gene_pred/ORF_finder/*/*/*_ORF.gff | grep -v '_F_atg_' | grep -v '_R_atg_'); do
     ORF_Gff_mod=$(echo $ORF_Gff | sed 's/_ORF.gff/_ORF_corrected.gff3/g')
