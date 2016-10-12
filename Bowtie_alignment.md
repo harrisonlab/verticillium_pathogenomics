@@ -5,16 +5,16 @@ Sequence data for isolates with a data from a single sequencing run was aligned 
 ```bash
 Reference=$(ls repeat_masked/*/*/*/*_contigs_unmasked.fa)
 for StrainPath in $(ls -d qc_dna/paired/*/*); do
-Organism=$(echo $StrainPath | rev | cut -f2 -d '/' | rev)
-Strain=$(echo $StrainPath | rev | cut -f1 -d '/' | rev)
-echo "$Organism - $Strain"
-F_Read=$(ls $StrainPath/F/*.fq.gz)
-R_Read=$(ls $StrainPath/R/*.fq.gz)
-echo $F_Read
-echo $R_Read
-OutDir=analysis/genome_alignment/bowtie/$Organism/$Strain/
-ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/genome_alignment
-qsub $ProgDir/bowtie/sub_bowtie.sh $Reference $F_Read $R_Read $OutDir $Strain
+	Organism=$(echo $StrainPath | rev | cut -f2 -d '/' | rev)
+	Strain=$(echo $StrainPath | rev | cut -f1 -d '/' | rev)
+	echo "$Organism - $Strain"
+	F_Read=$(ls $StrainPath/F/*.fq.gz)
+	R_Read=$(ls $StrainPath/R/*.fq.gz)
+	echo $F_Read
+	echo $R_Read
+	OutDir=analysis/genome_alignment/bowtie/$Organism/$Strain/
+	ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/genome_alignment
+	qsub $ProgDir/bowtie/sub_bowtie.sh $Reference $F_Read $R_Read $OutDir $Strain
 done
   ```
 Sequence data for isolates with a data from two sequencing runs was aligned against the Fus2 genome
