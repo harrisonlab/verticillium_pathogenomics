@@ -815,12 +815,7 @@ done
 ```
 
 
-
-
-
-
-
-Secondly, genes were predicted using CodingQuary: 未做
+****** Secondly, genes were predicted using CodingQuary: 
 
 ```bash
     for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
@@ -834,11 +829,11 @@ Secondly, genes were predicted using CodingQuary: 未做
     done
 ```
 
-Then, additional transcripts were added to Braker gene models, when CodingQuary
+**** Then, additional transcripts were added to Braker gene models, when CodingQuary
 genes were predicted in regions of the genome, not containing Braker gene
 models:
 
-```bash 未做
+```bash 
   # for BrakerGff in $(ls gene_pred/braker/F.*/*_braker_new/*/augustus.gff3 | grep -w -e 'Fus2'); do
 for BrakerGff in $(ls gene_pred/braker/V.*/12008_braker_sixth/*/augustus.gff3); do
 Strain=$(echo $BrakerGff| rev | cut -d '/' -f3 | rev | sed 's/_braker_sixth//g')
@@ -900,7 +895,7 @@ gene_pred/codingquary/V.dahliae/12008/final_PDA
 585
 10456
 
-```bash 未做
+***```bash 
 for DirPath in $(ls -d gene_pred/codingquary/V.*/*/final); do
 echo $DirPath;
 cat $DirPath/final_genes_Braker.pep.fasta | grep '>' | wc -l;
@@ -931,7 +926,7 @@ the P. infestans genome. Additional functionality was added to this script by
 also printing ORFs in .gff format.
 
 
-```bash 已做
+```bash 
   ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
   for Genome in $(ls repeat_masked/*/*/*/*_contigs_unmasked.fa | grep -w -e '12008'); do
     qsub $ProgDir/run_ORF_finder.sh $Genome
@@ -940,7 +935,7 @@ also printing ORFs in .gff format.
 The Gff files from the the ORF finder are not in true Gff3 format. These were
 corrected using the following commands:
 
-```bash已做
+```bash
   ProgDir=~/git_repos/tools/seq_tools/feature_annotation
   for ORF_Gff in $(ls gene_pred/ORF_finder/*/*/*_ORF.gff | grep -v '_F_atg_' | grep -v '_R_atg_'); do
     ORF_Gff_mod=$(echo $ORF_Gff | sed 's/_ORF.gff/_ORF_corrected.gff3/g')
@@ -953,3 +948,23 @@ corrected using the following commands:
   done
 ```
 
+# Bioproject="PRJNA344737"
+SubFolder="Vd12008_PRJNA344737"
+mkdir $SubFolder
+for Read in $(ls raw_dna/paired/*/*/*/*.fastq.gz); do
+  echo $Read;
+  cp $Read $SubFolder/.
+done
+cp raw_dna/pacbio/*/*/extracted/concatenated_pacbio.fastq $SubFolder/.
+cd $SubFolder
+gzip concatenated_pacbio.fastq
+ftp ftp-private.ncbi.nlm.nih.gov
+cd uploads/rong.fan@emr.ac.uk_sYFJ25rv
+mkdir Vd12008_PRJNA344737
+cd Vd12008_PRJNA344737
+# put FoN_PRJNA338236
+prompt
+mput *
+bye
+cd ../
+rm -r $SubFolder
