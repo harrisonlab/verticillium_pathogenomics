@@ -948,23 +948,3 @@ corrected using the following commands:
   done
 ```
 
-# Bioproject="PRJNA344737"
-SubFolder="Vd12008_PRJNA344737"
-mkdir $SubFolder
-for Read in $(ls raw_dna/paired/*/*/*/*.fastq.gz); do
-  echo $Read;
-  cp $Read $SubFolder/.
-done
-cp raw_dna/pacbio/*/*/extracted/concatenated_pacbio.fastq $SubFolder/.
-cd $SubFolder
-gzip concatenated_pacbio.fastq
-ftp ftp-private.ncbi.nlm.nih.gov
-cd uploads/rong.fan@emr.ac.uk_sYFJ25rv
-mkdir Vd12008_PRJNA344737
-cd Vd12008_PRJNA344737
-# put FoN_PRJNA338236
-prompt
-mput *
-bye
-cd ../
-rm -r $SubFolder
