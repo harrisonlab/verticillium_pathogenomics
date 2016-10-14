@@ -803,16 +803,16 @@ therefore features can not be restricted by strand when they are intersected.
 ```
 *******
 ```bash 
-for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
-Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
-Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
-echo "$Organism - $Strain"
-OutDir=gene_pred/cufflinks/$Organism/$Strain/concatenated_prelim
-mkdir -p $OutDir
-AcceptedHits=alignment/$Organism/$Strain/concatenated/concatenated.bam
-ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
-qsub $ProgDir/sub3_cufflinks.sh $AcceptedHits $OutDir
-done
+  for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+  Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
+  Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
+  echo "$Organism - $Strain"
+  OutDir=gene_pred/cufflinks/$Organism/$Strain/concatenated_prelim
+  mkdir -p $OutDir
+  AcceptedHits=alignment/$Organism/$Strain/concatenated/concatenated.bam
+  ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
+  qsub $ProgDir/sub3_cufflinks.sh $AcceptedHits $OutDir
+  done
 ```
 
 
@@ -879,22 +879,22 @@ done
 The final number of genes per isolate was observed using:
 
 ```bash
-# for DirPath in $(ls -d gene_pred/codingquary/V.*/*/final_PDA); do
-#echo $DirPath;
-#cat $DirPath/final_genes_Braker.pep.fasta | grep '>' | wc -l;
-#cat $DirPath/final_genes_CodingQuary.pep.fasta | grep '>' | wc -l;
-#cat $DirPath/final_genes_combined.pep.fasta | grep '>' | wc -l;
-#echo "";
-#done
+  # for DirPath in $(ls -d gene_pred/codingquary/V.*/*/final_PDA); do
+  #echo $DirPath;
+  #cat $DirPath/final_genes_Braker.pep.fasta | grep '>' | wc -l;
+  #cat $DirPath/final_genes_CodingQuary.pep.fasta | grep '>' | wc -l;
+  #cat $DirPath/final_genes_combined.pep.fasta | grep '>' | wc -l;
+  #echo "";
+  #done
 ```
-#gene_pred/codingquary/V.dahliae/12008/final_CD
-#9871
-#704
-#10575
-#gene_pred/codingquary/V.dahliae/12008/final_PDA
-#9871
-#585
-#10456
+  #gene_pred/codingquary/V.dahliae/12008/final_CD
+  #9871
+  #704
+  #10575
+  #gene_pred/codingquary/V.dahliae/12008/final_PDA
+  #9871
+  #585
+  #10456
 
 ***
 ```bash 
