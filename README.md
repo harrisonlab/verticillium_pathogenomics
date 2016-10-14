@@ -896,7 +896,8 @@ gene_pred/codingquary/V.dahliae/12008/final_PDA
 585
 10456
 
-***```bash 
+***
+```bash 
 for DirPath in $(ls -d gene_pred/codingquary/V.*/*/final); do
 echo $DirPath;
 cat $DirPath/final_genes_Braker.pep.fasta | grep '>' | wc -l;
