@@ -801,7 +801,7 @@ therefore features can not be restricted by strand when they are intersected.
     qsub $ProgDir/sub_cufflinks.sh $AcceptedHits $OutDir
     done
 ```
-```bash 
+*******```bash 
 for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
 Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
 Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
@@ -810,7 +810,7 @@ OutDir=gene_pred/cufflinks/$Organism/$Strain/concatenated_prelim
 mkdir -p $OutDir
 AcceptedHits=alignment/$Organism/$Strain/concatenated/concatenated.bam
 ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
-qsub $ProgDir/sub2_cufflinks.sh $AcceptedHits $OutDir
+qsub $ProgDir/sub3_cufflinks.sh $AcceptedHits $OutDir
 done
 ```
 
@@ -948,3 +948,23 @@ corrected using the following commands:
   done
 ```
 
+# Bioproject="PRJNA344737"
+SubFolder="Vd12008_PRJNA344737"
+mkdir $SubFolder
+for Read in $(ls raw_dna/paired/*/*/*/*.fastq.gz); do
+  echo $Read;
+  cp $Read $SubFolder/.
+done
+cp raw_dna/pacbio/*/*/extracted/concatenated_pacbio.fastq $SubFolder/.
+cd $SubFolder
+gzip concatenated_pacbio.fastq
+ftp ftp-private.ncbi.nlm.nih.gov
+cd uploads/rong.fan@emr.ac.uk_sYFJ25rv
+mkdir Vd12008_PRJNA344737
+cd Vd12008_PRJNA344737
+# put FoN_PRJNA338236
+prompt
+mput *
+bye
+cd ../
+rm -r $SubFolder
