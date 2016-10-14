@@ -801,7 +801,8 @@ therefore features can not be restricted by strand when they are intersected.
     qsub $ProgDir/sub_cufflinks.sh $AcceptedHits $OutDir
     done
 ```
-*******```bash 
+*******
+```bash 
 for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
 Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
 Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
