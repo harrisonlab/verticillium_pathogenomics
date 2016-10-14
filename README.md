@@ -778,28 +778,28 @@ Note - cufflinks doesn't always predict direction of a transcript and
 therefore features can not be restricted by strand when they are intersected.
 
 ```bash
-  # for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
-    Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
-    Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
-    echo "$Organism - $Strain"
-    OutDir=gene_pred/cufflinks/$Organism/$Strain/PDA_concatenated_prelim
-    mkdir -p $OutDir
-    AcceptedHits=alignment/$Organism/$Strain/12008PDA/accepted_hits.bam
-    ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
-    qsub $ProgDir/sub_cufflinks.sh $AcceptedHits $OutDir
-    done
+    #for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+    #Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
+    #Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
+    #echo "$Organism - $Strain"
+    #OutDir=gene_pred/cufflinks/$Organism/$Strain/PDA_concatenated_prelim
+    #mkdir -p $OutDir
+    #AcceptedHits=alignment/$Organism/$Strain/12008PDA/accepted_hits.bam
+    #ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
+    #qsub $ProgDir/sub_cufflinks.sh $AcceptedHits $OutDir
+    #done
 ```
 ```bash
-  # for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
-    Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
-    Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
-    echo "$Organism - $Strain"
-    OutDir=gene_pred/cufflinks/$Organism/$Strain/CD_concatenated_prelim
-    mkdir -p $OutDir
-    AcceptedHits=alignment/$Organism/$Strain/12008CD/accepted_hits.bam
-    ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
-    qsub $ProgDir/sub_cufflinks.sh $AcceptedHits $OutDir
-    done
+    #for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+    #Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
+    #Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
+    #echo "$Organism - $Strain"
+    #OutDir=gene_pred/cufflinks/$Organism/$Strain/CD_concatenated_prelim
+    #mkdir -p $OutDir
+    #AcceptedHits=alignment/$Organism/$Strain/12008CD/accepted_hits.bam
+    #ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
+    #qsub $ProgDir/sub_cufflinks.sh $AcceptedHits $OutDir
+    #done
 ```
 *******
 ```bash 
@@ -880,21 +880,21 @@ The final number of genes per isolate was observed using:
 
 ```bash
 # for DirPath in $(ls -d gene_pred/codingquary/V.*/*/final_PDA); do
-echo $DirPath;
-cat $DirPath/final_genes_Braker.pep.fasta | grep '>' | wc -l;
-cat $DirPath/final_genes_CodingQuary.pep.fasta | grep '>' | wc -l;
-cat $DirPath/final_genes_combined.pep.fasta | grep '>' | wc -l;
-echo "";
-done
+#echo $DirPath;
+#cat $DirPath/final_genes_Braker.pep.fasta | grep '>' | wc -l;
+#cat $DirPath/final_genes_CodingQuary.pep.fasta | grep '>' | wc -l;
+#cat $DirPath/final_genes_combined.pep.fasta | grep '>' | wc -l;
+#echo "";
+#done
 ```
-gene_pred/codingquary/V.dahliae/12008/final_CD
-9871
-704
-10575
-gene_pred/codingquary/V.dahliae/12008/final_PDA
-9871
-585
-10456
+#gene_pred/codingquary/V.dahliae/12008/final_CD
+#9871
+#704
+#10575
+#gene_pred/codingquary/V.dahliae/12008/final_PDA
+#9871
+#585
+#10456
 
 ***
 ```bash 
@@ -950,23 +950,3 @@ corrected using the following commands:
   done
 ```
 
-# Bioproject="PRJNA344737"
-SubFolder="Vd12008_PRJNA344737"
-mkdir $SubFolder
-for Read in $(ls raw_dna/paired/*/*/*/*.fastq.gz); do
-  echo $Read;
-  cp $Read $SubFolder/.
-done
-cp raw_dna/pacbio/*/*/extracted/concatenated_pacbio.fastq $SubFolder/.
-cd $SubFolder
-gzip concatenated_pacbio.fastq
-ftp ftp-private.ncbi.nlm.nih.gov
-cd uploads/rong.fan@emr.ac.uk_sYFJ25rv
-mkdir Vd12008_PRJNA344737
-cd Vd12008_PRJNA344737
-# put FoN_PRJNA338236
-prompt
-mput *
-bye
-cd ../
-rm -r $SubFolder
