@@ -1,1 +1,15 @@
+#  Quantification of gene model expression
 
+
+Expression was determined for aligned reads against predcited gene models using
+cufflinks:
+
+```bash
+for Alignment in $(ls alignment/repeat_masked/12008PDA_accurate/accepted_hits.bam); do
+Gff=gene_pred/codingquary1/V.dahliae/12008/final/final_genes_appended.gff3
+OutDir=$(dirname $Alignment)
+mkdir -p $OutDir/fpkm
+ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
+qsub $ProgDir/sub4_cufflinks.sh $Gff $Alignment
+# cufflinks -p 8 -o $OutDir/fpkm -G $Gff $Alignment
+done
