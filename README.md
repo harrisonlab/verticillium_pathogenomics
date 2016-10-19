@@ -801,7 +801,7 @@ therefore features can not be restricted by strand when they are intersected.
     #qsub $ProgDir/sub_cufflinks.sh $AcceptedHits $OutDir
     #done
 ```
-*******
+
 ```bash 
   for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
   Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
@@ -815,19 +815,18 @@ therefore features can not be restricted by strand when they are intersected.
   done
 ```
 
-
-****** Secondly, genes were predicted using CodingQuary: 
+Secondly, genes were predicted using CodingQuary: 
 
 ```bash
-    for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
-    Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
-    Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
-    echo "$Organism - $Strain"
-    OutDir=gene_pred/codingquary/$Organism/$Strain
-    CufflinksGTF=gene_pred/cufflinks/$Organism/$Strain/concatenated_prelim/cufflinks/transcripts.gtf
-    ProgDir=/home/fanron/git_repos/tools/gene_prediction/codingquary
-    qsub $ProgDir/sub_CodingQuary.sh $Assembly $CufflinksGTF $OutDir
-    done
+  for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+  Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
+  Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
+  echo "$Organism - $Strain"
+  OutDir=gene_pred/codingquary1/$Organism/$Strain
+  CufflinksGTF=gene_pred/cufflinks/$Organism/$Strain/concatenated_prelim/transcripts.gtf
+  ProgDir=/home/fanron/git_repos/tools/gene_prediction/codingquary
+  qsub $ProgDir/sub1_CodingQuary.sh $Assembly $CufflinksGTF $OutDir
+  done
 ```
 
 **** Then, additional transcripts were added to Braker gene models, when CodingQuary
