@@ -1155,19 +1155,20 @@ gene models using a number of approaches:
   done
  ```
  ***Those proteins with transmembrane domains were removed from lists of Signal peptide containing proteins
-
+```bash
   for File in $(ls gene_pred/trans_mem/*/*/*_TM_genes_neg.txt); do
-  Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
-  Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
-  echo "$Organism - $Strain"
-  TmHeaders=$(echo "$File" | sed 's/neg.txt/neg_headers.txt/g')
-  cat $File | cut -f1 > $TmHeaders
-  SigP=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/*_final_sp.aa)
-  OutDir=$(dirname $SigP)
-  ProgDir=/home/passet/git_repos/tools/gene_prediction/ORF_finder
-  $ProgDir/extract_from_fasta.py --fasta $SigP --headers $TmHeaders > $OutDir/"$Strain"_final_sp_no_trans_mem.aa
-  cat $OutDir/"$Strain"_final_sp_no_trans_mem.aa | grep '>' | wc -l
+    Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
+    Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
+    echo "$Organism - $Strain"
+    TmHeaders=$(echo "$File" | sed 's/neg.txt/neg_headers.txt/g')
+    cat $File | cut -f1 > $TmHeaders
+    SigP=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/*_final_sp.aa)
+    OutDir=$(dirname $SigP)
+    ProgDir=/home/passet/git_repos/tools/gene_prediction/ORF_finder
+    $ProgDir/extract_from_fasta.py --fasta $SigP --headers $TmHeaders > $OutDir/"$Strain"_final_sp_no_trans_mem.aa
+    cat $OutDir/"$Strain"_final_sp_no_trans_mem.aa | grep '>' | wc -l
   done
+```
 
 ### B) From Augustus gene models - Effector identification using EffectorP
 
@@ -1185,22 +1186,23 @@ Required programs:
   done
 ```
 ****Those genes that were predicted as secreted and tested positive by effectorP were identified:
-
-for File in $(ls analysis/effectorP/*/*/*_EffectorP.txt); do
-Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
-Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
-echo "$Organism - $Strain"
-Headers=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_headers.txt/g')
-cat $File | grep 'Effector' | cut -f1 > $Headers
-Secretome=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/*_final_sp_no_trans_mem.aa)
-OutFile=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted.aa/g')
-ProgDir=/home/passet/git_repos/tools/gene_prediction/ORF_finder
-$ProgDir/extract_from_fasta.py --fasta $Secretome --headers $Headers > $OutFile
-OutFileHeaders=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted_headers.txt/g')
-cat $OutFile | grep '>' | tr -d '>' > $OutFileHeaders
-cat $OutFileHeaders | wc -l
-Gff=$(ls gene_pred/codingquary/$Organism/$Strain/*/final_genes_appended.gff3)
-EffectorP_Gff=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted.gff/g')
-ProgDir=/home/passet/git_repos/tools/gene_prediction/ORF_finder
-$ProgDir/extract_gff_for_sigP_hits.pl $OutFileHeaders $Gff effectorP ID > $EffectorP_Gff
-done
+```bash
+  for File in $(ls analysis/effectorP/*/*/*_EffectorP.txt); do
+    Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
+    Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
+    echo "$Organism - $Strain"
+    Headers=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_headers.txt/g')
+    cat $File | grep 'Effector' | cut -f1 > $Headers
+    Secretome=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/*_final_sp_no_trans_mem.aa)
+    OutFile=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted.aa/g')
+    ProgDir=/home/passet/git_repos/tools/gene_prediction/ORF_finder
+    $ProgDir/extract_from_fasta.py --fasta $Secretome --headers $Headers > $OutFile
+    OutFileHeaders=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted_headers.txt/g')
+    cat $OutFile | grep '>' | tr -d '>' > $OutFileHeaders
+    cat $OutFileHeaders | wc -l
+    Gff=$(ls gene_pred/codingquary/$Organism/$Strain/*/final_genes_appended.gff3)
+    EffectorP_Gff=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted.gff/g')
+    ProgDir=/home/passet/git_repos/tools/gene_prediction/ORF_finder
+    $ProgDir/extract_gff_for_sigP_hits.pl $OutFileHeaders $Gff effectorP ID > $EffectorP_Gff
+  done
+```
