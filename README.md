@@ -1062,18 +1062,18 @@ done
   #qsub $ProgDir/sub_swissprot.sh $Proteome $OutDir $SwissDbDir $SwissDbName
   #done
 ```
-        *****
-        ```bash
-        for SwissTable in $(ls gene_pred/swissprot/*/*/swissprot_v2015_10_hits.tbl); do
-        # SwissTable=gene_pred/swissprot/Fus2/swissprot_v2015_10_hits.tbl
-        Strain=$(echo $SwissTable | rev | cut -f2 -d '/' | rev)
-        Organism=$(echo $SwissTable | rev | cut -f3 -d '/' | rev)
-        echo "$Organism - $Strain"
-        OutTable=gene_pred/swissprot/$Organism/$Strain/swissprot_v2015_tophit_parsed.tbl
-        ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/swissprot
-        $ProgDir/swissprot_parser.py --blast_tbl $SwissTable --blast_db_fasta ../../uniprot/swissprot/uniprot_sprot.fasta > $OutTable
-        done
-        ```
+          *****
+          ```bash
+          for SwissTable in $(ls gene_pred/swissprot/*/*/swissprot_v2015_10_hits.tbl); do
+          # SwissTable=gene_pred/swissprot/Fus2/swissprot_v2015_10_hits.tbl
+          Strain=$(echo $SwissTable | rev | cut -f2 -d '/' | rev)
+          Organism=$(echo $SwissTable | rev | cut -f3 -d '/' | rev)
+          echo "$Organism - $Strain"
+          OutTable=gene_pred/swissprot/$Organism/$Strain/swissprot_v2015_tophit_parsed.tbl
+          ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/swissprot
+          $ProgDir/swissprot_parser.py --blast_tbl $SwissTable --blast_db_fasta ../../uniprot/swissprot/uniprot_sprot.fasta > $OutTable
+          done
+          ```
 ## Effector genes
 
 Putative pathogenicity and effector related genes were identified within Braker
@@ -1154,3 +1154,53 @@ gene models using a number of approaches:
     qsub $ProgDir/submit_TMHMM.sh $Proteome
   done
  ```
+ ***Those proteins with transmembrane domains were removed from lists of Signal peptide containing proteins
+
+  for File in $(ls gene_pred/trans_mem/*/*/*_TM_genes_neg.txt); do
+  Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
+  Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
+  echo "$Organism - $Strain"
+  TmHeaders=$(echo "$File" | sed 's/neg.txt/neg_headers.txt/g')
+  cat $File | cut -f1 > $TmHeaders
+  SigP=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/*_final_sp.aa)
+  OutDir=$(dirname $SigP)
+  ProgDir=/home/passet/git_repos/tools/gene_prediction/ORF_finder
+  $ProgDir/extract_from_fasta.py --fasta $SigP --headers $TmHeaders > $OutDir/"$Strain"_final_sp_no_trans_mem.aa
+  cat $OutDir/"$Strain"_final_sp_no_trans_mem.aa | grep '>' | wc -l
+  done
+
+### B) From Augustus gene models - Effector identification using EffectorP
+
+Required programs:
+ * EffectorP.py
+
+```bash
+  for Proteome in $(ls gene_pred/codingquary1/*/*/*/final_genes_combined.pep.fasta); do
+    Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
+    Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
+    BaseName="$Organism"_"$Strain"_EffectorP
+    OutDir=analysis/effectorP/$Organism/$Strain
+    ProgDir=~/git_repos/tools/seq_tools/feature_annotation/fungal_effectors
+    qsub $ProgDir/pred_effectorP.sh $Proteome $BaseName $OutDir
+  done
+```
+****Those genes that were predicted as secreted and tested positive by effectorP were identified:
+
+for File in $(ls analysis/effectorP/*/*/*_EffectorP.txt); do
+Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
+Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
+echo "$Organism - $Strain"
+Headers=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_headers.txt/g')
+cat $File | grep 'Effector' | cut -f1 > $Headers
+Secretome=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/*_final_sp_no_trans_mem.aa)
+OutFile=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted.aa/g')
+ProgDir=/home/passet/git_repos/tools/gene_prediction/ORF_finder
+$ProgDir/extract_from_fasta.py --fasta $Secretome --headers $Headers > $OutFile
+OutFileHeaders=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted_headers.txt/g')
+cat $OutFile | grep '>' | tr -d '>' > $OutFileHeaders
+cat $OutFileHeaders | wc -l
+Gff=$(ls gene_pred/codingquary/$Organism/$Strain/*/final_genes_appended.gff3)
+EffectorP_Gff=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted.gff/g')
+ProgDir=/home/passet/git_repos/tools/gene_prediction/ORF_finder
+$ProgDir/extract_gff_for_sigP_hits.pl $OutFileHeaders $Gff effectorP ID > $EffectorP_Gff
+done
