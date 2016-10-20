@@ -601,7 +601,7 @@ if run the commands on cluster other than a node:
     > Processed 17260 loci.                        [*************************] 100%
 
     The Estimated Mean: 224.61 allowed calculation of of the mean insert gap to be
-    -255bp 225-(240*2) where 175? was the mean read length. This was provided to tophat
+    -255bp 225-(240*2) where 240? was the mean read length. This was provided to tophat
     on a second run (as the -r option) along with the fragment length stdev to
     increase the accuracy of mapping.
 
@@ -994,17 +994,163 @@ was redirected to a temporary output file named interproscan_submission.log .
   done 2>&1 | tee -a interproscan_submisison.log
 ```
 
-*****Following interproscan annotation split files were combined using the following
+Following interproscan annotation split files were combined using the following
 commands:
 
 ```bash
-  ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
-  for Proteins in $(ls gene_pred/codingquary/N.*/*/*/final_genes_combined.pep.fasta); do
-    Strain=$(echo $Proteins | rev | cut -d '/' -f3 | rev)
-    Organism=$(echo $Proteins | rev | cut -d '/' -f4 | rev)
-    echo "$Organism - $Strain"
-    echo $Strain
-    InterProRaw=gene_pred/interproscan/$Organism/$Strain/raw
-    $ProgDir/append_interpro.sh $Proteins $InterProRaw
+ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
+for Proteins in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
+Strain=$(echo $Proteins | rev | cut -d '/' -f3 | rev)
+Organism=$(echo $Proteins | rev | cut -d '/' -f4 | rev)
+echo "$Organism - $Strain"
+echo $Strain
+InterProRaw=gene_pred/interproscan/$Organism/$Strain/raw
+$ProgDir/append_interpro.sh $Proteins $InterProRaw
+done
+```
+## B) SwissProt
+<!--
+```bash
+  screen -a
+  qlogin
+  ProjDir=/home/groups/harrisonlab/project_files/idris
+  cd $ProjDir
+  for Proteome in $(ls gene_pred/codingquary/F.*/*/*/final_genes_combined.pep.fasta); do
+    Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
+    Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
+    OutDir=$ProjDir/gene_pred/swissprot/$Species/$Strain/
+    mkdir -p $OutDir
+    blastp \
+    -db /home/groups/harrisonlab/uniprot/swissprot/uniprot_sprot \
+    -query $ProjDir/$Proteome \
+    -out $OutDir/swissprot_v2015_10_hits.tbl \
+    -evalue 1e-100 \
+    -outfmt 6 \
+    -num_threads 16 \
+    -num_alignments 10
+  done
+``` -->
+```bash
+  qlogin
+  ProjDir=/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
+  cd $ProjDir
+  for Proteome in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
+    Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
+    Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
+    OutDir=$ProjDir/gene_pred/swissprot/$Organism/$Strain/
+    mkdir -p $OutDir
+    blastp \
+    -db /home/groups/harrisonlab/uniprot/swissprot/uniprot_sprot \
+    -query $ProjDir/$Proteome \
+    -out $OutDir/swissprot_v2015_10_hits.tbl \
+    -evalue 1e-100 \
+    -outfmt 6 \
+    -num_threads 16 \
+    -num_alignments 10
   done
 ```
+
+
+```bash
+  #for Proteome in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
+  #Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
+  #Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
+  #OutDir=gene_pred/swissprot/$Organism/$Strain
+  #SwissDbDir=../../uniprot/swissprot
+  #SwissDbName=uniprot_sprot
+  #ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/swissprot
+  #qsub $ProgDir/sub_swissprot.sh $Proteome $OutDir $SwissDbDir $SwissDbName
+  #done
+```
+        *****
+        ```bash
+        for SwissTable in $(ls gene_pred/swissprot/*/*/swissprot_v2015_10_hits.tbl); do
+        # SwissTable=gene_pred/swissprot/Fus2/swissprot_v2015_10_hits.tbl
+        Strain=$(echo $SwissTable | rev | cut -f2 -d '/' | rev)
+        Organism=$(echo $SwissTable | rev | cut -f3 -d '/' | rev)
+        echo "$Organism - $Strain"
+        OutTable=gene_pred/swissprot/$Organism/$Strain/swissprot_v2015_tophit_parsed.tbl
+        ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/swissprot
+        $ProgDir/swissprot_parser.py --blast_tbl $SwissTable --blast_db_fasta ../../uniprot/swissprot/uniprot_sprot.fasta > $OutTable
+        done
+        ```
+## Effector genes
+
+Putative pathogenicity and effector related genes were identified within Braker
+gene models using a number of approaches:
+
+ * A) From Augustus gene models - Identifying secreted proteins
+ * B) From Augustus gene models - Effector identification using EffectorP
+ 
+### A) From Augustus gene models - Identifying secreted proteins
+
+ Required programs:
+  * SignalP-4.1
+  * TMHMM
+
+ Proteins that were predicted to contain signal peptides were identified using
+ the following commands:
+
+ ```bash
+  SplitfileDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/signal_peptides
+  ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/signal_peptides
+  CurPath=$PWD
+  for Proteome in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
+    Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
+    Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
+    SplitDir=gene_pred/final_genes_split/$Organism/$Strain
+    mkdir -p $SplitDir
+    BaseName="$Organism""_$Strain"_final_preds
+    $SplitfileDir/splitfile_500.py --inp_fasta $Proteome --out_dir $SplitDir --out_base $BaseName
+    for File in $(ls $SplitDir/*_final_preds_*); do
+      Jobs=$(qstat | grep 'pred_sigP' | grep 'qw' | wc -l)
+      while [ $Jobs -gt 1 ]; do
+        sleep 10
+        printf "."
+        Jobs=$(qstat | grep 'pred_sigP' | grep 'qw' | wc -l)
+      done
+      printf "\n"
+      echo $File
+      qsub $ProgDir/pred_sigP.sh $File signalp-4.1
+    done
+  done
+ ```
+
+ The batch files of predicted secreted proteins needed to be combined into a
+ single file for each strain. This was done with the following commands:
+ ```bash
+  for SplitDir in $(ls -d gene_pred/final_genes_split/*/*); do
+    Strain=$(echo $SplitDir | rev |cut -d '/' -f1 | rev)
+    Organism=$(echo $SplitDir | rev |cut -d '/' -f2 | rev)
+    InStringAA=''
+    InStringNeg=''
+    InStringTab=''
+    InStringTxt=''
+    SigpDir=final_genes_signalp-4.1
+    for GRP in $(ls -l $SplitDir/*_final_preds_*.fa | rev | cut -d '_' -f1 | rev | sort -n); do
+      InStringAA="$InStringAA gene_pred/$SigpDir/$Organism/$Strain/split/"$Organism"_"$Strain"_final_preds_$GRP""_sp.aa";
+      InStringNeg="$InStringNeg gene_pred/$SigpDir/$Organism/$Strain/split/"$Organism"_"$Strain"_final_preds_$GRP""_sp_neg.aa";
+      InStringTab="$InStringTab gene_pred/$SigpDir/$Organism/$Strain/split/"$Organism"_"$Strain"_final_preds_$GRP""_sp.tab";
+      InStringTxt="$InStringTxt gene_pred/$SigpDir/$Organism/$Strain/split/"$Organism"_"$Strain"_final_preds_$GRP""_sp.txt";
+    done
+    cat $InStringAA > gene_pred/$SigpDir/$Organism/$Strain/"$Strain"_final_sp.aa
+    cat $InStringNeg > gene_pred/$SigpDir/$Organism/$Strain/"$Strain"_final_neg_sp.aa
+    tail -n +2 -q $InStringTab > gene_pred/$SigpDir/$Organism/$Strain/"$Strain"_final_sp.tab
+    cat $InStringTxt > gene_pred/$SigpDir/$Organism/$Strain/"$Strain"_final_sp.txt
+  done
+ ```
+
+ Some proteins that are incorporated into the cell membrane require secretion.
+ Therefore proteins with a transmembrane domain are not likely to represent
+ cytoplasmic or apoplastic effectors.
+
+ Proteins containing a transmembrane domain were identified:
+
+ ```bash
+  for Proteome in $(ls gene_pred/codingquary1/*/*/*/final_genes_combined.pep.fasta); do
+    Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
+    Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
+    ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/transmembrane_helices
+    qsub $ProgDir/submit_TMHMM.sh $Proteome
+  done
+ ```
