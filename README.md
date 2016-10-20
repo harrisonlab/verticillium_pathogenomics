@@ -998,15 +998,15 @@ Following interproscan annotation split files were combined using the following
 commands:
 
 ```bash
-ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
-for Proteins in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
-Strain=$(echo $Proteins | rev | cut -d '/' -f3 | rev)
-Organism=$(echo $Proteins | rev | cut -d '/' -f4 | rev)
-echo "$Organism - $Strain"
-echo $Strain
-InterProRaw=gene_pred/interproscan/$Organism/$Strain/raw
-$ProgDir/append_interpro.sh $Proteins $InterProRaw
-done
+  ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
+  for Proteins in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
+    Strain=$(echo $Proteins | rev | cut -d '/' -f3 | rev)
+    Organism=$(echo $Proteins | rev | cut -d '/' -f4 | rev)
+    echo "$Organism - $Strain"
+    echo $Strain
+    InterProRaw=gene_pred/interproscan/$Organism/$Strain/raw
+    $ProgDir/append_interpro.sh $Proteins $InterProRaw
+  done
 ```
 ## B) SwissProt
 <!--
@@ -1118,6 +1118,7 @@ gene models using a number of approaches:
 
  The batch files of predicted secreted proteins needed to be combined into a
  single file for each strain. This was done with the following commands:
+ 
  ```bash
   for SplitDir in $(ls -d gene_pred/final_genes_split/*/*); do
     Strain=$(echo $SplitDir | rev |cut -d '/' -f1 | rev)
@@ -1154,7 +1155,8 @@ gene models using a number of approaches:
     qsub $ProgDir/submit_TMHMM.sh $Proteome
   done
  ```
- ***Those proteins with transmembrane domains were removed from lists of Signal peptide containing proteins
+ Those proteins with transmembrane domains were removed from lists of Signal peptide containing proteins
+
 ```bash
   for File in $(ls gene_pred/trans_mem/*/*/*_TM_genes_neg.txt); do
     Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
@@ -1164,11 +1166,13 @@ gene models using a number of approaches:
     cat $File | cut -f1 > $TmHeaders
     SigP=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/*_final_sp.aa)
     OutDir=$(dirname $SigP)
-    ProgDir=/home/passet/git_repos/tools/gene_prediction/ORF_finder
+    ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
     $ProgDir/extract_from_fasta.py --fasta $SigP --headers $TmHeaders > $OutDir/"$Strain"_final_sp_no_trans_mem.aa
     cat $OutDir/"$Strain"_final_sp_no_trans_mem.aa | grep '>' | wc -l
   done
 ```
+  V.dahliae - 12008
+  943
 
 ### B) From Augustus gene models - Effector identification using EffectorP
 
@@ -1185,7 +1189,8 @@ Required programs:
     qsub $ProgDir/pred_effectorP.sh $Proteome $BaseName $OutDir
   done
 ```
-****Those genes that were predicted as secreted and tested positive by effectorP were identified:
+Those genes that were predicted as secreted and tested positive by effectorP were identified:
+
 ```bash
   for File in $(ls analysis/effectorP/*/*/*_EffectorP.txt); do
     Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
@@ -1195,14 +1200,18 @@ Required programs:
     cat $File | grep 'Effector' | cut -f1 > $Headers
     Secretome=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/*_final_sp_no_trans_mem.aa)
     OutFile=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted.aa/g')
-    ProgDir=/home/passet/git_repos/tools/gene_prediction/ORF_finder
+    ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
     $ProgDir/extract_from_fasta.py --fasta $Secretome --headers $Headers > $OutFile
     OutFileHeaders=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted_headers.txt/g')
     cat $OutFile | grep '>' | tr -d '>' > $OutFileHeaders
     cat $OutFileHeaders | wc -l
-    Gff=$(ls gene_pred/codingquary/$Organism/$Strain/*/final_genes_appended.gff3)
+    Gff=$(ls gene_pred/codingquary1/$Organism/$Strain/*/final_genes_appended.gff3)
     EffectorP_Gff=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted.gff/g')
-    ProgDir=/home/passet/git_repos/tools/gene_prediction/ORF_finder
+    ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
     $ProgDir/extract_gff_for_sigP_hits.pl $OutFileHeaders $Gff effectorP ID > $EffectorP_Gff
   done
 ```
+V.dahliae - 12008
+candidate secreted effectors
+194
+
