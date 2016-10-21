@@ -1,20 +1,152 @@
-# Bioproject="PRJNA344737"
-SubFolder="Vd12008_PRJNA344737"
-mkdir $SubFolder
-for Read in $(ls raw_dna/paired/*/*/*/*.fastq.gz); do
-  echo $Read;
-  cp $Read $SubFolder/.
-done
-cp raw_dna/pacbio/*/*/extracted/concatenated_pacbio.fastq $SubFolder/.
-cd $SubFolder
-gzip concatenated_pacbio.fastq
-ftp ftp-private.ncbi.nlm.nih.gov
-cd uploads/rong.fan@emr.ac.uk_sYFJ25rv
-mkdir Vd12008_PRJNA344737
-cd Vd12008_PRJNA344737
-# put Vd12008_PRJNA344737
-prompt
-mput *
-bye
-cd ../
-rm -r $SubFolder
+
+# Submission Commands
+
+Submisison of annotations with an assembly appears to be a complex process.
+If a genome is to be submitted without annotation then all that is needed is the
+fasta file containing the assembled contigs. If an annotated genome is to be
+submitted then a number of processing steps are required before submission. The
+fasta file of contigs and the gff file of annotations must be combined to form a
+.asn file. The program that does this conversion (tbl2asn) requires the fasta
+files and gff files to be formatted correctly. In the case of the gff file, this
+means parsing it to a .tbl file.
+
+The commands used to parse these files and prepare the F. oxysporum f. sp.
+narcissi genome for submisson are shown below.
+
+
+
+# Preliminary submission
+
+A Bioproject and biosample number was prepared for the genome submission at:
+https://submit.ncbi.nlm.nih.gov
+
+A preliminary submission was made for the .fasta assembly to check if
+any contigs needed to be split. This step was performed early in the annotation
+process (prior to gene prediction) to ensure that annotation did not have to
+be repeated at the end of the project.
+
+
+The following note was provided in the WGS submission page on NCBI in the box
+labeled "Private comments to NCBI staff":
+
+```
+I have been advised to submit my assemblies to NCBI early in my submission process to ensure that my contigs pass the contamination screen. This assembly will be revised as appropriate, including renaming of contigs where needed. Please allow me to modify this submission at a later date, including upload of the final gene models.
+
+'For future submissions, you could send us the fasta files early
+in the submission process so we can run them through our foreign
+contamination screen. We will let you know if we find any
+sequences to exclude or trim before you generate your final
+WGS submission.'...'*IMPORTANT* Include a comment that you are submitting
+the fasta files to be screened by the contamination screen
+prior to creating your final annotated submission.'
+```
+
+
+# Submission of sequence data to SRA
+
+Reads were submitted to the SRA at https://submit.ncbi.nlm.nih.gov/subs/sra/ .
+To do this, a metadata file was provided detailing each of the files in the
+bioproject. The file was downloaded in excel format and edited manually. A copy
+of the edited file and the final .tsv file is present at:
+
+```bash
+  ls genome_submission/SRA_metadata_acc.txt genome_submission/SRA_metadata_acc.xlsx
+```
+
+As these files included a file > 500 Mb, a presubmission folder was requested.
+This aids submission of large data files. This file was created on the ftp server
+at ftp-private.ncbi.nlm.nih.gov, with a private folder named
+uploads/andrew.armitage@emr.ac.uk_6L2oakBI. Ncbi provided a username a password.
+Files were uploaded into a folder created within my preload folder using ftp.
+
+```bash
+	# Bioproject="PRJNA344737"
+	SubFolder="Vd12008_PRJNA344737"
+	mkdir $SubFolder
+	for Read in $(ls raw_dna/paired/*/*/*/*.fastq.gz); do
+	  echo $Read;
+	  cp $Read $SubFolder/.
+	done
+	cp raw_dna/pacbio/*/*/extracted/concatenated_pacbio.fastq $SubFolder/.
+	cd $SubFolder
+	gzip concatenated_pacbio.fastq
+	ftp ftp-private.ncbi.nlm.nih.gov
+	cd uploads/rong.fan@emr.ac.uk_sYFJ25rv
+	mkdir Vd12008_PRJNA344737
+	cd Vd12008_PRJNA344737
+	# put Vd12008_PRJNA344737
+	prompt
+	mput *
+	bye
+	cd ../
+	rm -r $SubFolder
+```
+
+# Final Submission
+
+These commands were used in the final submission of the VD_12008 genome:
+
+
+## Output directory
+An output and working directory was made for genome submission:
+
+```bash
+ProjDir=/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
+cd $ProjDir
+OutDir="genome_submission"
+  mkdir -p $OutDir
+```
+## SbtFile
+The genbank submission template tool was used at:
+http://www.ncbi.nlm.nih.gov/WebSub/template.cgi
+This produce a template file detailing the submission.
+
+## Setting varibales
+Vairables containing locations of files and options for scripts were set:
+
+```bash
+# Program locations:
+AnnieDir="/home/armita/prog/annie/genomeannotation-annie-c1e848b"
+ProgDir="/home/armita/git_repos/emr_repos/tools/genbank_submission"
+# File locations:
+SbtFile="genome_submission/template.sbt"
+Assembly=$(ls repeat_masked/V.dahliae/12008/filtered_contigs_repmask/12008_contigs_unmasked.fa)
+InterProTab=$(ls gene_pred/interproscan/V.dahliae/12008/12008_interproscan.tsv)
+SwissProtBlast=$(ls gene_pred/swissprot/V.dahliae/12008/swissprot_vJul2016_tophit_parsed.tbl)
+SwissProtFasta=$(ls /home/groups/harrisonlab/uniprot/swissprot/uniprot_sprot.fasta)
+GffFile=$(ls gene_pred/codingquary1/V.dahliae/12008/final/final_genes_appended.gff3)
+# tbl2asn options:
+Organism="Verticillium dahliae"
+Strain="12008"
+# ncbi_tbl_corrector script options:
+
+
+
+*****************SubmissionID="BFJ65"???
+LabID="ArmitageEMR"
+# GeneSource='ab initio prediction:Braker:1.9, CodingQuary:2.0'
+# IDSource='similar to AA sequence:SwissProt:2016_07'
+# IDSource='similar to AA sequence:UniProtKB/Swiss-Prot'
+# Final submisison file name:
+FinalName="Vd12008_Fan_2016"
+```
+
+<!-- ## Preparing Gff input file
+
+Parse the Augustus Gff file.
+Transcripts should be renamed as mRNA features. Exons should be added to the
+Gff and unique IDs should be given to all features in the file.
+
+```bash
+# cat $GffFile | sed 's/transcript/mRNA/g' > $OutDir/GffMRNA.gff
+# $ProgDir/generate_tbl_file/exon_generator.pl $OutDir/GffMRNA.gff > $OutDir/corrected_exons.gff
+# $ProgDir/generate_tbl_file/gff_add_id.py --inp_gff $OutDir/corrected_exons.gff --out_gff $OutDir/corrected_exons_id.gff
+``` -->
+
+## Generating .tbl file (GAG)
+
+The Genome Annotation Generator (GAG.py) can be used to convert gff files into
+.tbl format, for use by tbl2asn.
+
+It can also add annotations to features as provided by Annie the Annotation
+extractor.
