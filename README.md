@@ -1052,28 +1052,28 @@ commands:
 
 
 ```bash
-  #for Proteome in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
-  #Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
-  #Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
-  #OutDir=gene_pred/swissprot/$Organism/$Strain
-  #SwissDbDir=../../uniprot/swissprot
-  #SwissDbName=uniprot_sprot
-  #ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/swissprot
-  #qsub $ProgDir/sub_swissprot.sh $Proteome $OutDir $SwissDbDir $SwissDbName
-  #done
+for Proteome in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
+ Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
+ Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
+  OutDir=gene_pred/swissprot/$Organism/$Strain
+  SwissDbDir=../../../uniprot/swissprot
+  SwissDbName=uniprot_sprot
+  ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/swissprot
+  qsub $ProgDir/sub_swissprot.sh $Proteome $OutDir $SwissDbDir $SwissDbName
+  done
 ```
-          *****
-          ```bash
-          for SwissTable in $(ls gene_pred/swissprot/*/*/swissprot_v2015_10_hits.tbl); do
-          # SwissTable=gene_pred/swissprot/Fus2/swissprot_v2015_10_hits.tbl
-          Strain=$(echo $SwissTable | rev | cut -f2 -d '/' | rev)
-          Organism=$(echo $SwissTable | rev | cut -f3 -d '/' | rev)
-          echo "$Organism - $Strain"
-          OutTable=gene_pred/swissprot/$Organism/$Strain/swissprot_v2015_tophit_parsed.tbl
-          ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/swissprot
-          $ProgDir/swissprot_parser.py --blast_tbl $SwissTable --blast_db_fasta ../../uniprot/swissprot/uniprot_sprot.fasta > $OutTable
-          done
-          ```
+
+```bash
+for SwissTable in $(ls gene_pred/swissprot/*/*/swissprot_v2015_10_hits.tbl); do
+# SwissTable=gene_pred/swissprot/Fus2/swissprot_v2015_10_hits.tbl
+Strain=$(echo $SwissTable | rev | cut -f2 -d '/' | rev)
+Organism=$(echo $SwissTable | rev | cut -f3 -d '/' | rev)
+echo "$Organism - $Strain"
+OutTable=gene_pred/swissprot/$Organism/$Strain/swissprot_v2015_tophit_parsed.tbl
+ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/swissprot
+$ProgDir/swissprot_parser.py --blast_tbl $SwissTable --blast_db_fasta ../../../uniprot/swissprot/uniprot_sprot.fasta > $OutTable
+done
+```
 ## Effector genes
 
 Putative pathogenicity and effector related genes were identified within Braker
@@ -1219,58 +1219,91 @@ candidate secreted effectors
 
 Carbohydrte active enzymes were idnetified using CAZYfollowing recomendations
 at http://csbl.bmb.uga.edu/dbCAN/download/readme.txt :
-******
-      ```bash
-        for Proteome in $(ls gene_pred/codingquary1/*/*/*/final_genes_combined.pep.fasta); do
-          Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
-          Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
-          OutDir=gene_pred/CAZY/$Organism/$Strain
-          mkdir -p $OutDir
-          Prefix="$Strain"_CAZY
-          # CazyHmm=../../dbCAN/dbCAN-fam-HMMs.txt
-          # ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/HMMER
-          ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/HMMER
-          qsub $ProgDir/sub_hmmscan.sh $CazyHmm $Proteome $Prefix $OutDir
-        done
-      ```
-      The Hmm parser was used to filter hits by an E-value of E1x10-5 or E 1x10-e3 if they had a hit over a length of X %.
 
-      Those proteins with a signal peptide were extracted from the list and gff files
-      representing these proteins made.
+```bash
+  for Proteome in $(ls gene_pred/codingquary1/*/*/*/final_genes_combined.pep.fasta); do
+    Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
+    Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
+    OutDir=gene_pred/CAZY/$Organism/$Strain
+    mkdir -p $OutDir
+    Prefix="$Strain"_CAZY
+    CazyHmm=../../../dbCAN/dbCAN-fam-HMMs.txt
+    ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/HMMER
+    # ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/HMMER
+    qsub $ProgDir/sub_hmmscan.sh $CazyHmm $Proteome $Prefix $OutDir
+  done
+```
+The Hmm parser was used to filter hits by an E-value of E1x10-5 or E 1x10-e3 if they had a hit over a length of X %.
 
-      ```bash
-        for File in $(ls gene_pred/CAZY/F.*/*/*CAZY.out.dm); do
-          Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
-          Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
-          OutDir=$(dirname $File)
-          echo "$Organism - $Strain"
-          ProgDir=/home/groups/harrisonlab/dbCAN
-          $ProgDir/hmmscan-parser.sh $OutDir/Fus2_canu_new_CAZY.out.dm > $OutDir/Fus2_canu_new_CAZY.out.dm.ps
-          SecretedProts=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/"$Strain"_final_sp_no_trans_mem.aa)
-          SecretedHeaders=$(echo $SecretedProts | sed 's/.aa/_headers.txt/g')
-          cat $SecretedProts | grep '>' | tr -d '>' > $SecretedHeaders
-          Gff=$(ls gene_pred/final_genes/$Organism/$Strain/final/final_genes_appended.gff3)
-          CazyGff=$OutDir/Fus2_canu_new_CAZY.gff
-          ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/ORF_finder
-          $ProgDir/extract_gff_for_sigP_hits.pl $SecretedHeaders $Gff CAZyme ID > $CazyGff
-        done
-      ```
+Those proteins with a signal peptide were extracted from the list and gff files
+representing these proteins made.
 
-      Note - the CAZY genes identified may need further filtering based on e value and
-      cuttoff length - see below:
+```bash
+  for File in $(ls gene_pred/CAZY/*/*/*CAZY.out.dm); do
+    Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
+    Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
+    OutDir=$(dirname $File)
+    echo "$Organism - $Strain"
+    ProgDir=/home/groups/harrisonlab/dbCAN
+    $ProgDir/hmmscan-parser.sh $OutDir/12008_CAZY.out.dm > $OutDir/12008_CAZY.out.dm.ps
+    SecretedProts=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/"$Strain"_final_sp_no_trans_mem.aa)
+    SecretedHeaders=$(echo $SecretedProts | sed 's/.aa/_headers.txt/g')
+    cat $SecretedProts | grep '>' | tr -d '>' > $SecretedHeaders
+    Gff=$(ls gene_pred/codingquary1/*/*/*/final_genes_appended.gff3)
+    CazyGff=$OutDir/12008_CAZY.gff
+    ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
+    $ProgDir/extract_gff_for_sigP_hits.pl $SecretedHeaders $Gff CAZyme ID > $CazyGff
+  done
+```
 
-      Cols in yourfile.out.dm.ps:
-      1. Family HMM
-      2. HMM length
-      3. Query ID
-      4. Query length
-      5. E-value (how similar to the family HMM)
-      6. HMM start
-      7. HMM end
-      8. Query start
-      9. Query end
-      10. Coverage
+for File in $(ls gene_pred/CAZY/*/12008/*CAZY.out.dm); do
+      Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
+      Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
+      OutDir=$(dirname $File)
+      echo "$Organism - $Strain"
+      ProgDir=/home/groups/harrisonlab/dbCAN
+      $ProgDir/hmmscan-parser.sh $OutDir/"$Strain"_CAZY.out.dm > $OutDir/"$Strain"_CAZY.out.dm.ps
+      CazyHeaders=$(echo $File | sed 's/.out.dm/_headers.txt/g')
+      cat $OutDir/"$Strain"_CAZY.out.dm.ps | cut -f3 | sort | uniq > $CazyHeaders
+      echo "number of CAZY genes identified:"
+      cat $CazyHeaders | wc -l
+      # Gff=$(ls gene_pred/codingquary1/$Organism/$Strain/final/final_genes_appended.gff3)
+      Gff=$(ls gene_pred/codingquary1/$Organism/$Strain/final/final_genes_appended.gff3)
+      CazyGff=$OutDir/"$Strain"_CAZY.gff
+      ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
+      $ProgDir/extract_gff_for_sigP_hits.pl $CazyHeaders $Gff CAZyme ID > $CazyGff
 
-      * For fungi, use E-value < 1e-17 and coverage > 0.45
+      SecretedProts=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/"$Strain"_final_sp_no_trans_mem.aa)
+      SecretedHeaders=$(echo $SecretedProts | sed 's/.aa/_headers.txt/g')
+      cat $SecretedProts | grep '>' | tr -d '>' > $SecretedHeaders
+      CazyGffSecreted=$OutDir/"$Strain"_CAZY_secreted.gff
+      $ProgDir/extract_gff_for_sigP_hits.pl $SecretedHeaders $CazyGff Secreted_CAZyme ID > $CazyGffSecreted
+      echo "number of Secreted CAZY genes identified:"
+      cat $CazyGffSecreted | grep -w 'mRNA' | cut -f9 | tr -d 'ID=' | cut -f1 -d ';' > $OutDir/"$Strain"_CAZY_secreted_headers.txt
+      cat $OutDir/"$Strain"_CAZY_secreted_headers.txt | wc -l
+    done
 
-      * The best threshold varies for different CAZyme classes (please see http://www.ncbi.nlm.nih.gov/pmc/articles/PMC4132414/ for details). Basically to annotate GH proteins, one should use a very relax coverage cutoff or the sensitivity will be low (Supplementary Tables S4 and S9); (ii) to annotate CE families a very stringent E-value cutoff and coverage cutoff should be used; otherwise the precision will be very low due to a very high false positive rate (Supplementary Tables S5 and S10)
+V.dahliae - 12008
+number of CAZY genes identified:
+620
+number of Secreted CAZY genes identified:
+298
+
+Note - the CAZY genes identified may need further filtering based on e value and
+cuttoff length - see below:
+
+Cols in yourfile.out.dm.ps:
+1. Family HMM
+2. HMM length
+3. Query ID
+4. Query length
+5. E-value (how similar to the family HMM)
+6. HMM start
+7. HMM end
+8. Query start
+9. Query end
+10. Coverage
+
+* For fungi, use E-value < 1e-17 and coverage > 0.45
+
+* The best threshold varies for different CAZyme classes (please see http://www.ncbi.nlm.nih.gov/pmc/articles/PMC4132414/ for details). Basically to annotate GH proteins, one should use a very relax coverage cutoff or the sensitivity will be low (Supplementary Tables S4 and S9); (ii) to annotate CE families a very stringent E-value cutoff and coverage cutoff should be used; otherwise the precision will be very low due to a very high false positive rate (Supplementary Tables S5 and S10)
