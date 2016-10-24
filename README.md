@@ -1081,7 +1081,9 @@ gene models using a number of approaches:
 
  * A) From Augustus gene models - Identifying secreted proteins
  * B) From Augustus gene models - Effector identification using EffectorP
- 
+ * C) CAZY proteins
+ * D) Identify Small secreted cysteine rich proteins
+
 ### A) From Augustus gene models - Identifying secreted proteins
 
  Required programs:
@@ -1307,3 +1309,22 @@ Cols in yourfile.out.dm.ps:
 * For fungi, use E-value < 1e-17 and coverage > 0.45
 
 * The best threshold varies for different CAZyme classes (please see http://www.ncbi.nlm.nih.gov/pmc/articles/PMC4132414/ for details). Basically to annotate GH proteins, one should use a very relax coverage cutoff or the sensitivity will be low (Supplementary Tables S4 and S9); (ii) to annotate CE families a very stringent E-value cutoff and coverage cutoff should be used; otherwise the precision will be very low due to a very high false positive rate (Supplementary Tables S5 and S10)
+
+
+## D) Identify Small secreted cysteine rich proteins
+
+in secretome:
+
+ProgPath=/home/fanron/git_repos/tools/pathogen/sscp
+for Filez in $(ls gene_pred/final_genes_signalp-4.1/V.dahliae/12008/*_sp.aa | grep -v _neg_sp.aa); do            
+echo "$Filez"
+qsub "$ProgPath"/sub_sscp.sh "$Filez"
+done
+
+in effectorP:
+
+ProgPath=/home/fanron/git_repos/tools/pathogen/sscp
+for Filez in $(ls analysis/effectorP/V.dahliae/12008/*.aa); do            
+echo "$Filez"
+qsub "$ProgPath"/sub1_sscp.sh "$Filez"
+done
