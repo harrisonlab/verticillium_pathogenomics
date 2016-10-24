@@ -17,20 +17,20 @@ ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
 cufflinks -p 8 -o $OutDir/fpkm -G $Gff $Alignment
 done
 ```
+fpkm_files=$(ls alignment/repeat_masked/12008PDA_accurate/fpkm/genes.fpkm_tracking | sed -r 's/\n/ /g')
+ProgDir=/home/armita/git_repos/emr_repos/scripts/fusarium/RNAseq
+Cazy=gene_pred/CAZY/*/*/*_CAZY_secreted_headers.txt
+EffectorP=analysis/effectorP/*/*/*_EffectorP_secreted_headers.txt
+mkdir analysis/expression
+$ProgDir/fpkm_by_gene.py --fpkm_file $fpkm_files --CAZY_headers $Cazy --effectorP_headers $EffectorP > analysis/expression/12008_PDA_expressed_genes.tsv
+
+fpkm_files=$(ls alignment/repeat_masked/12008CD_accurate/fpkm/genes.fpkm_tracking | sed -r 's/\n/ /g')
+ProgDir=/home/armita/git_repos/emr_repos/scripts/fusarium/RNAseq
+Cazy=gene_pred/CAZY/*/*/*_CAZY_secreted_headers.txt
+EffectorP=analysis/effectorP/*/*/*_EffectorP_secreted_headers.txt
+mkdir analysis/expression
+$ProgDir/fpkm_by_gene.py --fpkm_file $fpkm_files --CAZY_headers $Cazy --effectorP_headers $EffectorP > analysis/expression/12008_CD_expressed_genes.tsv
+
 *
-fpkm_files=$(ls alignment/r*/*/12008_PDA/fpkm/genes.fpkm_tracking | sed -r 's/\n/ /g')
-ProgDir=/home/armita/git_repos/emr_repos/scripts/fusarium/RNAseq
-Cazy=gene_pred/CAZY/*/*/*_CAZY_secreted_headers.txt
-EffectorP=analysis/effectorP/*/*/*_EffectorP_secreted_headers.txt
-mkdir analysis/expression
-$ProgDir/fpkm_by_gene.py -h --fpkm_file $fpkm_files --CAZY_headers $Cazy --effectorP_headers $EffectorP > analysis/expression/12008_PDA_expressed_genes.tsv
-
-fpkm_files=$(ls alignment/r*/*/12008_CD/fpkm/genes.fpkm_tracking | sed -r 's/\n/ /g')
-ProgDir=/home/armita/git_repos/emr_repos/scripts/fusarium/RNAseq
-Cazy=gene_pred/CAZY/*/*/*_CAZY_secreted_headers.txt
-EffectorP=analysis/effectorP/*/*/*_EffectorP_secreted_headers.txt
-mkdir analysis/expression
-$ProgDir/fpkm_by_gene.py -h --fpkm_file $fpkm_files --CAZY_headers $Cazy --effectorP_headers $EffectorP > analysis/expression/12008_CD_expressed_genes.tsv
-
 echo "Number of variaible core genes in top 50 expressed genes:"
 cat analysis/expression/12008_CD_expressed_genes.tsv | head -n 50 | grep -w -v -e 'contig_10_pilon' -e 'contig_14_pilon' -e 'contig_16_pilon' -e 'contig_18_pilon' -e 'contig_19_pilon' -e 'contig_20_pilon' -e 'contig_21_pilon' | grep -w -e 'contig_9_pilon' -e 'contig_11_pilon' -e 'contig_12_pilon' -e 'contig_13_pilon' -e 'contig_15_pilon' -e 'contig_17_pilon' | wc -l
