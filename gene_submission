@@ -67,9 +67,9 @@ Files were uploaded into a folder created within my preload folder using ftp.
 	  echo $Read;
 	  cp $Read $SubFolder/.
 	done
-	cp raw_dna/pacbio/*/*/extracted/concatenated_pacbio.fastq $SubFolder/.
+	cp raw_dna/pacbio/*/*/extracted/gz/concatenated_pacbio.fastq.gz $SubFolder/.
 	cd $SubFolder
-	gzip concatenated_pacbio.fastq
+	# gzip concatenated_pacbio.fastq
 	ftp ftp-private.ncbi.nlm.nih.gov
 	cd uploads/rong.fan@emr.ac.uk_sYFJ25rv
 	mkdir Vd12008_PRJNA344737
@@ -150,3 +150,89 @@ The Genome Annotation Generator (GAG.py) can be used to convert gff files into
 
 It can also add annotations to features as provided by Annie the Annotation
 extractor.
+
+
+
+
+
+
+
+For WGS
+# Calculate coverage using the count_nucl.pl script
+
+## For one library
+
+```bash
+for DataDir in $(ls -d qc_dna/paired/*/*)
+do
+    F_Read=$(ls $DataDir/F/*.gz)
+    R_Read=$(ls $DataDir/R/*.gz)
+    Strain=$(echo $DataDir | rev | cut -f1 -d '/' | rev)
+    Organism=$(echo $DataDir | rev | cut -f2 -d '/' | rev)
+    WorkDir=tmp_dir/$Strain
+    mkdir -p $WorkDir
+    cp -r $F_Read $WorkDir
+    cp -r $R_Read $WorkDir
+    cd $WorkDir
+    Read1=*R1*
+    Read2=*R2*
+    gunzip $Read1
+    gunzip $Read2
+    Sub1=*R1*.fq
+    Sub2=*R2*.fq
+    echo "$Organism - $Strain"
+    count_nucl.pl -i $Sub1 -i $Sub2 -g 35
+    cd /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
+done
+```
+```````````````````````````````````````````````````````````````````````````
+			V.dahliae - 12008
+			The estimated genome size is: 35000000 bp
+
+
+			The input file is: Vd12008_S1_L001_R1_001_trim.fq
+
+			Results for: Vd12008_S1_L001_R1_001_trim.fq
+			 Within this file of 1192143533 bp there were 4722428 fastq sequences
+			 of these 0 lines were empty.
+
+
+			The input file is: Vd12008_S1_L001_R2_001_trim.fq
+
+			Results for: Vd12008_S1_L001_R2_001_trim.fq
+			 Within this file of 1136947554 bp there were 4722428 fastq sequences
+			 of these 0 lines were empty.
+
+
+
+			Total results:
+
+			 There are a total of 2329091087 nucleotides in this file.
+
+			 This equates to an estimated genome coverage of 66.55 .
+```````````````````````````````````````````````````````````````````````````
+## For PacBio data
+
+```bash
+count_nucl.pl -i raw_dna/pacbio/*/*/extracted/concatenated_pacbio.fastq -g 35
+```
+```````````````````````````````````````````````````````````````````````````
+			results:
+			The estimated genome size is: 35000000 bp
+
+
+			The input file is: raw_dna/pacbio/V.dahliae/12008/extracted/concatenated_pacbio.fastq
+
+
+			Results for: raw_dna/pacbio/V.dahliae/12008/extracted/concatenated_pacbio.fastq
+			 Within this file of 3755996917 bp there were 610703 fastq sequences
+			 of these 0 lines were empty.
+
+
+
+			Total results:
+
+			 There are a total of 3755996917 nucleotides in this file.
+
+			 This equates to an estimated genome coverage of 107.31 .
+```````````````````````````````````````````````````````````````````````````
