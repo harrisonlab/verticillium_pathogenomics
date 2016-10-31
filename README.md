@@ -281,13 +281,74 @@ L50                          16
 L75                          32                                               
 N's per 100 kbp             0.00                   
 
+A Bioproject and Biosample was made with NCBI genbank for submission of genomes.
+Following the creation of these submissions, the .fasta assembly was uploaded
+through the submission portal. A note was provided requesting that the assembly
+be run through the contamination screen to aid a more detailed resubmission in
+future. The returned FCSreport.txt was downloaded from the NCBI webportal and
+used to correct the assembly to NCBI standards.
 
-Checking PacBio coverage against Spades assembly
+NCBI reports (FCSreport.txt) were manually downloaded to the following loactions:
 
 ```bash
-  Assembly=assembly/merged_canu_spades/V.dahliae/12008/filtered_contigs/12008_contigs_renamed.fasta
+  for Assembly in $(ls assembly/merged_canu_spades/V.dahliae/12008/filtered_contigs/12008_contigs_renamed.fasta); do
+    Strain=$(echo $Assembly | rev | cut -f3 -d '/' | rev)
+    Organism=$(echo $Assembly | rev | cut -f4 -d '/' | rev)  
+    NCBI_report_dir=genome_submission/$Organism/$Strain/initial_submission
+    mkdir -p $NCBI_report_dir
+  done
+```
+These downloaded files were used to correct assemblies:
+
+```bash
+for Assembly in $(ls assembly/merged_canu_spades/V.dahliae/12008/filtered_contigs/12008_contigs_renamed.fasta); do
+Strain=$(echo $Assembly | rev | cut -f3 -d '/' | rev)
+Organism=$(echo $Assembly | rev | cut -f4 -d '/' | rev)
+echo "$Organism - $Strain"
+NCBI_report=$(ls genome_submission/$Organism/$Strain/initial_submission/FCSreport.txt)
+OutDir=assembly/merged_canu_spades/$Organism/$Strain/ncbi_edits
+mkdir -p $OutDir
+ProgDir=/home/fanron/git_repos/tools/seq_tools/assemblers/assembly_qc/remove_contaminants
+$ProgDir/remove_contaminants.py --inp $Assembly --out $OutDir/12008_contigs_renamed.fasta --coord_file $NCBI_report > $OutDir/log.txt
+done
+```
+Quast was used to collect details on these assemblies again
+
+```bash
+ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/assemblers/assembly_qc/quast
+for Assembly in $(ls assembly/merged_canu_spades/*/*/ncbi_edits/12008_contigs_renamed.fasta); do
+Strain=$(echo $Assembly | rev | cut -f3 -d '/' | rev)
+Organism=$(echo $Assembly | rev | cut -f4 -d '/' | rev)  
+echo "$Organism - $Strain"
+OutDir=assembly/merged_canu_spades/$Organism/$Strain/ncbi_edits
+qsub $ProgDir/sub_quast.sh $Assembly $OutDir
+done
+```
+All statistics are based on contigs of size >= 500 bp, unless otherwise noted (e.g., "# contigs (>= 0 bp)" and "Total length (>= 0 bp)" include all contigs).
+
+Assembly                   12008_contigs_renamed  12008_contigs_renamed broken
+# contigs (>= 0 bp)        103                    103
+# contigs (>= 1000 bp)     103                    103
+Total length (>= 0 bp)     35057408               35057408
+Total length (>= 1000 bp)  35057408               35057408
+# contigs                  103                    103
+Largest contig             2438101                2438101
+Total length               35057408               35057408
+GC (%)                     54.57                  54.57
+N50                        746680                 746680
+N75                        389743                 389743
+L50                        16                     16
+L75                        32                     32
+# N's per 100 kbp          0.00                   0.00
+
+
+
+Checking PacBio coverage against merged assembly
+
+```bash
+  Assembly=assembly/merged_canu_spades/V.dahliae/12008/ncbi_edits/12008_contigs_renamed.fasta
   Reads=raw_dna/pacbio/V.dahliae/12008/extracted/concatenated_pacbio.fastq
-  OutDir=analysis/genome_alignment/bwa/Verticillium/12008/vs_12008
+  OutDir=analysis/genome_alignment/bwa/Verticillium/12008/ncbi_12008
   ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/bwa
   qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
 ```
@@ -303,10 +364,10 @@ The best assemblies were used to perform repeatmasking
 
 ```bash
   ProgDir=/home/fanron/git_repos/tools/seq_tools/repeat_masking
-  for BestAss in $(ls assembly/merged_canu_spades/*/*/filtered_contigs/12008_contigs_renamed.fasta); do
+  for BestAss in $(ls assembly/merged_canu_spades/*/*/ncbi_edits/12008_contigs_renamed.fasta); do
     Organism=$(echo $BestAss | rev | cut -d "/" -f4 | rev)
     Strain=$(echo $BestAss | rev | cut -d "/" -f3 | rev)
-    OutDir=repeat_masked/$Organism/$Strain/filtered_contigs_repmask
+    OutDir=repeat_masked/$Organism/$Strain/ncbi_filtered_contigs_repmask
     qsub $ProgDir/rep_modeling.sh $BestAss $OutDir
     qsub $ProgDir/transposonPSI.sh $BestAss $OutDir
   done
@@ -316,7 +377,7 @@ The number of bases masked by transposonPSI and Repeatmasker were summarised
 using the following commands:
 
 ```bash
-  for RepDir in $(ls -d repeat_masked/V.*/*/filtered_contigs_repmask | grep '12008'); do
+  for RepDir in $(ls -d repeat_masked/V.*/*/ncbi_filtered_contigs_repmask | grep '12008'); do
     Strain=$(echo $RepDir | rev | cut -f2 -d '/' | rev)
     Organism=$(echo $RepDir | rev | cut -f3 -d '/' | rev)  
     RepMaskGff=$(ls $RepDir/*_contigs_hardmasked.gff)
@@ -335,9 +396,13 @@ using the following commands:
   The number of bases masked by RepeatMasker:     3014429
   The number of bases masked by TransposonPSI:    859780
   The total number of masked bases are:   3161584
+  ncbi-V.dahliae       12008
+  The number of bases masked by RepeatMasker:     3280336
+  The number of bases masked by TransposonPSI:    859780
+  The total number of masked bases are:   3372268
 
 ```bash
-  for File in $(ls repeat_masked/*/*/filtered_contigs_repmask/*_contigs_softmasked.fa); do
+  for File in $(ls repeat_masked/*/*/ncbi_filtered_contigs_repmask/*_contigs_softmasked.fa); do
     OutDir=$(dirname $File)
     TPSI=$(ls $OutDir/*_contigs_unmasked.fa.TPSI.allHits.chains.gff3)
     OutFile=$(echo $File | sed 's/_contigs_softmasked.fa/_contigs_softmasked_repeatmasker_TPSI_appended.fa/g')
@@ -366,28 +431,32 @@ Quality of genome assemblies was assessed by looking for the gene space in the a
 ```bash
   ProgDir=/home/fanron/git_repos/tools/gene_prediction/cegma
   cd /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
-  for Genome in $(ls repeat_masked/V.*/*/*/*_contigs_softmasked.fa); do
+  for Genome in $(ls repeat_masked/V.*/*/ncbi*/*_contigs_softmasked.fa); do
     echo $Genome;
-    qsub $ProgDir/sub_cegma.sh $Genome dna;
+    OutDir=gene_pre/ncbi_cegma
+    mkdir -p gene_pre/ncbi_cegma
+    qsub $ProgDir/sub_cegma.sh $Genome dna $OutDIr;
   done
 ```
-** Number of cegma genes present and complete: 95.56%
+*** Number of cegma genes present and complete: 95.56%
 ** Number of cegma genes present and partial: 98.39%
 
 ```bash
   ProgDir=/home/fanron/git_repos/tools/gene_prediction/cegma
   cd /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
-  for Genome in $(ls repeat_masked/V.*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+  for Genome in $(ls repeat_masked/V.*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
     echo $Genome;
+    OutDir=gene_pre/ncbi_cegma
+    mkdir -p gene_pre/ncbi_cegma
     qsub $ProgDir/sub_cegma.sh $Genome dna;
   done
 ```
-** Number of cegma genes present and complete: 95.56%
+*** Number of cegma genes present and complete: 95.56%
 ** Number of cegma genes present and partial: 98.39%
 
 Outputs were summarised using the commands:
 ```bash
-  for File in $(ls gene_pred/cegma/V.*/12008/*_dna_cegma.completeness_report); do
+  for File in $(ls gene_pre/ncbi_cegma/V.*/12008/*_dna_cegma.completeness_report); do
     Strain=$(echo $File | rev | cut -f2 -d '/' | rev);
     Species=$(echo $File | rev | cut -f3 -d '/' | rev);
     printf "$Species\t$Strain\n";
@@ -489,7 +558,7 @@ single genome. The fragment length and stdev were printed to stdout while
 cufflinks was running.
 
 ```bash
-  for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+  for Assembly in $(ls repeat_masked/*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
     Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
     Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
     echo "$Organism - $Strain"
@@ -498,7 +567,7 @@ cufflinks was running.
       echo "$Timepoint"
       FileF=$(ls $RNADir/F/*_trim.fq.gz)
       FileR=$(ls $RNADir/R/*_trim.fq.gz)
-      OutDir=alignment/$Organism/$Strain/$Timepoint
+      OutDir=ncbi_alignment/$Organism/$Strain/$Timepoint
       ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
       qsub $ProgDir/tophat_alignment.sh $Assembly $FileF $FileR $OutDir
     done
@@ -509,7 +578,7 @@ cufflinks was running.
 
 
 ```bash
-  for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+  for Assembly in $(ls repeat_masked/*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
     Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
     Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
     echo "$Organism - $Strain"
@@ -518,7 +587,7 @@ cufflinks was running.
       echo "$Timepoint"
       FileF=$(ls $RNADir/F/*_trim.fq.gz)
       FileR=$(ls $RNADir/R/*_trim.fq.gz)
-      OutDir=alignment/$Organism/$Strain/$Timepoint
+      OutDir=ncbi_alignment/$Organism/$Strain/$Timepoint
       ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
       qsub $ProgDir/tophat_alignment.sh $Assembly $FileF $FileR $OutDir
     done
@@ -527,7 +596,7 @@ cufflinks was running.
 80.4% overall read mapping rate.
 70.9% concordant pair alignment rate.
 
-lignments were concatenated prior to running cufflinks:
+**Alignments were concatenated prior to running cufflinks:
 Cufflinks was run to produce the fragment length and stdev statistics:
 
 
@@ -937,8 +1006,10 @@ also printing ORFs in .gff format.
 
 ```bash 
   ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
-  for Genome in $(ls repeat_masked/*/*/*/*_contigs_unmasked.fa | grep -w -e '12008'); do
+  for Genome in $(ls repeat_masked/*/*/ncbi*/*_contigs_unmasked.fa | grep -w -e '12008'); do
     qsub $ProgDir/run_ORF_finder.sh $Genome
+    OutDir=gene_pre/ORF_Finder
+    mkdir $OutDir
   done
 ```
 The Gff files from the the ORF finder are not in true Gff3 format. These were
@@ -1081,10 +1152,9 @@ gene models using a number of approaches:
 
  * A) From Augustus gene models - Identifying secreted proteins
  * B) From Augustus gene models - Effector identification using EffectorP
- * C) CAZY proteins
- * D) Identify Small secreted cysteine rich proteins
 
-### A) From Augustus gene models - Identifying secreted proteins
+
+## A) From Augustus gene models - Identifying secreted proteins
 
  Required programs:
   * SignalP-4.1
@@ -1176,7 +1246,7 @@ gene models using a number of approaches:
   V.dahliae - 12008
   943
 
-### B) From Augustus gene models - Effector identification using EffectorP
+## B) From Augustus gene models - Effector identification using EffectorP
 
 Required programs:
  * EffectorP.py
@@ -1315,16 +1385,73 @@ Cols in yourfile.out.dm.ps:
 
 in secretome:
 
-ProgPath=/home/fanron/git_repos/tools/pathogen/sscp
-for Filez in $(ls gene_pred/final_genes_signalp-4.1/V.dahliae/12008/*_sp.aa | grep -v _neg_sp.aa); do            
-echo "$Filez"
-qsub "$ProgPath"/sub_sscp.sh "$Filez"
-done
+```bash
+  ProgPath=/home/fanron/git_repos/tools/pathogen/sscp
+  for Filez in $(ls gene_pred/final_genes_signalp-4.1/V.dahliae/12008/*_sp.aa | grep -v _neg_sp.aa); do            
+  echo "$Filez"
+  qsub "$ProgPath"/sub_sscp.sh "$Filez"
+  done
+```
 
 in effectorP:
+```bash
+  ProgPath=/home/fanron/git_repos/tools/pathogen/sscp
+  for Filez in $(ls analysis/effectorP/V.dahliae/12008/*.aa); do            
+  echo "$Filez"
+  qsub "$ProgPath"/sub1_sscp.sh "$Filez"
+  done
+```
+## E) AntiSMASH
 
-ProgPath=/home/fanron/git_repos/tools/pathogen/sscp
-for Filez in $(ls analysis/effectorP/V.dahliae/12008/*.aa); do            
-echo "$Filez"
-qsub "$ProgPath"/sub1_sscp.sh "$Filez"
+Antismash was run to identify clusters of secondary metabolite genes within
+the genome. Antismash was run using the weserver at:
+http://antismash.secondarymetabolites.org
+
+The assembly and Gff annotaiton of gene models was converted into EMBL format prior to submission:
+
+<!-- ```bash
+for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
+Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
+echo "$Organism - $Strain"
+OutDir=gene_pred/antismash/$Organism/$Strain
+mkdir -p $OutDir
+Gff=$(ls gene_pred/codingquary1/V.dahliae/12008/final/final_genes_appended.gff3)
+seqret -sequence $Assembly -feature -fformat gff -fopenfile $Gff -osformat embl -auto
+mv contig_1_pilon.embl $OutDir/"$Strain"_parsed_genome.embl
 done
+``` -->
+<!--
+```bash
+for Assembly in $(ls repeat_masked/*/*/*/*_contigs_unmasked.fa); do
+Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
+Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
+echo "$Organism - $Strain"
+OutDir=gene_pred/antismash/$Organism/$Strain
+mkdir -p $OutDir
+Gff=$(ls gene_pred/codingquary1/V.dahliae/12008/final/final_genes_appended.gff3)
+ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation/secondary_metabolites
+$ProgDir/antismash_gff2tab.py --gff $Gff --fasta $Assembly --out $OutDir
+cp $ProgDir/format_embl.py $OutDir/.
+# cp $Assembly $OutDir/assembly.fasta
+CurDir=$PWD
+cd $OutDir
+python format_embl.py
+cd $CurDir
+rm $OutDir/annotationtable.txt
+seqret -sequence $Assembly -feature -fformat gff -fopenfile $Gff -osformat embl -auto
+mv contig_1_pilon.embl $OutDir/"$Strain"_parsed_genome.embl
+done
+```
+ -->
+
+```bash
+AntiSmash=analysis/antismash/79c1471f-4a2b-41f7-ba36-18ba94675f59/contig_1_pilon.final.gbk
+OutDir=$(dirname $AntiSmash)
+ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation/secondary_metabolites
+$ProgDir/antismash2gff.py --inp_antismash $AntiSmash > $OutDir/Fus2_secondary_metabolite_regions.gff
+GeneGff=gene_pred/final_genes/F.oxysporum_fsp_cepae/Fus2_canu_new/final/final_genes_appended.gff3
+bedtools intersect -u -a $GeneGff -b $OutDir/Fus2_secondary_metabolite_regions.gff > $OutDir/metabolite_cluster_genes.gff
+cat $OutDir/metabolite_cluster_genes.gff | grep -w 'mRNA' | cut -f9 | cut -f2 -d '=' | cut -f1 -d ';' > $OutDir/metabolite_cluster_gene_headers.txt
+
+```
