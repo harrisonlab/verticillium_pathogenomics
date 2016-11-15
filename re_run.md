@@ -731,51 +731,79 @@ therefore features can not be restricted by strand when they are intersected.
   qsub $ProgDir/sub3_cufflinks.sh $AcceptedHits $OutDir
   done
 ```
+Secondly, genes were predicted using CodingQuary: 
 
+```bash
+  for Assembly in $(ls repeat_masked/*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+  Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
+  Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
+  echo "$Organism - $Strain"
+  OutDir=gene_pred/codingquary1/$Organism/$Strain
+  CufflinksGTF=gene_pred/cufflinks/$Organism/$Strain/concatenated_prelim/transcripts.gtf
+  ProgDir=/home/fanron/git_repos/tools/gene_prediction/codingquary
+  qsub $ProgDir/sub1_CodingQuary.sh $Assembly $CufflinksGTF $OutDir
+  done
+```
+Then, additional transcripts were added to Braker gene models, when CodingQuary
+genes were predicted in regions of the genome, not containing Braker gene
+models:
 
+```bash 
+  for BrakerGff in $(ls gene_pred/braker/V.*/12008/12008_braker_sixth/augustus.gff3); do
+  Strain=$(echo $BrakerGff| rev | cut -d '/' -f3 | rev)
+  Organism=$(echo $BrakerGff | rev | cut -d '/' -f4 | rev)
+  echo "$Organism - $Strain"
+  Assembly=$(ls repeat_masked/*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa)
+  CodingQuaryGff=gene_pred/codingquary1/$Organism/$Strain/out/PredictedPass.gff3
+  PGNGff=gene_pred/codingquary1/$Organism/$Strain/out/PGN_predictedPass.gff3
+  AddDir=gene_pred/codingquary1/$Organism/$Strain/additional
+  FinalDir=gene_pred/codingquary1/$Organism/$Strain/final
+  AddGenesList=$AddDir/additional_genes.txt
+  AddGenesGff=$AddDir/additional_genes.gff
+  FinalGff=$AddDir/combined_genes.gff
+  mkdir -p $AddDir
+  mkdir -p $FinalDir
 
+  bedtools intersect -v -a $CodingQuaryGff -b $BrakerGff | grep 'gene'| cut -f2 -d'=' | cut -f1 -d';' > $AddGenesList
+  bedtools intersect -v -a $PGNGff -b $BrakerGff | grep 'gene'| cut -f2 -d'=' | cut -f1 -d';' >> $AddGenesList
+  ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation
+  $ProgDir/gene_list_to_gff.pl $AddGenesList $CodingQuaryGff CodingQuarry_v2.0 ID CodingQuary > $AddGenesGff
+  $ProgDir/gene_list_to_gff.pl $AddGenesList $PGNGff PGNCodingQuarry_v2.0 ID CodingQuary >> $AddGenesGff
+  ProgDir=/home/gomeza/git_repos/emr_repos/tools/gene_prediction/codingquary
 
+  $ProgDir/add_CodingQuary_features.pl $AddGenesGff $Assembly > $FinalDir/final_genes_CodingQuary.gff3
+  $ProgDir/gff2fasta.pl $Assembly $FinalDir/final_genes_CodingQuary.gff3 $FinalDir/final_genes_CodingQuary
+  cp $BrakerGff $FinalDir/final_genes_Braker.gff3
+  $ProgDir/gff2fasta.pl $Assembly $FinalDir/final_genes_Braker.gff3 $FinalDir/final_genes_Braker
+  cat $FinalDir/final_genes_Braker.pep.fasta $FinalDir/final_genes_CodingQuary.pep.fasta | sed -r 's/\*/X/g' > $FinalDir/final_genes_combined.pep.fasta
+  cat $FinalDir/final_genes_Braker.cdna.fasta $FinalDir/final_genes_CodingQuary.cdna.fasta > $FinalDir/final_genes_combined.cdna.fasta
+  cat $FinalDir/final_genes_Braker.gene.fasta $FinalDir/final_genes_CodingQuary.gene.fasta > $FinalDir/final_genes_combined.gene.fasta
+  cat $FinalDir/final_genes_Braker.upstream3000.fasta $FinalDir/final_genes_CodingQuary.upstream3000.fasta > $FinalDir/final_genes_combined.upstream3000.fasta
 
+  GffBraker=$FinalDir/final_genes_CodingQuary.gff3
+  GffQuary=$FinalDir/final_genes_Braker.gff3
+  GffAppended=$FinalDir/final_genes_appended.gff3
+  cat $GffBraker $GffQuary > $GffAppended
 
+  # cat $BrakerGff $AddDir/additional_gene_parsed.gff3 | bedtools sort > $FinalGff
+  done
+```
 
+The final number of genes per isolate was observed using:
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```bash 
+  for DirPath in $(ls -d gene_pred/codingquary1/V.*/*/final); do
+  echo $DirPath;
+  cat $DirPath/final_genes_Braker.pep.fasta | grep '>' | wc -l;
+  cat $DirPath/final_genes_CodingQuary.pep.fasta | grep '>' | wc -l;
+  cat $DirPath/final_genes_combined.pep.fasta | grep '>' | wc -l;
+  echo "";
+  done
+```
+gene_pred/codingquary1/V.dahliae/12008/final
+9881
+721
+10602
 
 ## ORF finder
 
@@ -794,7 +822,7 @@ also printing ORFs in .gff format.
     mkdir $OutDir
   done
 ```
-he Gff files from the the ORF finder are not in true Gff3 format. These were
+The Gff files from the the ORF finder are not in true Gff3 format. These were
 corrected using the following commands:
 
 ```bash
@@ -809,4 +837,394 @@ corrected using the following commands:
     $ProgDir/gff_corrector.pl $ORF_Gff > $ORF_Gff_mod
   done
 ```
+The final number of genes per isolate was observed using:
+```bash
+for DirPath in $(ls -d gene_pred/ORF_finder/*/$Strain); do
+echo $DirPath
+cat $DirPath/*aa_cat.fa | grep '>' | wc -l
+echo ""
+done
+```
+gene_pred/ORF_finder/V.dahliae/12008
+ORF_finder
+329388
 
+#Functional annotation
+
+## A) Interproscan
+
+Interproscan was used to give gene models functional annotations.
+Annotation was run using the commands below:
+
+Note: This is a long-running script. As such, these commands were run using
+'screen' to allow jobs to be submitted and monitored in the background.
+This allows the session to be disconnected and reconnected over time.
+
+Screen ouput detailing the progress of submission of interporscan jobs
+was redirected to a temporary output file named interproscan_submission.log .
+
+```bash
+  screen -a
+  cd /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
+  ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
+  for Genes in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
+  echo $Genes
+  $ProgDir/sub_interproscan.sh $Genes
+  done 2>&1 | tee -a interproscan_submisison.log
+```
+Following interproscan annotation split files were combined using the following
+commands:
+
+```bash
+  ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
+  for Proteins in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
+    Strain=$(echo $Proteins | rev | cut -d '/' -f3 | rev)
+    Organism=$(echo $Proteins | rev | cut -d '/' -f4 | rev)
+    echo "$Organism - $Strain"
+    echo $Strain
+    InterProRaw=gene_pred/interproscan/$Organism/$Strain/raw
+    $ProgDir/append_interpro.sh $Proteins $InterProRaw
+  done
+```
+## B) SwissProt
+```bash
+  qlogin
+  ProjDir=/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
+  cd $ProjDir
+  for Proteome in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
+    Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
+    Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
+    OutDir=$ProjDir/gene_pred/swissprot/$Organism/$Strain/
+    mkdir -p $OutDir
+    blastp \
+    -db /home/groups/harrisonlab/uniprot/swissprot/uniprot_sprot \
+    -query $ProjDir/$Proteome \
+    -out $OutDir/swissprot_v2015_10_hits.tbl \
+    -evalue 1e-100 \
+    -outfmt 6 \
+    -num_threads 16 \
+    -num_alignments 10
+  done
+```
+or
+```bash
+for Proteome in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
+ Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
+ Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
+  OutDir=gene_pred/swissprot/$Organism/$Strain
+  SwissDbDir=../../../uniprot/swissprot
+  SwissDbName=uniprot_sprot
+  ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/swissprot
+  qsub $ProgDir/sub_swissprot.sh $Proteome $OutDir $SwissDbDir $SwissDbName
+  done
+```
+then
+```bash
+for SwissTable in $(ls gene_pred/swissprot/*/*/swissprot_v2015_10_hits.tbl); do
+# SwissTable=gene_pred/swissprot/Fus2/swissprot_v2015_10_hits.tbl
+Strain=$(echo $SwissTable | rev | cut -f2 -d '/' | rev)
+Organism=$(echo $SwissTable | rev | cut -f3 -d '/' | rev)
+echo "$Organism - $Strain"
+OutTable=gene_pred/swissprot/$Organism/$Strain/swissprot_v2015_tophit_parsed.tbl
+ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/swissprot
+$ProgDir/swissprot_parser.py --blast_tbl $SwissTable --blast_db_fasta ../../../uniprot/swissprot/uniprot_sprot.fasta > $OutTable
+done
+```
+## Effector genes   
+
+Putative pathogenicity and effector related genes were identified within Braker
+gene models using a number of approaches:
+
+ * A) From Augustus gene models - Identifying secreted proteins
+ * B) From Augustus gene models - Effector identification using EffectorP
+
+
+## A) From Augustus gene models - Identifying secreted proteins
+
+ Required programs:
+  * SignalP-4.1
+  * TMHMM
+
+ Proteins that were predicted to contain signal peptides were identified using
+ the following commands:
+
+ ```bash
+  SplitfileDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/signal_peptides
+  ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/signal_peptides
+  CurPath=$PWD
+  for Proteome in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
+    Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
+    Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
+    SplitDir=gene_pred/final_genes_split/$Organism/$Strain
+    mkdir -p $SplitDir
+    BaseName="$Organism""_$Strain"_final_preds
+    $SplitfileDir/splitfile_500.py --inp_fasta $Proteome --out_dir $SplitDir --out_base $BaseName
+    for File in $(ls $SplitDir/*_final_preds_*); do
+      Jobs=$(qstat | grep 'pred_sigP' | grep 'qw' | wc -l)
+      while [ $Jobs -gt 1 ]; do
+        sleep 10
+        printf "."
+        Jobs=$(qstat | grep 'pred_sigP' | grep 'qw' | wc -l)
+      done
+      printf "\n"
+      echo $File
+      qsub $ProgDir/pred_sigP.sh $File signalp-4.1
+    done
+  done
+ ```
+The batch files of predicted secreted proteins needed to be combined into a
+ single file for each strain. This was done with the following commands:
+ 
+ ```bash
+  for SplitDir in $(ls -d gene_pred/final_genes_split/*/*); do
+    Strain=$(echo $SplitDir | rev |cut -d '/' -f1 | rev)
+    Organism=$(echo $SplitDir | rev |cut -d '/' -f2 | rev)
+    InStringAA=''
+    InStringNeg=''
+    InStringTab=''
+    InStringTxt=''
+    SigpDir=final_genes_signalp-4.1
+    for GRP in $(ls -l $SplitDir/*_final_preds_*.fa | rev | cut -d '_' -f1 | rev | sort -n); do
+      InStringAA="$InStringAA gene_pred/$SigpDir/$Organism/$Strain/split/"$Organism"_"$Strain"_final_preds_$GRP""_sp.aa";
+      InStringNeg="$InStringNeg gene_pred/$SigpDir/$Organism/$Strain/split/"$Organism"_"$Strain"_final_preds_$GRP""_sp_neg.aa";
+      InStringTab="$InStringTab gene_pred/$SigpDir/$Organism/$Strain/split/"$Organism"_"$Strain"_final_preds_$GRP""_sp.tab";
+      InStringTxt="$InStringTxt gene_pred/$SigpDir/$Organism/$Strain/split/"$Organism"_"$Strain"_final_preds_$GRP""_sp.txt";
+    done
+    cat $InStringAA > gene_pred/$SigpDir/$Organism/$Strain/"$Strain"_final_sp.aa
+    cat $InStringNeg > gene_pred/$SigpDir/$Organism/$Strain/"$Strain"_final_neg_sp.aa
+    tail -n +2 -q $InStringTab > gene_pred/$SigpDir/$Organism/$Strain/"$Strain"_final_sp.tab
+    cat $InStringTxt > gene_pred/$SigpDir/$Organism/$Strain/"$Strain"_final_sp.txt
+  done
+ ```
+Some proteins that are incorporated into the cell membrane require secretion.
+ Therefore proteins with a transmembrane domain are not likely to represent
+ cytoplasmic or apoplastic effectors.
+
+ Proteins containing a transmembrane domain were identified:
+
+ ```bash
+  for Proteome in $(ls gene_pred/codingquary1/*/*/*/final_genes_combined.pep.fasta); do
+    Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
+    Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
+    ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/transmembrane_helices
+    qsub $ProgDir/submit_TMHMM.sh $Proteome
+  done
+ ```
+Those proteins with transmembrane domains were removed from lists of Signal peptide containing proteins
+
+```bash
+  for File in $(ls gene_pred/trans_mem/*/*/*_TM_genes_neg.txt); do
+    Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
+    Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
+    echo "$Organism - $Strain"
+    TmHeaders=$(echo "$File" | sed 's/neg.txt/neg_headers.txt/g')
+    cat $File | cut -f1 > $TmHeaders
+    SigP=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/*_final_sp.aa)
+    OutDir=$(dirname $SigP)
+    ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
+    $ProgDir/extract_from_fasta.py --fasta $SigP --headers $TmHeaders > $OutDir/"$Strain"_final_sp_no_trans_mem.aa
+    cat $OutDir/"$Strain"_final_sp_no_trans_mem.aa | grep '>' | wc -l
+  done
+```
+V.alfafae - VaMs102
+866
+V.dahliae - 12008
+951
+V.dahliae - JR2
+867
+V.dahliae - Ls17
+908
+
+## B) From Augustus gene models - Effector identification using EffectorP
+
+Required programs:
+ * EffectorP.py
+
+```bash
+  for Proteome in $(ls gene_pred/codingquary1/*/*/*/final_genes_combined.pep.fasta); do
+    Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
+    Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
+    BaseName="$Organism"_"$Strain"_EffectorP
+    OutDir=analysis/effectorP/$Organism/$Strain
+    ProgDir=~/git_repos/tools/seq_tools/feature_annotation/fungal_effectors
+    qsub $ProgDir/pred_effectorP.sh $Proteome $BaseName $OutDir
+  done
+```
+Those genes that were predicted as secreted and tested positive by effectorP were identified:
+
+```bash
+  for File in $(ls analysis/effectorP/*/12008/*_EffectorP.txt); do
+    Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
+    Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
+    echo "$Organism - $Strain"
+    Headers=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_headers.txt/g')
+    cat $File | grep 'Effector' | cut -f1 > $Headers
+    Secretome=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/*_final_sp_no_trans_mem.aa)
+    OutFile=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted.aa/g')
+    ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
+    $ProgDir/extract_from_fasta.py --fasta $Secretome --headers $Headers > $OutFile
+    OutFileHeaders=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted_headers.txt/g')
+    cat $OutFile | grep '>' | tr -d '>' > $OutFileHeaders
+    cat $OutFileHeaders | wc -l
+    Gff=$(ls gene_pred/codingquary1/V.dahliae/12008/*/final_genes_appended.gff3)
+    EffectorP_Gff=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted.gff/g')
+    ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
+    $ProgDir/extract_gff_for_sigP_hits.pl $OutFileHeaders $Gff effectorP ID > $EffectorP_Gff
+  done
+```
+V.dahliae - 12008
+187
+
+## C) CAZY proteins
+
+Carbohydrte active enzymes were idnetified using CAZYfollowing recomendations
+at http://csbl.bmb.uga.edu/dbCAN/download/readme.txt :
+
+```bash
+  for Proteome in $(ls gene_pred/codingquary1/*/*/*/final_genes_combined.pep.fasta); do
+    Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
+    Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
+    OutDir=gene_pred/CAZY/$Organism/$Strain
+    mkdir -p $OutDir
+    Prefix="$Strain"_CAZY
+    CazyHmm=../../../dbCAN/dbCAN-fam-HMMs.txt
+    ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/HMMER
+    # ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/HMMER
+    qsub $ProgDir/sub_hmmscan.sh $CazyHmm $Proteome $Prefix $OutDir
+  done
+```
+
+The Hmm parser was used to filter hits by an E-value of E1x10-5 or E 1x10-e3 if they had a hit over a length of X %.
+
+Those proteins with a signal peptide were extracted from the list and gff files
+representing these proteins made.
+
+```bash
+  for File in $(ls gene_pred/CAZY/*/12008/*CAZY.out.dm); do
+    Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
+    Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
+    OutDir=$(dirname $File)
+    echo "$Organism - $Strain"
+    ProgDir=/home/groups/harrisonlab/dbCAN
+    $ProgDir/hmmscan-parser.sh $OutDir/12008_CAZY.out.dm > $OutDir/12008_CAZY.out.dm.ps
+    SecretedProts=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/"$Strain"_final_sp_no_trans_mem.aa)
+    SecretedHeaders=$(echo $SecretedProts | sed 's/.aa/_headers.txt/g')
+    cat $SecretedProts | grep '>' | tr -d '>' > $SecretedHeaders
+    Gff=$(ls gene_pred/codingquary1/*/*/*/final_genes_appended.gff3)
+    CazyGff=$OutDir/12008_CAZY.gff
+    ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
+    $ProgDir/extract_gff_for_sigP_hits.pl $SecretedHeaders $Gff CAZyme ID > $CazyGff
+  done
+```
+```bash
+for File in $(ls gene_pred/CAZY/*/12008/*CAZY.out.dm); do
+      Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
+      Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
+      OutDir=$(dirname $File)
+      echo "$Organism - $Strain"
+      ProgDir=/home/groups/harrisonlab/dbCAN
+      $ProgDir/hmmscan-parser.sh $OutDir/"$Strain"_CAZY.out.dm > $OutDir/"$Strain"_CAZY.out.dm.ps
+      CazyHeaders=$(echo $File | sed 's/.out.dm/_headers.txt/g')
+      cat $OutDir/"$Strain"_CAZY.out.dm.ps | cut -f3 | sort | uniq > $CazyHeaders
+      echo "number of CAZY genes identified:"
+      cat $CazyHeaders | wc -l
+      # Gff=$(ls gene_pred/codingquary1/$Organism/$Strain/final/final_genes_appended.gff3)
+      Gff=$(ls gene_pred/codingquary1/$Organism/$Strain/final/final_genes_appended.gff3)
+      CazyGff=$OutDir/"$Strain"_CAZY.gff
+      ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
+      $ProgDir/extract_gff_for_sigP_hits.pl $CazyHeaders $Gff CAZyme ID > $CazyGff
+
+      SecretedProts=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/"$Strain"_final_sp_no_trans_mem.aa)
+      SecretedHeaders=$(echo $SecretedProts | sed 's/.aa/_headers.txt/g')
+      cat $SecretedProts | grep '>' | tr -d '>' > $SecretedHeaders
+      CazyGffSecreted=$OutDir/"$Strain"_CAZY_secreted.gff
+      $ProgDir/extract_gff_for_sigP_hits.pl $SecretedHeaders $CazyGff Secreted_CAZyme ID > $CazyGffSecreted
+      echo "number of Secreted CAZY genes identified:"
+      cat $CazyGffSecreted | grep -w 'mRNA' | cut -f9 | tr -d 'ID=' | cut -f1 -d ';' > $OutDir/"$Strain"_CAZY_secreted_headers.txt
+      cat $OutDir/"$Strain"_CAZY_secreted_headers.txt | wc -l
+    done
+```
+V.dahliae - 12008
+number of CAZY genes identified:
+627
+
+number of Secreted CAZY genes identified:
+306
+
+Note - the CAZY genes identified may need further filtering based on e value and
+cuttoff length - see below:
+
+Cols in yourfile.out.dm.ps:
+1. Family HMM
+2. HMM length
+3. Query ID
+4. Query length
+5. E-value (how similar to the family HMM)
+6. HMM start
+7. HMM end
+8. Query start
+9. Query end
+10. Coverage
+
+* For fungi, use E-value < 1e-17 and coverage > 0.45
+
+* The best threshold varies for different CAZyme classes (please see http://www.ncbi.nlm.nih.gov/pmc/articles/PMC4132414/ for details). Basically to annotate GH proteins, one should use a very relax coverage cutoff or the sensitivity will be low (Supplementary Tables S4 and S9); (ii) to annotate CE families a very stringent E-value cutoff and coverage cutoff should be used; otherwise the precision will be very low due to a very high false positive rate (Supplementary Tables S5 and S10)
+
+## D) Identify Small secreted cysteine rich proteins
+
+in secretome:
+
+```bash
+  ProgPath=/home/fanron/git_repos/tools/pathogen/sscp
+  for Filez in $(ls gene_pred/final_genes_signalp-4.1/V.dahliae/12008/*_neg_sp.aa); do            
+  echo "$Filez"
+  qsub "$ProgPath"/sub_sscp.sh "$Filez"
+  done
+```
+
+in effectorP:
+```bash
+  ProgPath=/home/fanron/git_repos/tools/pathogen/sscp
+  for Filez in $(ls analysis/effectorP/V.dahliae/12008/*.aa); do            
+  echo "$Filez"
+  qsub "$ProgPath"/sub1_sscp.sh "$Filez"
+  done
+```
+##D) AntiSMASH
+
+Do it in the website: http://antismash.secondarymetabolites.org/
+```bash
+for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+Organism=$(echo $Assembly | rev | cut -f4 -d '/' | rev)
+Strain=$(echo $Assembly | rev | cut -f3 -d '/' | rev)
+OutDir=analysis/antismash/$Organism/$Strain
+mkdir -p $OutDir
+done
+```
+```bash
+for Zip in $(ls analysis/antismash/*/*/*.zip); do
+OutDir=$(dirname $Zip)
+unzip -d $OutDir $Zip
+done
+```
+```bash
+for AntiSmash in $(ls analysis/antismash/*/*/*/*.final.gbk); do
+Organism=$(echo $AntiSmash | rev | cut -f4 -d '/' | rev)
+Strain=$(echo $AntiSmash | rev | cut -f3 -d '/' | rev)
+echo "$Organism - $Strain"
+OutDir=analysis/antismash/$Organism/$Strain
+ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation/secondary_metabolites
+$ProgDir/antismash2gff.py --inp_antismash $AntiSmash > $OutDir/"$Strain"_secondary_metabolite_regions.gff
+printf "Number of clusters detected:\t"
+cat $OutDir/"$Strain"_secondary_metabolite_regions.gff | grep 'antismash_cluster' | wc -l
+# GeneGff=gene_pred/final_genes/F.oxysporum_fsp_cepae/Fus2_canu_new/final/final_genes_appended.gff3
+GeneGff=gene_pred/codingquary1/V.dahliae/12008/final/final_genes_appended.gff3
+bedtools intersect -u -a $GeneGff -b $OutDir/"$Strain"_secondary_metabolite_regions.gff > $OutDir/metabolite_cluster_genes.gff
+cat $OutDir/metabolite_cluster_genes.gff | grep -w 'mRNA' | cut -f9 | cut -f2 -d '=' | cut -f1 -d ';' > $OutDir/metabolite_cluster_gene_headers.txt
+printf "Number of predicted genes in clusters:\t"
+cat $OutDir/metabolite_cluster_gene_headers.txt | wc -l
+done
+```
+V.dahliae - 12008
+Number of clusters detected:    21
+Number of predicted genes in clusters:  251
