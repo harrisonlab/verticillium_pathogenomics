@@ -35,7 +35,7 @@ gene models using a number of approaches:
   SplitfileDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/signal_peptides
   ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/signal_peptides
   CurPath=$PWD
-  for Proteome in $(ls assembly/merged_canu_spades/V.dahliae/*/ensembl/*.pep.all.fa); do
+  for Proteome in $(ls assembly/merged_canu_spades/V.dahliae/JR2/ensembl/*.pep.all.fa); do
     Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
     Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
     SplitDir=gene_pred/final_genes_split/$Organism/$Strain
@@ -118,3 +118,248 @@ gene models using a number of approaches:
     qsub $ProgDir/submit_TMHMM.sh $Proteome
   done
  ```
+
+ Those proteins with transmembrane domains were removed from lists of Signal peptide containing proteins
+
+```bash
+  for File in $(ls gene_pred/trans_mem/*/*/*_TM_genes_neg.txt); do
+    Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
+    Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
+    echo "$Organism - $Strain"
+    TmHeaders=$(echo "$File" | sed 's/neg.txt/neg_headers.txt/g')
+    cat $File | cut -f1 > $TmHeaders
+    SigP=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/*_final_sp.aa)
+    OutDir=$(dirname $SigP)
+    ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
+    $ProgDir/extract_from_fasta.py --fasta $SigP --headers $TmHeaders > $OutDir/"$Strain"_final_sp_no_trans_mem.aa
+    cat $OutDir/"$Strain"_final_sp_no_trans_mem.aa | grep '>' | wc -l
+  done
+```
+
+V.alfafae - VaMs102
+866
+V.dahliae - 12008
+943
+V.dahliae - JR2
+867
+V.dahliae - Ls17
+908
+
+## B) From Augustus gene models - Effector identification using EffectorP
+
+Required programs:
+ * EffectorP.py
+
+```bash
+  for Proteome in $(ls assembly/merged_canu_spades/*/JR2/ensembl/*.pep.all.fa); do
+    Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
+    Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
+    BaseName="$Organism"_"$Strain"_EffectorP
+    OutDir=analysis/effectorP/$Organism/$Strain
+    ProgDir=~/git_repos/tools/seq_tools/feature_annotation/fungal_effectors
+    qsub $ProgDir/pred_effectorP.sh $Proteome $BaseName $OutDir
+  done
+```
+
+********
+Those genes that were predicted as secreted and tested positive by effectorP were identified:
+
+```bash
+  for File in $(ls analysis/effectorP/V.alfafae/VaMs102/*_EffectorP.txt); do
+    Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
+    Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
+    echo "$Organism - $Strain"
+    Headers=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_headers.txt/g')
+    cat $File | grep 'Effector' | cut -f1 -d ' ' > $Headers
+    Secretome=$(ls gene_pred/final_genes_signalp-4.1/V.alfafae/VaMs102/*_final_sp_no_trans_mem.aa)
+    OutFile=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted.aa/g')
+    ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
+    $ProgDir/extract_from_fasta.py --fasta $Secretome --headers $Headers > $OutFile
+    OutFileHeaders=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted_headers.txt/g')
+    cat $OutFile | grep '>' | tr -d '>' > $OutFileHeaders
+    cat $OutFileHeaders | wc -l
+      #Gff=$(ls gene_pred/codingquary1/V.dahliae/12008/*/final_genes_appended.gff3)
+    #EffectorP_Gff=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted.gff/g')
+    #ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
+    #$ProgDir/extract_gff_for_sigP_hits.pl $OutFileHeaders $Gff effectorP ID > $EffectorP_Gff
+  #done
+  #Note: the Gff part is to know the location of effectors in genome.
+```
+V.alfafae - VaMs102
+169
+
+```bash
+for File in $(ls analysis/effectorP/V.dahliae/JR2/*_EffectorP.txt); do
+Test=$(echo "$File" | sed 's/_EffectorP.txt/_test.txt/'g)
+cat "$File" | cut -d' ' -f1,7 | awk -v OFS="\t" '$1=$1' | cut -d$'\t' -f1,3,4 > $Test
+Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
+Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
+echo "$Organism - $Strain"
+Headers=$(echo "$Test" | sed 's/_test.txt/_EffectorP_headers.txt/g')
+cat $Test | grep 'Effector' | cut -f1 -d ' ' | awk -v OFS="\t" '$1=$1' | cut -d$'\t' -f1 > $Headers
+Secretome=$(ls gene_pred/final_genes_signalp-4.1/V.dahliae/JR2/*_final_sp_no_trans_mem.aa)
+OutFile=$(echo "$Test" | sed 's/_test.txt/_EffectorP_secreted.aa/g')
+ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
+$ProgDir/extract_from_fasta.py --fasta $Secretome --headers $Headers > $OutFile
+OutFileHeaders=$(echo "$Test" | sed 's/_test.txt/_EffectorP_secreted_headers.txt/g')
+cat $OutFile | grep '>' | tr -d '>' > $OutFileHeaders
+cat $OutFileHeaders | wc -l
+Gff=$(ls assembly/merged_canu_spades/V.dahliae/JR2/ensembl/Verticillium_dahliaejr2.GCA_000400815.2.33.gff3)
+EffectorP_Gff=$(sed 's/_test.txt/_EffectorP_secreted.gff/g')
+ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
+$ProgDir/extract_gff_for_sigP_hits.pl $OutFileHeaders $Gff effectorP ID > $EffectorP_Gff
+done
+```
+ | 
+  V.dahliae - JR2
+182
+
+```bash
+for File in $(ls analysis/effectorP/V.dahliae/Ls17/*_EffectorP.txt); do
+Test=$(echo "$File" | sed 's/_EffectorP.txt/_test.txt/'g)
+cat "$File" | cut -d' ' -f1,9 | awk -v OFS="\t" '$1=$1' | cut -d$'\t' -f1,3,4 > $Test
+Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
+Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
+echo "$Organism - $Strain"
+Headers=$(sed 's/_test.txt/_EffectorP_headers.txt/g')
+cat $File | grep 'Effector' | cut -f1 -d ' ' > $Headers
+Secretome=$(ls gene_pred/final_genes_signalp-4.1/V.dahliae/Ls17/*_final_sp_no_trans_mem.aa)
+OutFile=$(echo "$File" | sed 's/_test.txt/_EffectorP_secreted.aa/g')
+ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
+$ProgDir/extract_from_fasta.py --fasta $Secretome --headers $Headers > $OutFile
+OutFileHeaders=$(echo "$File" | sed 's/_test.txt/_EffectorP_secreted_headers.txt/g')
+cat $OutFile | grep '>' | tr -d '>' > $OutFileHeaders
+cat $OutFileHeaders | wc -l
+Gff=$(ls assembly/merged_canu_spades/V.dahliae/Ls17/ensembl/*.gff3)
+EffectorP_Gff=$(sed 's/_test.txt/_EffectorP_secreted.gff/g')
+ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
+$ProgDir/extract_gff_for_sigP_hits.pl $OutFileHeaders $Gff effectorP ID > $EffectorP_Gff
+done
+```
+  V.dahliae - Ls17
+155
+
+## C) CAZY proteins
+
+Carbohydrte active enzymes were idnetified using CAZYfollowing recomendations
+at http://csbl.bmb.uga.edu/dbCAN/download/readme.txt :
+
+```bash
+  for Proteome in $(ls assembly/merged_canu_spades/*/*/ensembl/*.pep.all.fa); do
+    Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
+    Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
+    OutDir=gene_pred/CAZY/$Organism/$Strain
+    mkdir -p $OutDir
+    Prefix="$Strain"_CAZY
+    CazyHmm=../../../dbCAN/dbCAN-fam-HMMs.txt
+    ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/HMMER
+    # ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/HMMER
+    qsub $ProgDir/sub_hmmscan.sh $CazyHmm $Proteome $Prefix $OutDir
+  done
+```
+The Hmm parser was used to filter hits by an E-value of E1x10-5 or E 1x10-e3 if they had a hit over a length of X %.
+
+********
+Those proteins with a signal peptide were extracted from the list and gff files
+representing these proteins made.
+
+```bash
+  for File in $(ls gene_pred/CAZY/V.dahliae/JR2/*CAZY.out.dm); do
+      Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
+      Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
+      OutDir=$(dirname $File)
+      echo "$Organism - $Strain"
+      ProgDir=/home/groups/harrisonlab/dbCAN
+      $ProgDir/hmmscan-parser.sh $OutDir/"$Strain"_CAZY.out.dm > $OutDir/"$Strain"_CAZY.out.dm.ps
+      CazyHeaders=$(echo $File | sed 's/.out.dm/_headers.txt/g')
+      cat $OutDir/"$Strain"_CAZY.out.dm.ps | cut -f3 | sort | uniq > $CazyHeaders
+      echo "number of CAZY genes identified:"
+      cat $CazyHeaders | wc -l
+  done      
+```
+V.dahliae - JR2
+number of CAZY genes identified:
+606
+
+```bash
+for File in $(ls gene_pred/CAZY/V.dahliae/Ls17/*CAZY.out.dm); do
+      Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
+      Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
+      OutDir=$(dirname $File)
+      echo "$Organism - $Strain"
+      ProgDir=/home/groups/harrisonlab/dbCAN
+      $ProgDir/hmmscan-parser.sh $OutDir/"$Strain"_CAZY.out.dm > $OutDir/"$Strain"_CAZY.out.dm.ps
+      CazyHeaders=$(echo $File | sed 's/.out.dm/_headers.txt/g')
+      cat $OutDir/"$Strain"_CAZY.out.dm.ps | cut -f3 | sort | uniq > $CazyHeaders
+      echo "number of CAZY genes identified:"
+      cat $CazyHeaders | wc -l
+      Gff=$(ls assembly/merged_canu_spades/V.*/Ls17/ensembl/*.gff3)
+      CazyGff=$OutDir/"$Strain"_CAZY.gff
+      ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
+      $ProgDir/extract_gff_for_sigP_hits.pl $CazyHeaders $Gff CAZyme ID > $CazyGff
+
+      SecretedProts=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/"$Strain"_final_sp_no_trans_mem.aa)
+      SecretedHeaders=$(echo $SecretedProts | sed 's/.aa/_headers.txt/g')
+      cat $SecretedProts | grep '>' | tr -d '>' > $SecretedHeaders
+      CazyGffSecreted=$OutDir/"$Strain"_CAZY_secreted.gff
+      $ProgDir/extract_gff_for_sigP_hits.pl $SecretedHeaders $CazyGff Secreted_CAZyme ID > $CazyGffSecreted
+      echo "number of Secreted CAZY genes identified:"
+      cat $CazyGffSecreted | grep -w 'mRNA' | cut -f9 | tr -d 'ID=' | cut -f1 -d ';' > $OutDir/"$Strain"_CAZY_secreted_headers.txt
+      cat $OutDir/"$Strain"_CAZY_secreted_headers.txt | wc -l
+    done
+```
+V.dahliae - Ls17
+number of CAZY genes identified:
+623
+
+```bash
+for File in $(ls gene_pred/CAZY/*/VaMs102/*CAZY.out.dm); do
+      Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
+      Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
+      OutDir=$(dirname $File)
+      echo "$Organism - $Strain"
+      ProgDir=/home/groups/harrisonlab/dbCAN
+      $ProgDir/hmmscan-parser.sh $OutDir/"$Strain"_CAZY.out.dm > $OutDir/"$Strain"_CAZY.out.dm.ps
+      CazyHeaders=$(echo $File | sed 's/.out.dm/_headers.txt/g')
+      cat $OutDir/"$Strain"_CAZY.out.dm.ps | cut -f3 | sort | uniq > $CazyHeaders
+      echo "number of CAZY genes identified:"
+      cat $CazyHeaders | wc -l
+      Gff=$(ls assembly/merged_canu_spades/V.*/VaMs102/ensembl/*.gff3)
+      CazyGff=$OutDir/"$Strain"_CAZY.gff
+      ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
+      $ProgDir/extract_gff_for_sigP_hits.pl $CazyHeaders $Gff CAZyme ID > $CazyGff
+
+      SecretedProts=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/"$Strain"_final_sp_no_trans_mem.aa)
+      SecretedHeaders=$(echo $SecretedProts | sed 's/.aa/_headers.txt/g')
+      cat $SecretedProts | grep '>' | tr -d '>' > $SecretedHeaders
+      CazyGffSecreted=$OutDir/"$Strain"_CAZY_secreted.gff
+      $ProgDir/extract_gff_for_sigP_hits.pl $SecretedHeaders $CazyGff Secreted_CAZyme ID > $CazyGffSecreted
+      echo "number of Secreted CAZY genes identified:"
+      cat $CazyGffSecreted | grep -w 'mRNA' | cut -f9 | tr -d 'ID=' | cut -f1 -d ';' > $OutDir/"$Strain"_CAZY_secreted_headers.txt
+      cat $OutDir/"$Strain"_CAZY_secreted_headers.txt | wc -l
+    done
+```
+V.alfafae - VaMs102
+number of CAZY genes identified:
+599
+
+## D) Identify Small secreted cysteine rich proteins
+
+in secretome:
+
+```bash
+  ProgPath=/home/fanron/git_repos/tools/pathogen/sscp
+  for Filez in $(ls gene_pred/final_genes_signalp-4.1/V.*/*/*_neg_sp.aa); do            
+  echo "$Filez"
+  qsub "$ProgPath"/sub_sscp.sh "$Filez"
+  done
+```
+
+in effectorP:
+```bash
+  ProgPath=/home/fanron/git_repos/tools/pathogen/sscp
+  for Filez in $(ls analysis/effectorP/V.*/Ls17/*.aa); do            
+  echo "$Filez"
+  qsub "$ProgPath"/sub1_sscp.sh "$Filez"
+  done
+```
