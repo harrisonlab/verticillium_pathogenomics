@@ -363,3 +363,13 @@ in effectorP:
   qsub "$ProgPath"/sub1_sscp.sh "$Filez"
   done
 ```
+
+number of LysM and NPP1 in verticillium strains
+cat ..interproscan..gff3 | grep 'LysM' | wc -l
+................................'NPP1'........
+
+     12008  JR2  Ls17  VaM102  51  53  58  61
+LysM  11     11   11     11    11  11  11  11
+
+NPP1   7     7    9      8     7   7   7    8
+   
