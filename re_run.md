@@ -326,20 +326,20 @@ done
 ```
 All statistics are based on contigs of size >= 500 bp, unless otherwise noted (e.g., "# contigs (>= 0 bp)" and "Total length (>= 0 bp)" include all contigs).
 
-Assembly                   12008_contigs_renamed  12008_contigs_renamed broken
-# contigs (>= 0 bp)        103                    103
-# contigs (>= 1000 bp)     103                    103
-Total length (>= 0 bp)     35057408               35057408
-Total length (>= 1000 bp)  35057408               35057408
-# contigs                  103                    103
-Largest contig             2438101                2438101
-Total length               35057408               35057408
-GC (%)                     54.57                  54.57
-N50                        746680                 746680
-N75                        389743                 389743
-L50                        16                     16
-L75                        32                     32
-# N's per 100 kbp          0.00                   0.00
+  Assembly                   12008_contigs_renamed  12008_contigs_renamed broken
+  contigs (>= 0 bp)        103                    103
+  contigs (>= 1000 bp)     103                    103
+  Total length (>= 0 bp)     35057408               35057408
+  Total length (>= 1000 bp)  35057408               35057408
+  contigs                  103                    103
+  Largest contig             2438101                2438101
+  Total length               35057408               35057408
+  GC (%)                     54.57                  54.57
+  N50                        746680                 746680
+  N75                        389743                 389743
+  L50                        16                     16
+  L75                        32                     32
+  N's per 100 kbp          0.00                   0.00
 
 
 
