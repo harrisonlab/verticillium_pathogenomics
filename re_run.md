@@ -581,28 +581,28 @@ Cufflinks was run to produce the fragment length and stdev statistics:
   done
   ```
 
-  12008PDA
-  > Processed 18186 loci.                        [*************************] 100%
-> Map Properties:
->       Normalized Map Mass: 11146895.55
->       Raw Map Mass: 11146895.55
->       Fragment Length Distribution: Empirical (learned)
->                     Estimated Mean: 233.22
->                  Estimated Std Dev: 59.61
-[12:43:19] Assembling transcripts and estimating abundances.
-> Processed 18321 loci.                        [*************************] 100%
+    12008PDA
+    > Processed 18186 loci.                        [*************************] 100%
+  > Map Properties:
+  >       Normalized Map Mass: 11146895.55
+  >       Raw Map Mass: 11146895.55
+  >       Fragment Length Distribution: Empirical (learned)
+  >                     Estimated Mean: 233.22
+  >                  Estimated Std Dev: 59.61
+  [12:43:19] Assembling transcripts and estimating abundances.
+  > Processed 18321 loci.                        [*************************] 100%
 
-12008CD
+  12008CD
 
-> Processed 17115 loci.                        [*************************] 100%
-> Map Properties:
->       Normalized Map Mass: 8302675.27
->       Raw Map Mass: 8302675.27
->       Fragment Length Distribution: Empirical (learned)
->                     Estimated Mean: 224.51
->                  Estimated Std Dev: 62.76
-[10:05:48] Assembling transcripts and estimating abundances.
-> Processed 17261 loci.                        [*************************] 100%
+  > Processed 17115 loci.                        [*************************] 100%
+  > Map Properties:
+  >       Normalized Map Mass: 8302675.27
+  >       Raw Map Mass: 8302675.27
+  >       Fragment Length Distribution: Empirical (learned)
+  >                     Estimated Mean: 224.51
+  >                  Estimated Std Dev: 62.76
+  [10:05:48] Assembling transcripts and estimating abundances.
+  > Processed 17261 loci.                        [*************************] 100%
 
 Then Rnaseq data was aligned to each genome assembly:
 
@@ -667,7 +667,7 @@ Then Rnaseq data was aligned to each genome assembly:
   
   mv -r 12008CD/* 12008CD_accurate/
 ```
-#### Braker prediction
+### Braker prediction
 
 Before braker predictiction was performed, I double checked that I had the genemark key in my user area and copied it over from the genemark install directory:
 
@@ -700,7 +700,7 @@ Braker predictiction was performed using softmasked genome, not unmasked one.
   done
 ```
 
-Amino acid sequences and gff files were extracted from Braker1 output.
+####Amino acid sequences and gff files were extracted from Braker1 output.
 
 ```bash
   for File in $(ls gene_pred/braker/V.dahliae/12008/12008_braker_sixth/augustus.gff); do
@@ -722,7 +722,7 @@ Note - IGV was used to view aligned reads against the Fus2 genome on my local ma
     samtools index $SortBam.bam
 
 
-## Supplimenting Braker gene models with CodingQuary genes
+### Supplimenting Braker gene models with CodingQuary genes
 
 Additional genes were added to Braker gene predictions, using CodingQuary in
 pathogen mode to predict additional regions.
@@ -756,93 +756,93 @@ Secondly, genes were predicted using CodingQuary:
   qsub $ProgDir/sub1_CodingQuary.sh $Assembly $CufflinksGTF $OutDir
   done
 ```
-## Identification of duplicated genes in additional CodingQuary gene models
+### Identification of duplicated genes in additional CodingQuary gene models
+
+  ```bash
+  for AddGenes in $(ls gene_pred/codingquary1/V.*/12008/additional/additional_genes.gff); do
+  Strain=$(echo $AddGenes| rev | cut -d '/' -f3 | rev)
+  Organism=$(echo $AddGenes | rev | cut -d '/' -f4 | rev)
+  OutDir=$(dirname $AddGenes)
+  echo "$Organism - $Strain" > $OutDir/duplicated_genes.txt
+  ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/codingquary
+  $ProgDir/remove_dup_features.py --inp_gff $AddGenes >> $OutDir/duplicated_genes.txt
+  cat $OutDir/duplicated_genes.txt
+  echo ""
+  done
+  ```
+    V.dahliae - 12008
+    Duplicate gene found:   contig_8        417120  417650
+    contig_8        CodingQuarry_v2.0       gene    417120  417650  .       +       .       ID=NS.04274;Name=;                                                                          
+    contig_8        CodingQuarry_v2.0       gene    417120  417650  .       +       .       ID=CUFF.9944.1.116;Name=;                                                                            
+#### Remove those lines containing 'CUFF.9944.1.116' because we are not very confident for the cuff results
+  the command used was : 
+  cd /gene_pred/codingquary1/V.dahliae/12008/additional:
+  cat additional_genes.gff | grep -v -w 'CUFF.9944.1.116' > new_additional_genes.gff
+
+#### Note that at this stage all codingquary genes contain . characters rather than _ characters
+
+  ```bash
+  for Assembly in $(ls repeat_masked/*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+  Organism=$(echo $Assembly | rev | cut -f4 -d '/' | rev)
+  Strain=$(echo $Assembly | rev | cut -f3 -d '/' | rev)
+  OutDir=gene_pred/final_genes/$Organism/$Strain/edited
+  mkdir -p $OutDir
+  BrakerGff=$(ls gene_pred/braker/V.dahliae/12008/12008_braker_sixth/augustus.gff3)
+  CodingQuaryGff=$(ls gene_pred/codingquary1/$Organism/$Strain/out/PredictedPass.gff3)
+  PGNGff=$(ls gene_pred/codingquary1/$Organism/$Strain/out/PGN_predictedPass.gff3)
+  cp -i $BrakerGff $OutDir/final_genes_Braker_ed.gff3
+  cat $CodingQuaryGff | grep -v -w -e 'CUFF.9944.1.116' > $OutDir/PredictedPass_ed.gff3
+  cp -i $PGNGff $OutDir/PGN_predictedPass_ed.gff3
+  done
+  ```
+### Then additional transcripts were added to Braker gene models, when CodingQuary
+   genes were predicted in regions of the genome, not containing Braker gene
+   models:
 
 ```bash
-for AddGenes in $(ls gene_pred/codingquary1/V.*/12008/additional/additional_genes.gff); do
-Strain=$(echo $AddGenes| rev | cut -d '/' -f3 | rev)
-Organism=$(echo $AddGenes | rev | cut -d '/' -f4 | rev)
-OutDir=$(dirname $AddGenes)
-echo "$Organism - $Strain" > $OutDir/duplicated_genes.txt
-ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/codingquary
-$ProgDir/remove_dup_features.py --inp_gff $AddGenes >> $OutDir/duplicated_genes.txt
-cat $OutDir/duplicated_genes.txt
-echo ""
-done
-```
-V.dahliae - 12008
-Duplicate gene found:   contig_8        417120  417650
-contig_8        CodingQuarry_v2.0       gene    417120  417650  .       +       .       ID=NS.04274;Name=;                                                                          
-contig_8        CodingQuarry_v2.0       gene    417120  417650  .       +       .       ID=CUFF.9944.1.116;Name=;                                                                            
-### Remove those lines containing 'CUFF.9944.1.116' because we are not very confident for the cuff results
-the command used was : 
-cd /gene_pred/codingquary1/V.dahliae/12008/additional:
-cat additional_genes.gff | grep -v -w 'CUFF.9944.1.116' > new_additional_genes.gff
+  for EditDir in $(ls -d gene_pred/final_genes/*/12008/edited); do
+  Strain=$(echo $EditDir | rev | cut -d '/' -f2 | rev)
+  Organism=$(echo $EditDir | rev | cut -d '/' -f3 | rev)
+  echo "$Organism - $Strain"
+  Assembly=$(ls repeat_masked/$Organism/$Strain/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa)
+  BrakerGff=$EditDir/final_genes_Braker_ed.gff3
+  CodingQuaryGff=$EditDir/PredictedPass_ed.gff3
+  PGNGff=$EditDir/PGN_predictedPass_ed.gff3
+  # ManGff=$EditDir/manual_annotations.gff3
+  AddDir=$EditDir/additional
+  FinalDir=gene_pred/final_genes/$Organism/$Strain/final
+  AddGenesList=$AddDir/additional_genes.txt
+  AddGenesGff=$AddDir/additional_genes.gff
+  # FinalGff=$AddDir/combined_genes.gff
+  mkdir -p $AddDir
+  mkdir -p $FinalDir
 
-## Note that at this stage all codingquary genes contain . characters rather than _ characters
+  bedtools intersect -v -a $CodingQuaryGff -b $BrakerGff | grep 'gene'| cut -f2 -d'=' | cut -f1 -d';' > $AddGenesList
+  bedtools intersect -v -a $PGNGff -b $BrakerGff | grep 'gene'| cut -f2 -d'=' | cut -f1 -d';' >> $AddGenesList
+  ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation
+  $ProgDir/gene_list_to_gff.pl $AddGenesList $CodingQuaryGff CodingQuarry_v2.0 ID CodingQuary > $AddGenesGff
+  $ProgDir/gene_list_to_gff.pl $AddGenesList $PGNGff PGNCodingQuarry_v2.0 ID CodingQuary >> $AddGenesGff
+  ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/codingquary
 
-```bash
-for Assembly in $(ls repeat_masked/*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
-Organism=$(echo $Assembly | rev | cut -f4 -d '/' | rev)
-Strain=$(echo $Assembly | rev | cut -f3 -d '/' | rev)
-OutDir=gene_pred/final_genes/$Organism/$Strain/edited
-mkdir -p $OutDir
-BrakerGff=$(ls gene_pred/braker/V.dahliae/12008/12008_braker_sixth/augustus.gff3)
-CodingQuaryGff=$(ls gene_pred/codingquary1/$Organism/$Strain/out/PredictedPass.gff3)
-PGNGff=$(ls gene_pred/codingquary1/$Organism/$Strain/out/PGN_predictedPass.gff3)
-cp -i $BrakerGff $OutDir/final_genes_Braker_ed.gff3
-cat $CodingQuaryGff | grep -v -w -e 'CUFF.9944.1.116' > $OutDir/PredictedPass_ed.gff3
-cp -i $PGNGff $OutDir/PGN_predictedPass_ed.gff3
-done
-```
-## Then, additional transcripts were added to Braker gene models, when CodingQuary
-genes were predicted in regions of the genome, not containing Braker gene
-models:
+  $ProgDir/add_CodingQuary_features.pl $AddGenesGff $Assembly > $FinalDir/final_genes_CodingQuary.gff3
+  $ProgDir/gff2fasta.pl $Assembly $FinalDir/final_genes_CodingQuary.gff3 $FinalDir/final_genes_CodingQuary
+  cp $BrakerGff $FinalDir/final_genes_Braker.gff3
+  $ProgDir/gff2fasta.pl $Assembly $FinalDir/final_genes_Braker.gff3 $FinalDir/final_genes_Braker
+  # cp $ManGff $FinalDir/final_genes_manual.gff3
+  # $ProgDir/gff2fasta.pl $Assembly $FinalDir/final_genes_manual.gff3 $FinalDir/final_genes_manual
+  cat $FinalDir/final_genes_Braker.pep.fasta $FinalDir/final_genes_CodingQuary.pep.fasta | sed -r 's/\*/X/g' > $FinalDir/final_genes_combined.pep.fasta
+  cat $FinalDir/final_genes_Braker.cdna.fasta $FinalDir/final_genes_CodingQuary.cdna.fasta > $FinalDir/final_genes_combined.cdna.fasta
+  cat $FinalDir/final_genes_Braker.gene.fasta $FinalDir/final_genes_CodingQuary.gene.fasta > $FinalDir/final_genes_combined.gene.fasta
+  cat $FinalDir/final_genes_Braker.upstream3000.fasta $FinalDir/final_genes_CodingQuary.upstream3000.fasta > $FinalDir/final_genes_combined.upstream3000.fasta
 
-```bash
-for EditDir in $(ls -d gene_pred/final_genes/*/12008/edited); do
-Strain=$(echo $EditDir | rev | cut -d '/' -f2 | rev)
-Organism=$(echo $EditDir | rev | cut -d '/' -f3 | rev)
-echo "$Organism - $Strain"
-Assembly=$(ls repeat_masked/$Organism/$Strain/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa)
-BrakerGff=$EditDir/final_genes_Braker_ed.gff3
-CodingQuaryGff=$EditDir/PredictedPass_ed.gff3
-PGNGff=$EditDir/PGN_predictedPass_ed.gff3
-# ManGff=$EditDir/manual_annotations.gff3
-AddDir=$EditDir/additional
-FinalDir=gene_pred/final_genes/$Organism/$Strain/final
-AddGenesList=$AddDir/additional_genes.txt
-AddGenesGff=$AddDir/additional_genes.gff
-# FinalGff=$AddDir/combined_genes.gff
-mkdir -p $AddDir
-mkdir -p $FinalDir
-
-bedtools intersect -v -a $CodingQuaryGff -b $BrakerGff | grep 'gene'| cut -f2 -d'=' | cut -f1 -d';' > $AddGenesList
-bedtools intersect -v -a $PGNGff -b $BrakerGff | grep 'gene'| cut -f2 -d'=' | cut -f1 -d';' >> $AddGenesList
-ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation
-$ProgDir/gene_list_to_gff.pl $AddGenesList $CodingQuaryGff CodingQuarry_v2.0 ID CodingQuary > $AddGenesGff
-$ProgDir/gene_list_to_gff.pl $AddGenesList $PGNGff PGNCodingQuarry_v2.0 ID CodingQuary >> $AddGenesGff
-ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/codingquary
-
-$ProgDir/add_CodingQuary_features.pl $AddGenesGff $Assembly > $FinalDir/final_genes_CodingQuary.gff3
-$ProgDir/gff2fasta.pl $Assembly $FinalDir/final_genes_CodingQuary.gff3 $FinalDir/final_genes_CodingQuary
-cp $BrakerGff $FinalDir/final_genes_Braker.gff3
-$ProgDir/gff2fasta.pl $Assembly $FinalDir/final_genes_Braker.gff3 $FinalDir/final_genes_Braker
-# cp $ManGff $FinalDir/final_genes_manual.gff3
-# $ProgDir/gff2fasta.pl $Assembly $FinalDir/final_genes_manual.gff3 $FinalDir/final_genes_manual
-cat $FinalDir/final_genes_Braker.pep.fasta $FinalDir/final_genes_CodingQuary.pep.fasta | sed -r 's/\*/X/g' > $FinalDir/final_genes_combined.pep.fasta
-cat $FinalDir/final_genes_Braker.cdna.fasta $FinalDir/final_genes_CodingQuary.cdna.fasta > $FinalDir/final_genes_combined.cdna.fasta
-cat $FinalDir/final_genes_Braker.gene.fasta $FinalDir/final_genes_CodingQuary.gene.fasta > $FinalDir/final_genes_combined.gene.fasta
-cat $FinalDir/final_genes_Braker.upstream3000.fasta $FinalDir/final_genes_CodingQuary.upstream3000.fasta > $FinalDir/final_genes_combined.upstream3000.fasta
-
-GffBraker=$FinalDir/final_genes_CodingQuary.gff3
-GffQuary=$FinalDir/final_genes_Braker.gff3
-# GffManual=$FinalDir/final_genes_manual.gff3
-GffAppended=$FinalDir/final_genes_appended.gff3
-cat $GffBraker $GffQuary > $GffAppended
-# cat $GffBraker $GffQuary $GffManual > $GffAppended
-done
-```
+  GffBraker=$FinalDir/final_genes_CodingQuary.gff3
+  GffQuary=$FinalDir/final_genes_Braker.gff3
+  # GffManual=$FinalDir/final_genes_manual.gff3
+  GffAppended=$FinalDir/final_genes_appended.gff3
+  cat $GffBraker $GffQuary > $GffAppended
+  # cat $GffBraker $GffQuary $GffManual > $GffAppended
+  done
+  ```
 
 The final number of genes per isolate was observed using:
 
@@ -855,18 +855,18 @@ The final number of genes per isolate was observed using:
   echo "";
   done
 ```
-gene_pred/codingquary1/V.dahliae/12008/final
-9881
-721
-10601
+  gene_pred/codingquary1/V.dahliae/12008/final
+  9881
+  721
+  10601
 
-## ORF finder
+  ## ORF finder
 
-The genome was searched in six reading frames for any start codon and following
-translated identification of a start codon translating sequence until a stop
-codon was found. This is based upon the atg.pl script used in paper describing
-the P. infestans genome. Additional functionality was added to this script by
-also printing ORFs in .gff format.
+  The genome was searched in six reading frames for any start codon and following
+  translated identification of a start codon translating sequence until a stop
+  codon was found. This is based upon the atg.pl script used in paper describing
+  the P. infestans genome. Additional functionality was added to this script by
+  also printing ORFs in .gff format.
 
 
 ```bash 
@@ -892,17 +892,17 @@ corrected using the following commands:
     $ProgDir/gff_corrector.pl $ORF_Gff > $ORF_Gff_mod
   done
 ```
-The final number of genes per isolate was observed using:
-```bash
-for DirPath in $(ls -d gene_pred/ORF_finder/*/$Strain); do
-echo $DirPath
-cat $DirPath/*aa_cat.fa | grep '>' | wc -l
-echo ""
-done
-```
-gene_pred/ORF_finder/V.dahliae/12008
-ORF_finder
-329388
+  The final number of genes per isolate was observed using:
+  ```bash
+  for DirPath in $(ls -d gene_pred/ORF_finder/*/$Strain); do
+  echo $DirPath
+  cat $DirPath/*aa_cat.fa | grep '>' | wc -l
+  echo ""
+  done
+  ```
+  gene_pred/ORF_finder/V.dahliae/12008
+  ORF_finder
+  329388
 
 
 
@@ -910,15 +910,15 @@ ORF_finder
 
 ## A) Interproscan
 
-Interproscan was used to give gene models functional annotations.
-Annotation was run using the commands below:
+  Interproscan was used to give gene models functional annotations.
+  Annotation was run using the commands below:
 
-Note: This is a long-running script. As such, these commands were run using
-'screen' to allow jobs to be submitted and monitored in the background.
-This allows the session to be disconnected and reconnected over time.
+  Note: This is a long-running script. As such, these commands were run using
+  'screen' to allow jobs to be submitted and monitored in the background.
+  This allows the session to be disconnected and reconnected over time.
 
-Screen ouput detailing the progress of submission of interporscan jobs
-was redirected to a temporary output file named interproscan_submission.log .
+  Screen ouput detailing the progress of submission of interporscan jobs
+  was redirected to a temporary output file named interproscan_submission.log .
 
 ```bash
   screen -a
@@ -960,14 +960,14 @@ for Proteome in $(ls gene_pred/final_genes/*/*/*/final_genes_combined.pep.fasta)
 ```
 then
 ```bash
-for SwissTable in $(ls gene_pred/swissprot/*/12008/swissprot_vJul2016_10_hits.tbl); do
-Strain=$(echo $SwissTable | rev | cut -f2 -d '/' | rev)
-Organism=$(echo $SwissTable | rev | cut -f3 -d '/' | rev)
-echo "$Organism - $Strain"
-OutTable=gene_pred/swissprot/$Organism/$Strain/swissprot_vJul2016_tophit_parsed.tbl
-ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation/swissprot
-$ProgDir/swissprot_parser.py --blast_tbl $SwissTable --blast_db_fasta ../../../uniprot/swissprot/uniprot_sprot.fasta > $OutTable
-done
+  for SwissTable in $(ls gene_pred/swissprot/*/12008/swissprot_vJul2016_10_hits.tbl); do
+  Strain=$(echo $SwissTable | rev | cut -f2 -d '/' | rev)
+  Organism=$(echo $SwissTable | rev | cut -f3 -d '/' | rev)
+  echo "$Organism - $Strain"
+  OutTable=gene_pred/swissprot/$Organism/$Strain/swissprot_vJul2016_tophit_parsed.tbl
+  ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation/swissprot
+  $ProgDir/swissprot_parser.py --blast_tbl $SwissTable --blast_db_fasta ../../../uniprot/swissprot/uniprot_sprot.fasta > $OutTable
+  done
 ```
 ## Effector genes   
 
