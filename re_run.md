@@ -419,8 +419,8 @@ Quality of genome assemblies was assessed by looking for the gene space in the a
      qsub $ProgDir/sub_cegma.sh $Genome dna;
   done
 ```
-*** Number of cegma genes present and complete: 95.56%
-** Number of cegma genes present and partial: 98.39%
+Number of cegma genes present and complete: 95.56%
+Number of cegma genes present and partial: 98.39%
 
 Outputs were summarised using the commands:
 ```bash
@@ -744,55 +744,98 @@ Secondly, genes were predicted using CodingQuary:
   qsub $ProgDir/sub1_CodingQuary.sh $Assembly $CufflinksGTF $OutDir
   done
 ```
-Then, additional transcripts were added to Braker gene models, when CodingQuary
+## Identification of duplicated genes in additional CodingQuary gene models
+
+```bash
+for AddGenes in $(ls gene_pred/codingquary1/V.*/12008/additional/additional_genes.gff); do
+Strain=$(echo $AddGenes| rev | cut -d '/' -f3 | rev)
+Organism=$(echo $AddGenes | rev | cut -d '/' -f4 | rev)
+OutDir=$(dirname $AddGenes)
+echo "$Organism - $Strain" > $OutDir/duplicated_genes.txt
+ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/codingquary
+$ProgDir/remove_dup_features.py --inp_gff $AddGenes >> $OutDir/duplicated_genes.txt
+cat $OutDir/duplicated_genes.txt
+echo ""
+done
+```
+V.dahliae - 12008
+Duplicate gene found:   contig_8        417120  417650
+contig_8        CodingQuarry_v2.0       gene    417120  417650  .       +       .       ID=NS.04274;Name=;                                                                          
+contig_8        CodingQuarry_v2.0       gene    417120  417650  .       +       .       ID=CUFF.9944.1.116;Name=;                                                                            
+### Remove these lines containing 'CUFF.9944.1.116' because we are not very confident for the cuff results
+the command used was : 
+cd /gene_pred/codingquary1/V.dahliae/12008/additional:
+cat additional_genes.gff | grep -v -w 'CUFF.9944.1.116' > new_additional_genes.gff
+
+## Note that at this stage all codingquary genes contain . characters rather than _ characters
+
+```bash
+for Assembly in $(ls repeat_masked/*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+Organism=$(echo $Assembly | rev | cut -f4 -d '/' | rev)
+Strain=$(echo $Assembly | rev | cut -f3 -d '/' | rev)
+OutDir=gene_pred/final_genes/$Organism/$Strain/edited
+mkdir -p $OutDir
+BrakerGff=$(ls gene_pred/braker/V.dahliae/12008/12008_braker_sixth/augustus.gff3)
+CodingQuaryGff=$(ls gene_pred/codingquary1/$Organism/$Strain/out/PredictedPass.gff3)
+PGNGff=$(ls gene_pred/codingquary1/$Organism/$Strain/out/PGN_predictedPass.gff3)
+cp -i $BrakerGff $OutDir/final_genes_Braker_ed.gff3
+cat $CodingQuaryGff | grep -v -w -e 'CUFF.9944.1.116' > $OutDir/PredictedPass_ed.gff3
+cp -i $PGNGff $OutDir/PGN_predictedPass_ed.gff3
+done
+```
+## Then, additional transcripts were added to Braker gene models, when CodingQuary
 genes were predicted in regions of the genome, not containing Braker gene
 models:
 
-```bash 
-  for BrakerGff in $(ls gene_pred/braker/V.*/12008/12008_braker_sixth/augustus.gff3); do
-  Strain=$(echo $BrakerGff| rev | cut -d '/' -f3 | rev)
-  Organism=$(echo $BrakerGff | rev | cut -d '/' -f4 | rev)
-  echo "$Organism - $Strain"
-  Assembly=$(ls repeat_masked/*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa)
-  CodingQuaryGff=gene_pred/codingquary1/$Organism/$Strain/out/PredictedPass.gff3
-  PGNGff=gene_pred/codingquary1/$Organism/$Strain/out/PGN_predictedPass.gff3
-  AddDir=gene_pred/codingquary1/$Organism/$Strain/additional
-  FinalDir=gene_pred/codingquary1/$Organism/$Strain/final
-  AddGenesList=$AddDir/additional_genes.txt
-  AddGenesGff=$AddDir/additional_genes.gff
-  FinalGff=$AddDir/combined_genes.gff
-  mkdir -p $AddDir
-  mkdir -p $FinalDir
+```bash
+for EditDir in $(ls -d gene_pred/final_genes/*/12008/edited); do
+Strain=$(echo $EditDir | rev | cut -d '/' -f2 | rev)
+Organism=$(echo $EditDir | rev | cut -d '/' -f3 | rev)
+echo "$Organism - $Strain"
+Assembly=$(ls repeat_masked/$Organism/$Strain/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa)
+BrakerGff=$EditDir/final_genes_Braker_ed.gff3
+CodingQuaryGff=$EditDir/PredictedPass_ed.gff3
+PGNGff=$EditDir/PGN_predictedPass_ed.gff3
+# ManGff=$EditDir/manual_annotations.gff3
+AddDir=$EditDir/additional
+FinalDir=gene_pred/final_genes/$Organism/$Strain/final
+AddGenesList=$AddDir/additional_genes.txt
+AddGenesGff=$AddDir/additional_genes.gff
+# FinalGff=$AddDir/combined_genes.gff
+mkdir -p $AddDir
+mkdir -p $FinalDir
 
-  bedtools intersect -v -a $CodingQuaryGff -b $BrakerGff | grep 'gene'| cut -f2 -d'=' | cut -f1 -d';' > $AddGenesList
-  bedtools intersect -v -a $PGNGff -b $BrakerGff | grep 'gene'| cut -f2 -d'=' | cut -f1 -d';' >> $AddGenesList
-  ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation
-  $ProgDir/gene_list_to_gff.pl $AddGenesList $CodingQuaryGff CodingQuarry_v2.0 ID CodingQuary > $AddGenesGff
-  $ProgDir/gene_list_to_gff.pl $AddGenesList $PGNGff PGNCodingQuarry_v2.0 ID CodingQuary >> $AddGenesGff
-  ProgDir=/home/gomeza/git_repos/emr_repos/tools/gene_prediction/codingquary
+bedtools intersect -v -a $CodingQuaryGff -b $BrakerGff | grep 'gene'| cut -f2 -d'=' | cut -f1 -d';' > $AddGenesList
+bedtools intersect -v -a $PGNGff -b $BrakerGff | grep 'gene'| cut -f2 -d'=' | cut -f1 -d';' >> $AddGenesList
+ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation
+$ProgDir/gene_list_to_gff.pl $AddGenesList $CodingQuaryGff CodingQuarry_v2.0 ID CodingQuary > $AddGenesGff
+$ProgDir/gene_list_to_gff.pl $AddGenesList $PGNGff PGNCodingQuarry_v2.0 ID CodingQuary >> $AddGenesGff
+ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/codingquary
 
-  $ProgDir/add_CodingQuary_features.pl $AddGenesGff $Assembly > $FinalDir/final_genes_CodingQuary.gff3
-  $ProgDir/gff2fasta.pl $Assembly $FinalDir/final_genes_CodingQuary.gff3 $FinalDir/final_genes_CodingQuary
-  cp $BrakerGff $FinalDir/final_genes_Braker.gff3
-  $ProgDir/gff2fasta.pl $Assembly $FinalDir/final_genes_Braker.gff3 $FinalDir/final_genes_Braker
-  cat $FinalDir/final_genes_Braker.pep.fasta $FinalDir/final_genes_CodingQuary.pep.fasta | sed -r 's/\*/X/g' > $FinalDir/final_genes_combined.pep.fasta
-  cat $FinalDir/final_genes_Braker.cdna.fasta $FinalDir/final_genes_CodingQuary.cdna.fasta > $FinalDir/final_genes_combined.cdna.fasta
-  cat $FinalDir/final_genes_Braker.gene.fasta $FinalDir/final_genes_CodingQuary.gene.fasta > $FinalDir/final_genes_combined.gene.fasta
-  cat $FinalDir/final_genes_Braker.upstream3000.fasta $FinalDir/final_genes_CodingQuary.upstream3000.fasta > $FinalDir/final_genes_combined.upstream3000.fasta
+$ProgDir/add_CodingQuary_features.pl $AddGenesGff $Assembly > $FinalDir/final_genes_CodingQuary.gff3
+$ProgDir/gff2fasta.pl $Assembly $FinalDir/final_genes_CodingQuary.gff3 $FinalDir/final_genes_CodingQuary
+cp $BrakerGff $FinalDir/final_genes_Braker.gff3
+$ProgDir/gff2fasta.pl $Assembly $FinalDir/final_genes_Braker.gff3 $FinalDir/final_genes_Braker
+# cp $ManGff $FinalDir/final_genes_manual.gff3
+# $ProgDir/gff2fasta.pl $Assembly $FinalDir/final_genes_manual.gff3 $FinalDir/final_genes_manual
+cat $FinalDir/final_genes_Braker.pep.fasta $FinalDir/final_genes_CodingQuary.pep.fasta | sed -r 's/\*/X/g' > $FinalDir/final_genes_combined.pep.fasta
+cat $FinalDir/final_genes_Braker.cdna.fasta $FinalDir/final_genes_CodingQuary.cdna.fasta > $FinalDir/final_genes_combined.cdna.fasta
+cat $FinalDir/final_genes_Braker.gene.fasta $FinalDir/final_genes_CodingQuary.gene.fasta > $FinalDir/final_genes_combined.gene.fasta
+cat $FinalDir/final_genes_Braker.upstream3000.fasta $FinalDir/final_genes_CodingQuary.upstream3000.fasta > $FinalDir/final_genes_combined.upstream3000.fasta
 
-  GffBraker=$FinalDir/final_genes_CodingQuary.gff3
-  GffQuary=$FinalDir/final_genes_Braker.gff3
-  GffAppended=$FinalDir/final_genes_appended.gff3
-  cat $GffBraker $GffQuary > $GffAppended
-
-  # cat $BrakerGff $AddDir/additional_gene_parsed.gff3 | bedtools sort > $FinalGff
-  done
+GffBraker=$FinalDir/final_genes_CodingQuary.gff3
+GffQuary=$FinalDir/final_genes_Braker.gff3
+# GffManual=$FinalDir/final_genes_manual.gff3
+GffAppended=$FinalDir/final_genes_appended.gff3
+cat $GffBraker $GffQuary > $GffAppended
+# cat $GffBraker $GffQuary $GffManual > $GffAppended
+done
 ```
 
 The final number of genes per isolate was observed using:
 
 ```bash 
-  for DirPath in $(ls -d gene_pred/codingquary1/V.*/*/final); do
+  for DirPath in $(ls -d  gene_pred/final_genes/V.dahliae/12008/final); do
   echo $DirPath;
   cat $DirPath/final_genes_Braker.pep.fasta | grep '>' | wc -l;
   cat $DirPath/final_genes_CodingQuary.pep.fasta | grep '>' | wc -l;
@@ -803,7 +846,7 @@ The final number of genes per isolate was observed using:
 gene_pred/codingquary1/V.dahliae/12008/final
 9881
 721
-10602
+10601
 
 ## ORF finder
 
@@ -849,6 +892,8 @@ gene_pred/ORF_finder/V.dahliae/12008
 ORF_finder
 329388
 
+
+
 #Functional annotation
 
 ## A) Interproscan
@@ -867,17 +912,18 @@ was redirected to a temporary output file named interproscan_submission.log .
   screen -a
   cd /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
   ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
-  for Genes in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
+  for Genes in $(ls gene_pred/final_genes/*/*/*/final_genes_combined.pep.fasta); do
   echo $Genes
   $ProgDir/sub_interproscan.sh $Genes
   done 2>&1 | tee -a interproscan_submisison.log
 ```
+
 Following interproscan annotation split files were combined using the following
 commands:
 
 ```bash
   ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
-  for Proteins in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
+  for Proteins in $(ls gene_pred/final_genes/*/*/*/final_genes_combined.pep.fasta); do
     Strain=$(echo $Proteins | rev | cut -d '/' -f3 | rev)
     Organism=$(echo $Proteins | rev | cut -d '/' -f4 | rev)
     echo "$Organism - $Strain"
@@ -886,29 +932,11 @@ commands:
     $ProgDir/append_interpro.sh $Proteins $InterProRaw
   done
 ```
+
 ## B) SwissProt
+
 ```bash
-  qlogin
-  ProjDir=/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
-  cd $ProjDir
-  for Proteome in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
-    Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
-    Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
-    OutDir=$ProjDir/gene_pred/swissprot/$Organism/$Strain/
-    mkdir -p $OutDir
-    blastp \
-    -db /home/groups/harrisonlab/uniprot/swissprot/uniprot_sprot \
-    -query $ProjDir/$Proteome \
-    -out $OutDir/swissprot_v2015_10_hits.tbl \
-    -evalue 1e-100 \
-    -outfmt 6 \
-    -num_threads 16 \
-    -num_alignments 10
-  done
-```
-or
-```bash
-for Proteome in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
+for Proteome in $(ls gene_pred/final_genes/*/*/*/final_genes_combined.pep.fasta); do
  Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
  Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
   OutDir=gene_pred/swissprot/$Organism/$Strain
@@ -918,6 +946,15 @@ for Proteome in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fas
   qsub $ProgDir/sub_swissprot.sh $Proteome $OutDir $SwissDbDir $SwissDbName
   done
 ```
+
+
+
+
+
+
+
+
+
 then
 ```bash
 for SwissTable in $(ls gene_pred/swissprot/*/*/swissprot_v2015_10_hits.tbl); do
@@ -1175,21 +1212,15 @@ Cols in yourfile.out.dm.ps:
 in secretome:
 
 ```bash
+cat gene_pred/final_genes_signalp-4.1/V.dahliae/12008/12008_final_neg_sp.aa | sed -e 's/\(^>.*$\)/#\1#/' | tr -d "\r" | tr -d "\n" | sed -e 's/$/#/' | tr "#" "\n" | sed -e '/^$/d' > gene_pred/final_genes_signalp-4.1/V.dahliae/12008/12008_final_neg_sp1.aa
   ProgPath=/home/fanron/git_repos/tools/pathogen/sscp
-  for Filez in $(ls gene_pred/final_genes_signalp-4.1/V.dahliae/12008/*_neg_sp.aa); do            
+  for Filez in $(ls gene_pred/final_genes_signalp-4.1/V.dahliae/12008/12008_final_neg_sp1.aa); do            
   echo "$Filez"
   qsub "$ProgPath"/sub_sscp.sh "$Filez"
   done
 ```
 
-in effectorP:
-```bash
-  ProgPath=/home/fanron/git_repos/tools/pathogen/sscp
-  for Filez in $(ls analysis/effectorP/V.dahliae/12008/*.aa); do            
-  echo "$Filez"
-  qsub "$ProgPath"/sub1_sscp.sh "$Filez"
-  done
-```
+
 ##D) AntiSMASH
 
 Do it in the website: http://antismash.secondarymetabolites.org/
