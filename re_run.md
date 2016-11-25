@@ -703,13 +703,25 @@ Braker predictiction was performed using softmasked genome, not unmasked one.
 Amino acid sequences and gff files were extracted from Braker1 output.
 
 ```bash
-  for File in $(ls gene_pred/braker/V.dahliae/12008_braker_sixth/augustus.gff); do
+  for File in $(ls gene_pred/braker/V.dahliae/12008/12008_braker_sixth/augustus.gff); do
   getAnnoFasta.pl $File
   OutDir=$(dirname $File)
   echo "##gff-version 3" > $OutDir/augustus_extracted.gff
   cat $File | grep -v '#' >> $OutDir/augustus_extracted.gff
   done
 ```
+The relationship between gene models and aligned reads was investigated. To do this aligned reads needed to be sorted and indexed:
+
+Note - IGV was used to view aligned reads against the Fus2 genome on my local machine.
+
+    InBam=alignment/V.dahliae/12008/concatenated/concatenated.bam
+    ViewBam=alignment/V.dahliae/12008/concatenated/concatenated_view.bam
+    SortBam=alignment/V.dahliae/12008/concatenated/concatenated_sorted
+    samtools view -b $InBam > $ViewBam
+    samtools sort $ViewBam $SortBam
+    samtools index $SortBam.bam
+
+
 ## Supplimenting Braker gene models with CodingQuary genes
 
 Additional genes were added to Braker gene predictions, using CodingQuary in
@@ -762,7 +774,7 @@ V.dahliae - 12008
 Duplicate gene found:   contig_8        417120  417650
 contig_8        CodingQuarry_v2.0       gene    417120  417650  .       +       .       ID=NS.04274;Name=;                                                                          
 contig_8        CodingQuarry_v2.0       gene    417120  417650  .       +       .       ID=CUFF.9944.1.116;Name=;                                                                            
-### Remove these lines containing 'CUFF.9944.1.116' because we are not very confident for the cuff results
+### Remove those lines containing 'CUFF.9944.1.116' because we are not very confident for the cuff results
 the command used was : 
 cd /gene_pred/codingquary1/V.dahliae/12008/additional:
 cat additional_genes.gff | grep -v -w 'CUFF.9944.1.116' > new_additional_genes.gff
@@ -946,24 +958,14 @@ for Proteome in $(ls gene_pred/final_genes/*/*/*/final_genes_combined.pep.fasta)
   qsub $ProgDir/sub_swissprot.sh $Proteome $OutDir $SwissDbDir $SwissDbName
   done
 ```
-
-
-
-
-
-
-
-
-
 then
 ```bash
-for SwissTable in $(ls gene_pred/swissprot/*/*/swissprot_v2015_10_hits.tbl); do
-# SwissTable=gene_pred/swissprot/Fus2/swissprot_v2015_10_hits.tbl
+for SwissTable in $(ls gene_pred/swissprot/*/12008/swissprot_vJul2016_10_hits.tbl); do
 Strain=$(echo $SwissTable | rev | cut -f2 -d '/' | rev)
 Organism=$(echo $SwissTable | rev | cut -f3 -d '/' | rev)
 echo "$Organism - $Strain"
-OutTable=gene_pred/swissprot/$Organism/$Strain/swissprot_v2015_tophit_parsed.tbl
-ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/swissprot
+OutTable=gene_pred/swissprot/$Organism/$Strain/swissprot_vJul2016_tophit_parsed.tbl
+ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation/swissprot
 $ProgDir/swissprot_parser.py --blast_tbl $SwissTable --blast_db_fasta ../../../uniprot/swissprot/uniprot_sprot.fasta > $OutTable
 done
 ```
@@ -989,7 +991,7 @@ gene models using a number of approaches:
   SplitfileDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/signal_peptides
   ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/signal_peptides
   CurPath=$PWD
-  for Proteome in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
+  for Proteome in $(ls gene_pred/final_genes/*/12008/*/final_genes_combined.pep.fasta); do
     Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
     Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
     SplitDir=gene_pred/final_genes_split/$Organism/$Strain
@@ -1009,11 +1011,12 @@ gene models using a number of approaches:
     done
   done
  ```
+
 The batch files of predicted secreted proteins needed to be combined into a
  single file for each strain. This was done with the following commands:
  
  ```bash
-  for SplitDir in $(ls -d gene_pred/final_genes_split/*/*); do
+  for SplitDir in $(ls -d gene_pred/final_genes_split/*/12008); do
     Strain=$(echo $SplitDir | rev |cut -d '/' -f1 | rev)
     Organism=$(echo $SplitDir | rev |cut -d '/' -f2 | rev)
     InStringAA=''
@@ -1040,23 +1043,24 @@ Some proteins that are incorporated into the cell membrane require secretion.
  Proteins containing a transmembrane domain were identified:
 
  ```bash
-  for Proteome in $(ls gene_pred/codingquary1/*/*/*/final_genes_combined.pep.fasta); do
+  for Proteome in $(ls gene_pred/final_genes/*/12008/*/final_genes_combined.pep.fasta); do
     Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
     Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
     ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/transmembrane_helices
     qsub $ProgDir/submit_TMHMM.sh $Proteome
   done
  ```
+
 Those proteins with transmembrane domains were removed from lists of Signal peptide containing proteins
 
 ```bash
-  for File in $(ls gene_pred/trans_mem/*/*/*_TM_genes_neg.txt); do
+  for File in $(ls gene_pred/trans_mem/*/12008/*_TM_genes_neg.txt); do
     Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
     Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
     echo "$Organism - $Strain"
     TmHeaders=$(echo "$File" | sed 's/neg.txt/neg_headers.txt/g')
     cat $File | cut -f1 > $TmHeaders
-    SigP=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/*_final_sp.aa)
+    SigP=$(ls gene_pred/final_genes_signalp-4.1/$Organism/12008/*_final_sp.aa)
     OutDir=$(dirname $SigP)
     ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
     $ProgDir/extract_from_fasta.py --fasta $SigP --headers $TmHeaders > $OutDir/"$Strain"_final_sp_no_trans_mem.aa
@@ -1078,7 +1082,7 @@ Required programs:
  * EffectorP.py
 
 ```bash
-  for Proteome in $(ls gene_pred/codingquary1/*/*/*/final_genes_combined.pep.fasta); do
+  for Proteome in $(ls gene_pred/final_genes/*/12008/*/final_genes_combined.pep.fasta); do
     Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
     Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
     BaseName="$Organism"_"$Strain"_EffectorP
@@ -1096,14 +1100,14 @@ Those genes that were predicted as secreted and tested positive by effectorP wer
     echo "$Organism - $Strain"
     Headers=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_headers.txt/g')
     cat $File | grep 'Effector' | cut -f1 > $Headers
-    Secretome=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/*_final_sp_no_trans_mem.aa)
+    Secretome=$(ls gene_pred/final_genes_signalp-4.1/$Organism/12008/*_final_sp_no_trans_mem.aa)
     OutFile=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted.aa/g')
     ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
     $ProgDir/extract_from_fasta.py --fasta $Secretome --headers $Headers > $OutFile
     OutFileHeaders=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted_headers.txt/g')
     cat $OutFile | grep '>' | tr -d '>' > $OutFileHeaders
     cat $OutFileHeaders | wc -l
-    Gff=$(ls gene_pred/codingquary1/V.dahliae/12008/*/final_genes_appended.gff3)
+    Gff=$(ls gene_pred/final_genes/V.dahliae/12008/*/final_genes_appended.gff3)
     EffectorP_Gff=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted.gff/g')
     ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
     $ProgDir/extract_gff_for_sigP_hits.pl $OutFileHeaders $Gff effectorP ID > $EffectorP_Gff
@@ -1118,7 +1122,7 @@ Carbohydrte active enzymes were idnetified using CAZYfollowing recomendations
 at http://csbl.bmb.uga.edu/dbCAN/download/readme.txt :
 
 ```bash
-  for Proteome in $(ls gene_pred/codingquary1/*/*/*/final_genes_combined.pep.fasta); do
+  for Proteome in $(ls gene_pred/final_genes/*/12008/*/final_genes_combined.pep.fasta); do
     Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
     Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
     OutDir=gene_pred/CAZY/$Organism/$Strain
@@ -1130,6 +1134,17 @@ at http://csbl.bmb.uga.edu/dbCAN/download/readme.txt :
     qsub $ProgDir/sub_hmmscan.sh $CazyHmm $Proteome $Prefix $OutDir
   done
 ```
+
+
+
+
+
+
+
+
+
+
+
 
 The Hmm parser was used to filter hits by an E-value of E1x10-5 or E 1x10-e3 if they had a hit over a length of X %.
 
