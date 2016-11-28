@@ -1130,22 +1130,9 @@ at http://csbl.bmb.uga.edu/dbCAN/download/readme.txt :
     Prefix="$Strain"_CAZY
     CazyHmm=../../../dbCAN/dbCAN-fam-HMMs.txt
     ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/HMMER
-    # ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/HMMER
-    qsub $ProgDir/sub_hmmscan.sh $CazyHmm $Proteome $Prefix $OutDir
+      qsub $ProgDir/sub1_hmmscan.sh $CazyHmm $Proteome $Prefix $OutDir
   done
 ```
-
-
-
-
-
-
-
-
-
-
-
-
 The Hmm parser was used to filter hits by an E-value of E1x10-5 or E 1x10-e3 if they had a hit over a length of X %.
 
 Those proteins with a signal peptide were extracted from the list and gff files
@@ -1162,7 +1149,7 @@ representing these proteins made.
     SecretedProts=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/"$Strain"_final_sp_no_trans_mem.aa)
     SecretedHeaders=$(echo $SecretedProts | sed 's/.aa/_headers.txt/g')
     cat $SecretedProts | grep '>' | tr -d '>' > $SecretedHeaders
-    Gff=$(ls gene_pred/codingquary1/*/*/*/final_genes_appended.gff3)
+    Gff=$(ls gene_pred/final_genes/*/12008/*/final_genes_appended.gff3)
     CazyGff=$OutDir/12008_CAZY.gff
     ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
     $ProgDir/extract_gff_for_sigP_hits.pl $SecretedHeaders $Gff CAZyme ID > $CazyGff
@@ -1180,8 +1167,7 @@ for File in $(ls gene_pred/CAZY/*/12008/*CAZY.out.dm); do
       cat $OutDir/"$Strain"_CAZY.out.dm.ps | cut -f3 | sort | uniq > $CazyHeaders
       echo "number of CAZY genes identified:"
       cat $CazyHeaders | wc -l
-      # Gff=$(ls gene_pred/codingquary1/$Organism/$Strain/final/final_genes_appended.gff3)
-      Gff=$(ls gene_pred/codingquary1/$Organism/$Strain/final/final_genes_appended.gff3)
+      Gff=$(ls gene_pred/final_genes/*/12008/*/final_genes_appended.gff3)
       CazyGff=$OutDir/"$Strain"_CAZY.gff
       ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
       $ProgDir/extract_gff_for_sigP_hits.pl $CazyHeaders $Gff CAZyme ID > $CazyGff
@@ -1224,23 +1210,39 @@ Cols in yourfile.out.dm.ps:
 
 ## D) Identify Small secreted cysteine rich proteins
 
-in secretome:
-
-```bash
-cat gene_pred/final_genes_signalp-4.1/V.dahliae/12008/12008_final_neg_sp.aa | sed -e 's/\(^>.*$\)/#\1#/' | tr -d "\r" | tr -d "\n" | sed -e 's/$/#/' | tr "#" "\n" | sed -e '/^$/d' > gene_pred/final_genes_signalp-4.1/V.dahliae/12008/12008_final_neg_sp1.aa
-  ProgPath=/home/fanron/git_repos/tools/pathogen/sscp
-  for Filez in $(ls gene_pred/final_genes_signalp-4.1/V.dahliae/12008/12008_final_neg_sp1.aa); do            
-  echo "$Filez"
-  qsub "$ProgPath"/sub_sscp.sh "$Filez"
+Small secreted cysteine rich proteins were identified within secretomes. These proteins may be identified by EffectorP, but this approach allows direct control over what constitutes a SSCP.
+  ```bash
+  for Secretome in $(ls gene_pred/final_genes_signalp-4.1/*/12008/*_final_sp_no_trans_mem.aa); do
+  Strain=$(echo $Secretome| rev | cut -f2 -d '/' | rev)
+  Organism=$(echo $Secretome | rev | cut -f3 -d '/' | rev)
+  echo "$Organism - $Strain"
+  OutDir=analysis/sscp/$Organism/$Strain
+  mkdir -p $OutDir
+  ProgDir=/home/armita/git_repos/emr_repos/tools/pathogen/sscp
+  $ProgDir/sscp_filter.py --inp_fasta $Secretome --max_length 300 --threshold 1 --out_fasta $OutDir/"$Strain"_sscp_all_results.fa
+  cat $OutDir/"$Strain"_sscp_all_results.fa | grep 'Yes' > $OutDir/"$Strain"_sscp.fa
+  echo "Number of effectors predicted by EffectorP:"
+  EffectorP=$(ls analysis/effectorP/$Organism/$Strain/*_EffectorP_secreted_headers.txt)
+  cat $EffectorP | wc -l
+  echo "Number of SSCPs predicted by both effectorP and this approach"
+  cat $OutDir/"$Strain"_sscp.fa | grep '>' | tr -d '>' > $OutDir/"$Strain"_sscp_headers.txt
+  cat $OutDir/"$Strain"_sscp_headers.txt $EffectorP | cut -f1 | sort | uniq -d | wc -l
   done
-```
-
+  ```
+V.dahliae - 12008
+% cysteine content threshold set to:    1
+maximum length set to:  300
+No. short-cysteine rich proteins in input fasta:        300
+Number of effectors predicted by EffectorP:
+187
+Number of SSCPs predicted by both effectorP and this approach
+149
 
 ##D) AntiSMASH
 
 Do it in the website: http://antismash.secondarymetabolites.org/
 ```bash
-for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+for Assembly in $(ls repeat_masked/*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
 Organism=$(echo $Assembly | rev | cut -f4 -d '/' | rev)
 Strain=$(echo $Assembly | rev | cut -f3 -d '/' | rev)
 OutDir=analysis/antismash/$Organism/$Strain
@@ -1263,8 +1265,7 @@ ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation/seco
 $ProgDir/antismash2gff.py --inp_antismash $AntiSmash > $OutDir/"$Strain"_secondary_metabolite_regions.gff
 printf "Number of clusters detected:\t"
 cat $OutDir/"$Strain"_secondary_metabolite_regions.gff | grep 'antismash_cluster' | wc -l
-# GeneGff=gene_pred/final_genes/F.oxysporum_fsp_cepae/Fus2_canu_new/final/final_genes_appended.gff3
-GeneGff=gene_pred/codingquary1/V.dahliae/12008/final/final_genes_appended.gff3
+GeneGff=gene_pred/final_genes/*/12008/final/final_genes_appended.gff3
 bedtools intersect -u -a $GeneGff -b $OutDir/"$Strain"_secondary_metabolite_regions.gff > $OutDir/metabolite_cluster_genes.gff
 cat $OutDir/metabolite_cluster_genes.gff | grep -w 'mRNA' | cut -f9 | cut -f2 -d '=' | cut -f1 -d ';' > $OutDir/metabolite_cluster_gene_headers.txt
 printf "Number of predicted genes in clusters:\t"
@@ -1274,3 +1275,7 @@ done
 V.dahliae - 12008
 Number of clusters detected:    21
 Number of predicted genes in clusters:  251
+
+
+
+
