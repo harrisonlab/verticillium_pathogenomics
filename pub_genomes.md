@@ -165,19 +165,20 @@ Required programs:
 Those genes that were predicted as secreted and tested positive by effectorP were identified:
 
 ```bash
-  for File in $(ls analysis/effectorP/V.alfafae/VaMs102/*_EffectorP.txt); do
+    for File in $(ls analysis/effectorP/V.*/VaMs102/*_EffectorP.txt); do
     Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
     Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
     echo "$Organism - $Strain"
     Headers=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_headers.txt/g')
     cat $File | grep 'Effector' | cut -f1 -d ' ' > $Headers
-    Secretome=$(ls gene_pred/final_genes_signalp-4.1/V.alfafae/VaMs102/*_final_sp_no_trans_mem.aa)
+    Secretome=$(ls gene_pred/final_genes_signalp-4.1/V.*/VaMs102/*_final_sp_no_trans_mem.aa)
     OutFile=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted.aa/g')
     ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
     $ProgDir/extract_from_fasta.py --fasta $Secretome --headers $Headers > $OutFile
     OutFileHeaders=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted_headers.txt/g')
     cat $OutFile | grep '>' | tr -d '>' > $OutFileHeaders
     cat $OutFileHeaders | wc -l
+    done
       #Gff=$(ls gene_pred/codingquary1/V.dahliae/12008/*/final_genes_appended.gff3)
     #EffectorP_Gff=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted.gff/g')
     #ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
@@ -185,6 +186,7 @@ Those genes that were predicted as secreted and tested positive by effectorP wer
   #done
   #Note: the Gff part is to know the location of effectors in genome.
 ```
+
 V.alfafae - VaMs102
 169
 
@@ -339,30 +341,117 @@ for File in $(ls gene_pred/CAZY/*/VaMs102/*CAZY.out.dm); do
       cat $OutDir/"$Strain"_CAZY_secreted_headers.txt | wc -l
     done
 ```
+  V.alfafae - VaMs102
+  number of CAZY genes identified:
+  599
+
+  ## D) Identify Small secreted cysteine rich proteins
+
+  Small secreted cysteine rich proteins were identified within secretomes. These proteins may be identified by EffectorP, but this approach allows direct control over what constitutes a SSCP.
+  ```bash
+  for Secretome in $(ls gene_pred/final_genes_signalp-4.1/*/*/*_final_sp_no_trans_mem.aa); do
+  Strain=$(echo $Secretome| rev | cut -f2 -d '/' | rev)
+  Organism=$(echo $Secretome | rev | cut -f3 -d '/' | rev)
+  echo "$Organism - $Strain"
+  OutDir=analysis/sscp/$Organism/$Strain
+  mkdir -p $OutDir
+  ProgDir=/home/armita/git_repos/emr_repos/tools/pathogen/sscp
+  $ProgDir/sscp_filter.py --inp_fasta $Secretome --max_length 400 --threshold 1 --out_fasta $OutDir/"$Strain"_sscp_all_results.fa
+  cat $OutDir/"$Strain"_sscp_all_results.fa | grep 'Yes' > $OutDir/"$Strain"_sscp.fa
+  echo "Number of effectors predicted by EffectorP:"
+  EffectorP=$(ls analysis/effectorP/$Organism/$Strain/*_EffectorP_secreted_headers.txt)
+  cat $EffectorP | wc -l
+  echo "Number of SSCPs predicted by both effectorP and this approach"
+  cat $OutDir/"$Strain"_sscp.fa | grep '>' | tr -d '>' > $OutDir/"$Strain"_sscp_headers.txt
+  cat $OutDir/"$Strain"_sscp_headers.txt $EffectorP | cut -f1 | sort | uniq -d | wc -l
+  done
+  ```
 V.alfafae - VaMs102
-number of CAZY genes identified:
-599
+% cysteine content threshold set to:    1
+maximum length set to:  300
+No. short-cysteine rich proteins in input fasta:        266
+Number of effectors predicted by EffectorP:
+169
+Number of SSCPs predicted by both effectorP and this approach
+129
+V.dahliae - 12008
+% cysteine content threshold set to:    1
+maximum length set to:  300
+No. short-cysteine rich proteins in input fasta:        300
+Number of effectors predicted by EffectorP:
+187
+Number of SSCPs predicted by both effectorP and this approach
+149
+V.dahliae - JR2
+% cysteine content threshold set to:    1
+maximum length set to:  300
+No. short-cysteine rich proteins in input fasta:        284
+Number of effectors predicted by EffectorP:
+177
+Number of SSCPs predicted by both effectorP and this approach
+148
+V.dahliae - Ls17
+% cysteine content threshold set to:    1
+maximum length set to:  300
+No. short-cysteine rich proteins in input fasta:        272
+Number of effectors predicted by EffectorP:
+155
+Number of SSCPs predicted by both effectorP and this approach
+120
 
-## D) Identify Small secreted cysteine rich proteins
 
-in secretome:
 
-```bash
-  ProgPath=/home/fanron/git_repos/tools/pathogen/sscp
-  for Filez in $(ls gene_pred/final_genes_signalp-4.1/V.*/*/*_neg_sp.aa); do            
-  echo "$Filez"
-  qsub "$ProgPath"/sub_sscp.sh "$Filez"
-  done
-```
 
-in effectorP:
-```bash
-  ProgPath=/home/fanron/git_repos/tools/pathogen/sscp
-  for Filez in $(ls analysis/effectorP/V.*/Ls17/*.aa); do            
-  echo "$Filez"
-  qsub "$ProgPath"/sub1_sscp.sh "$Filez"
-  done
-```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+The number of SSCPs found in 12008 are: 4
+The number of SSCPs found in JR2 are: 2
+The number of SSCPs found in Ls17 are: 2
+The number of SSCPs found in VaMs102 are: 1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 number of LysM and NPP1 in verticillium strains
 cat ..interproscan..gff3 | grep 'LysM' | wc -l
