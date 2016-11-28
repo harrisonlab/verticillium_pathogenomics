@@ -400,59 +400,6 @@ Number of SSCPs predicted by both effectorP and this approach
 120
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-The number of SSCPs found in 12008 are: 4
-The number of SSCPs found in JR2 are: 2
-The number of SSCPs found in Ls17 are: 2
-The number of SSCPs found in VaMs102 are: 1
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 number of LysM and NPP1 in verticillium strains
 cat ..interproscan..gff3 | grep 'LysM' | wc -l
 ................................'NPP1'........
