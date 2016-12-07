@@ -1,1 +1,225 @@
+# For a comparison of  6 V.dahliaerace2 strains, 1 race1 strain and 1 V.alfafae isolates
 
+
+
+# Methodology 4
+
+
+```bash
+  ProjDir=/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
+  cd $ProjDir
+  IsolateAbrv=All_Strains
+  WorkDir=analysis/orthology/orthomcl/$IsolateAbrv
+  mkdir -p $WorkDir
+  mkdir -p $WorkDir/formatted
+  mkdir -p $WorkDir/goodProteins
+  mkdir -p $WorkDir/badProteins  
+```
+## 4.1 Format fasta files
+
+### 4.1.a Race2 isolates:
+
+### for 12008
+```bash
+  Taxon_code=12008
+  Fasta_file=$(ls gene_pred/final_genes/V.dahliae/12008/final/final_genes_combined.pep.fasta)
+  Id_field=1
+  orthomclAdjustFasta $Taxon_code $Fasta_file $Id_field
+  mv "$Taxon_code".fasta $WorkDir/formatted/"$Taxon_code".fasta
+```
+
+### for 51
+```bash
+  Taxon_code=51
+  Fasta_file=$(ls gene_pred/final_genes/V.dahliae/51/final/final_genes_combined.pep.fasta)
+  Id_field=1
+  orthomclAdjustFasta $Taxon_code $Fasta_file $Id_field
+  mv "$Taxon_code".fasta $WorkDir/formatted/"$Taxon_code".fasta
+```
+
+### for 53
+```bash
+  Taxon_code=53
+  Fasta_file=$(ls gene_pred/final_genes/V.dahliae/53/final/final_genes_combined.pep.fasta)
+  Id_field=1
+  orthomclAdjustFasta $Taxon_code $Fasta_file $Id_field
+  mv "$Taxon_code".fasta $WorkDir/formatted/"$Taxon_code".fasta
+```
+### for 58
+```bash
+  Taxon_code=58
+  Fasta_file=$(ls gene_pred/final_genes/V.dahliae/58/final/final_genes_combined.pep.fasta)
+  Id_field=1
+  orthomclAdjustFasta $Taxon_code $Fasta_file $Id_field
+  mv "$Taxon_code".fasta $WorkDir/formatted/"$Taxon_code".fasta
+```
+
+### for 61
+```bash
+  Taxon_code=61
+  Fasta_file=$(ls gene_pred/final_genes/V.dahliae/61/final/final_genes_combined.pep.fasta)
+  Id_field=1
+  orthomclAdjustFasta $Taxon_code $Fasta_file $Id_field
+  mv "$Taxon_code".fasta $WorkDir/formatted/"$Taxon_code".fasta
+```
+
+### for Ls17
+```bash
+  Taxon_code=Ls17
+  Fasta_file=$(ls gene_pred/final_genes/V.dahliae/Ls17/final/Verticillium_dahliae.ASM15067v2.pep.all.fa)
+  Id_field=1
+  orthomclAdjustFasta $Taxon_code $Fasta_file $Id_field
+  mv "$Taxon_code".fasta $WorkDir/formatted/"$Taxon_code".fasta
+```
+
+### 4.1.b Race1 isolate:
+
+### for JR2
+```bash
+  Taxon_code=JR2
+  Fasta_file=$(ls gene_pred/final_genes/V.dahliae/JR2/final/Verticillium_dahliaejr2.GCA_000400815.2.pep.all.fa)
+  Id_field=1
+  orthomclAdjustFasta $Taxon_code $Fasta_file $Id_field
+  mv "$Taxon_code".fasta $WorkDir/formatted/"$Taxon_code".fasta
+```
+### 4.1.c V.alfafae isolate:
+
+### for VaMs102
+```bash
+  Taxon_code=VaMs102
+  Fasta_file=$(ls gene_pred/final_genes/V.alfafae/VaMs102/final/Verticillium_alfalfae_vams_102.ASM15082v1.pep.all.fa)
+  Id_field=1
+  orthomclAdjustFasta $Taxon_code $Fasta_file $Id_field
+  mv "$Taxon_code".fasta $WorkDir/formatted/"$Taxon_code".fasta
+```
+## 4.2 Filter proteins into good and poor sets.
+
+```bash
+  Input_dir=$WorkDir/formatted
+  Min_length=10
+  Max_percent_stops=20
+  Good_proteins_file=$WorkDir/goodProteins/goodProteins.fasta
+  Poor_proteins_file=$WorkDir/badProteins/poorProteins.fasta
+  orthomclFilterFasta $Input_dir $Min_length $Max_percent_stops $Good_proteins_file $Poor_proteins_file
+```
+## 4.3.a Perform an all-vs-all blast of the proteins
+
+```bash
+  BlastDB=$WorkDir/blastall/$IsolateAbrv.db
+
+  makeblastdb -in $Good_proteins_file -dbtype prot -out $BlastDB
+  BlastOut=$WorkDir/all-vs-all_results.tsv
+  mkdir -p $WorkDir/splitfiles
+
+  SplitDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation/signal_peptides
+  $SplitDir/splitfile_500.py --inp_fasta $Good_proteins_file --out_dir $WorkDir/splitfiles --out_base goodProteins
+
+  ProgDir=/home/armita/git_repos/emr_repos/scripts/phytophthora/pathogen/orthology  
+  for File in $(find $WorkDir/splitfiles); do
+    Jobs=$(qstat | grep 'blast_500' | grep 'qw' | wc -l)
+    while [ $Jobs -gt 1 ]; do
+    sleep 3
+    printf "."
+    Jobs=$(qstat | grep 'blast_500' | grep 'qw' | wc -l)
+    done
+    printf "\n"
+    echo $File
+    BlastOut=$(echo $File | sed 's/.fa/.tab/g')
+    qsub $ProgDir/blast_500.sh $BlastDB $File $BlastOut
+  done
+```
+
+## 4.3.b Merge the all-vs-all blast results  
+```bash  
+  MergeHits="$IsolateAbrv"_blast.tab
+  printf "" > $MergeHits
+  for Num in $(ls $WorkDir/splitfiles/*.tab | rev | cut -f1 -d '_' | rev | sort -n); do
+    File=$(ls $WorkDir/splitfiles/*_$Num)
+    cat $File
+  done > $MergeHits
+```
+## 4.4 Perform ortholog identification
+
+```bash
+  ProgDir=/home/armita/git_repos/emr_repos/tools/pathogen/orthology/orthoMCL
+  MergeHits="$IsolateAbrv"_blast.tab
+  GoodProts=$WorkDir/goodProteins/goodProteins.fasta
+  qsub $ProgDir/qsub_orthomcl.sh $MergeHits $GoodProts 5
+```
+
+
+## 4.5.a Manual identification of numbers of orthologous and unique genes
+```bash
+for num in 1; do
+echo "The total number of orthogroups is:"
+cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | wc -l
+echo "The total number of genes in orthogroups is:"
+cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -o '|' | wc -l
+echo "The number of orthogroups common to V.dahliae strains is:"
+cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v 'VaMs102|' | grep '12008|' | grep '51|' | grep '53|' | grep '58|' | grep '61|' | grep 'L17|' | grep 'JR2|' | wc -l
+echo "This represents the following number of genes:"
+cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v 'VaMs102|' | grep '12008|' | grep '51|' | grep '53|' | grep '58|' | grep '61|' | grep 'L17|' | grep 'JR2|' | grep -o '|' | wc -l
+echo "The number of ortholog groups found in V.dahliae race2 but absent in race1 is:"
+cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' | grep '12008|' | grep '51|' | grep '53|' | grep '58|' | grep '61|' | grep 'Ls17|' | wc -l    
+echo "This represents the following number of genes:"
+cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' | grep '12008|' | grep '51|' | grep '53|' | grep '58|' | grep '61|' | grep 'Ls17|' | grep -o '|' | wc -l    
+echo "The number of ortholog groups found in race 1 strain but absent in race2 is:"
+cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -e 'JR2|' | grep -v -e 'VaMs102|' -e '12008|' -e '51|' -e '53|' -e '58|' -e '61|' -e 'Ls17|' | wc -l  
+echo "This represents the following number of genes:"
+cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -e 'JR2|' | grep -v -e 'VaMs102|' -e '12008|' -e '51|' -e '53|' -e '58|' -e '61|' -e 'Ls17|' | grep -o '|' | wc -l 
+echo "The number of orthogroups common to UK strains is:"
+cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' -e 'Ls17|' | grep '12008|' | grep '51|' | grep '53|' | grep '58|' | grep '61|' | wc -l    
+echo "This represents the following number of genes:"
+cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' -e 'Ls17|' | grep '12008|' | grep '51|' | grep '53|' | grep '58|' | grep '61|' | grep -o '|' | wc -l
+done
+```
+
+The total number of orthogroups is:
+9697
+The total number of genes in orthogroups is:
+80518
+The number of orthogroups common to V.dahliae strains is:
+0
+This represents the following number of genes:
+0
+The number of ortholog groups found in V.dahliae race2 but absent in race1 is:
+76
+This represents the following number of genes:
+463
+The number of ortholog groups found in race 1 strain but absent in race2 is:
+10
+This represents the following number of genes:
+18
+The number of orthogroups common to UK strains is:
+131
+This represents the following number of genes:
+767
+
+## 4.5.b Plot venn diagrams:
+
+```bash
+  ProgDir=/home/adamst/git_repos/scripts/fusarium/pathogen/orthology
+  $ProgDir/FoC_path_vs_non_path_venn_diag.r --inp $WorkDir/"$IsolateAbrv"_orthogroups.tab --out $WorkDir/"$IsolateAbrv"_orthogroups.pdf
+```
+Error in library(optparse) : there is no package called ‘optparse’
+Execution halted
+
+## 4.6.a Extracting fasta files orthogroups
+```bash
+  ProgDir=~/git_repos/tools/pathogen/orthology/orthoMCL
+  OrthogroupTxt=analysis/orthology/orthomcl/$IsolateAbrv/"$IsolateAbrv"_orthogroups.txt
+  GoodProt=analysis/orthology/orthomcl/$IsolateAbrv/goodProteins/goodProteins.fasta
+  OutDir=analysis/orthology/orthomcl/$IsolateAbrv/fasta/all_orthogroups
+  mkdir -p $OutDir
+  $ProgDir/orthoMCLgroups2fasta.py --orthogroups $OrthogroupTxt --fasta $GoodProt --out_dir $OutDir > $OutDir/extractionlog.txt
+```
+
+
+
+    
+
+
+
+
+
+ 
