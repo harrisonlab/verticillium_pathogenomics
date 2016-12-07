@@ -689,11 +689,12 @@ Braker predictiction was performed using softmasked genome, not unmasked one.
   Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
   Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
   echo "$Organism - $Strain"
-  OutDir=gene_pred/braker/$Organism/"$Strain"_braker_six
-  AcceptedHits=ncbi_alignment/$Organism/$Strain/concatenated/concatenated.bam
-  mkdir -p ncbi_alignment/$Organism/$Strain/concatenated
-  samtools merge -f $AcceptedHits \ncbi_alignment/after_cuff/12008CD_accurate/accepted_hits.bam \ncbi_alignment/after_cuff/12008PDA_accurate/accepted_hits.bam
-  GeneModelName="$Organism"_"$Strain"_braker_seven
+  OutDir=gene_pred/braker/$Organism/$Strain/"$Strain"_braker_six
+  AcceptedHits=alignment/$Organism/$Strain/concatenated/concatenated.bam
+  samtools merge -f $AcceptedHits \
+  alignment/$Organism/$Strain/12008CD/accepted_hits.bam \
+  alignment/$Organism/$Strain/12008PDA/accepted_hits.bam
+  GeneModelName="$Organism"_"$Strain"_braker_six
   rm -r /home/fanron/prog/augustus-3.1/config/species/"$Organism"_"$Strain"_braker_six
   ProgDir=/home/fanron/git_repos/tools/gene_prediction/braker1
   qsub $ProgDir/sub_braker_fungi.sh $Assembly $OutDir $AcceptedHits $GeneModelName
@@ -722,6 +723,7 @@ Note - IGV was used to view aligned reads against the Fus2 genome on my local ma
     samtools index $SortBam.bam
 
 
+
 ### Supplimenting Braker gene models with CodingQuary genes
 
 Additional genes were added to Braker gene predictions, using CodingQuary in
@@ -732,7 +734,7 @@ Fistly, aligned RNAseq data was assembled into transcripts using Cufflinks.
 Note - cufflinks doesn't always predict direction of a transcript and
 therefore features can not be restricted by strand when they are intersected.
 ```bash 
-  for Assembly in $(ls repeat_masked/*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+  for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
   Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
   Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
   echo "$Organism - $Strain"
@@ -740,7 +742,7 @@ therefore features can not be restricted by strand when they are intersected.
   mkdir -p $OutDir
   AcceptedHits=alignment/$Organism/$Strain/concatenated/concatenated.bam
   ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
-  qsub $ProgDir/sub3_cufflinks.sh $AcceptedHits $OutDir
+  qsub $ProgDir/sub_cufflinks.sh $AcceptedHits $OutDir
   done
 ```
 Secondly, genes were predicted using CodingQuary: 
@@ -753,13 +755,56 @@ Secondly, genes were predicted using CodingQuary:
   OutDir=gene_pred/codingquary1/$Organism/$Strain
   CufflinksGTF=gene_pred/cufflinks/$Organism/$Strain/concatenated_prelim/transcripts.gtf
   ProgDir=/home/fanron/git_repos/tools/gene_prediction/codingquary
-  qsub $ProgDir/sub1_CodingQuary.sh $Assembly $CufflinksGTF $OutDir
+  qsub $ProgDir/sub_CodingQuary.sh $Assembly $CufflinksGTF $OutDir
   done
 ```
+
+Then, additional transcripts were added to Braker gene models, when CodingQuary genes were predicted in regions of the genome, not containing Braker gene models:
+```
+for BrakerGff in $(ls gene_pred/braker/*/*/*/augustus.gff3); do
+Strain=$(echo $BrakerGff| rev | cut -d '/' -f3 | rev)
+Organism=$(echo $BrakerGff | rev | cut -d '/' -f4 | rev)
+echo "$Organism - $Strain"
+Assembly=$(ls repeat_masked/$Organism/$Strain/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa)
+CodingQuaryGff=gene_pred/codingquary1/$Organism/$Strain/out/PredictedPass.gff3
+PGNGff=gene_pred/codingquary1/$Organism/$Strain/out/PGN_predictedPass.gff3
+AddDir=gene_pred/codingquary1/$Organism/$Strain/additional
+FinalDir=gene_pred/final_genes/$Organism/$Strain/final
+AddGenesList=$AddDir/additional_genes.txt
+AddGenesGff=$AddDir/additional_genes.gff
+FinalGff=$AddDir/combined_genes.gff
+mkdir -p $AddDir
+mkdir -p $FinalDir
+
+bedtools intersect -v -a $CodingQuaryGff -b $BrakerGff | grep 'gene'| cut -f2 -d'=' | cut -f1 -d';' > $AddGenesList
+bedtools intersect -v -a $PGNGff -b $BrakerGff | grep 'gene'| cut -f2 -d'=' | cut -f1 -d';' >> $AddGenesList
+ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation
+$ProgDir/gene_list_to_gff.pl $AddGenesList $CodingQuaryGff CodingQuarry_v2.0 ID CodingQuary > $AddGenesGff
+$ProgDir/gene_list_to_gff.pl $AddGenesList $PGNGff PGNCodingQuarry_v2.0 ID CodingQuary >> $AddGenesGff
+ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/codingquary
+
+$ProgDir/add_CodingQuary_features.pl $AddGenesGff $Assembly > $FinalDir/final_genes_CodingQuary.gff3
+$ProgDir/gff2fasta.pl $Assembly $FinalDir/final_genes_CodingQuary.gff3 $FinalDir/final_genes_CodingQuary
+cp $BrakerGff $FinalDir/final_genes_Braker.gff3
+$ProgDir/gff2fasta.pl $Assembly $FinalDir/final_genes_Braker.gff3 $FinalDir/final_genes_Braker
+cat $FinalDir/final_genes_Braker.pep.fasta $FinalDir/final_genes_CodingQuary.pep.fasta | sed -r 's/\*/X/g' > $FinalDir/final_genes_combined.pep.fasta
+cat $FinalDir/final_genes_Braker.cdna.fasta $FinalDir/final_genes_CodingQuary.cdna.fasta > $FinalDir/final_genes_combined.cdna.fasta
+cat $FinalDir/final_genes_Braker.gene.fasta $FinalDir/final_genes_CodingQuary.gene.fasta > $FinalDir/final_genes_combined.gene.fasta
+cat $FinalDir/final_genes_Braker.upstream3000.fasta $FinalDir/final_genes_CodingQuary.upstream3000.fasta > $FinalDir/final_genes_combined.upstream3000.fasta
+
+GffBraker=$FinalDir/final_genes_CodingQuary.gff3
+GffQuary=$FinalDir/final_genes_Braker.gff3
+GffAppended=$FinalDir/final_genes_appended.gff3
+cat $GffBraker $GffQuary > $GffAppended
+
+done
+```
+
+
 ### Identification of duplicated genes in additional CodingQuary gene models
 
   ```bash
-  for AddGenes in $(ls gene_pred/codingquary1/V.*/12008/additional/additional_genes.gff); do
+  for AddGenes in $(ls gene_pred/codingquary1/V.*/*/additional/additional_genes.gff); do
   Strain=$(echo $AddGenes| rev | cut -d '/' -f3 | rev)
   Organism=$(echo $AddGenes | rev | cut -d '/' -f4 | rev)
   OutDir=$(dirname $AddGenes)
@@ -871,18 +916,18 @@ The final number of genes per isolate was observed using:
 
 ```bash 
   ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
-  for Genome in $(ls repeat_masked/*/*/ncbi*/*_contigs_unmasked.fa | grep -w -e '12008'); do
+  for Genome in $(ls repeat_masked/*/*/ncbi*/*_contigs_unmasked.fa | grep -e '51' -e '53' -e '58' -e '61'); do
     qsub $ProgDir/run_ORF_finder.sh $Genome
-    OutDir=gene_pre/ORF_Finder
-    mkdir $OutDir
-  done
+    OutDir=gene_pred/ORF_Finder
+     done
 ```
 The Gff files from the the ORF finder are not in true Gff3 format. These were
 corrected using the following commands:
 
 ```bash
   ProgDir=~/git_repos/tools/seq_tools/feature_annotation
-  for ORF_Gff in $(ls gene_pred/ORF_finder/*/*/*_ORF.gff | grep -v '_F_atg_' | grep -v '_R_atg_'); do
+  for Strain in 51 53 58 61; do
+  for ORF_Gff in $(ls gene_pred/ORF_finder/*/$Strain/*_ORF.gff | grep -v '_F_atg_' | grep -v '_R_atg_'); do
     ORF_Gff_mod=$(echo $ORF_Gff | sed 's/_ORF.gff/_ORF_corrected.gff3/g')
     echo ""
     echo "Correcting the following file:"
@@ -891,18 +936,33 @@ corrected using the following commands:
     echo $ORF_Gff_mod
     $ProgDir/gff_corrector.pl $ORF_Gff > $ORF_Gff_mod
   done
+  done
 ```
   The final number of genes per isolate was observed using:
   ```bash
+  for Strain in 51 53 58 61; do
   for DirPath in $(ls -d gene_pred/ORF_finder/*/$Strain); do
   echo $DirPath
   cat $DirPath/*aa_cat.fa | grep '>' | wc -l
   echo ""
   done
+  done
   ```
   gene_pred/ORF_finder/V.dahliae/12008
   ORF_finder
   329388
+  
+  gene_pred/ORF_finder/V.dahliae/51
+  319733
+
+  gene_pred/ORF_finder/V.dahliae/53
+  318454
+
+  gene_pred/ORF_finder/V.dahliae/58
+  314452
+
+  gene_pred/ORF_finder/V.dahliae/61
+  314552
 
 
 
@@ -1138,23 +1198,7 @@ The Hmm parser was used to filter hits by an E-value of E1x10-5 or E 1x10-e3 if 
 Those proteins with a signal peptide were extracted from the list and gff files
 representing these proteins made.
 
-```bash
-  for File in $(ls gene_pred/CAZY/*/12008/*CAZY.out.dm); do
-    Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
-    Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
-    OutDir=$(dirname $File)
-    echo "$Organism - $Strain"
-    ProgDir=/home/groups/harrisonlab/dbCAN
-    $ProgDir/hmmscan-parser.sh $OutDir/12008_CAZY.out.dm > $OutDir/12008_CAZY.out.dm.ps
-    SecretedProts=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/"$Strain"_final_sp_no_trans_mem.aa)
-    SecretedHeaders=$(echo $SecretedProts | sed 's/.aa/_headers.txt/g')
-    cat $SecretedProts | grep '>' | tr -d '>' > $SecretedHeaders
-    Gff=$(ls gene_pred/final_genes/*/12008/*/final_genes_appended.gff3)
-    CazyGff=$OutDir/12008_CAZY.gff
-    ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
-    $ProgDir/extract_gff_for_sigP_hits.pl $SecretedHeaders $Gff CAZyme ID > $CazyGff
-  done
-```
+
 ```bash
 for File in $(ls gene_pred/CAZY/*/12008/*CAZY.out.dm); do
       Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
@@ -1238,7 +1282,7 @@ Number of effectors predicted by EffectorP:
 Number of SSCPs predicted by both effectorP and this approach
 149
 
-##D) AntiSMASH
+##E) AntiSMASH
 
 Do it in the website: http://antismash.secondarymetabolites.org/
 ```bash
@@ -1272,7 +1316,7 @@ printf "Number of predicted genes in clusters:\t"
 cat $OutDir/metabolite_cluster_gene_headers.txt | wc -l
 done
 ```
-V.dahliae - 12008
+V.dahliae - 12008InBam
 Number of clusters detected:    21
 Number of predicted genes in clusters:  251
 
