@@ -1,1 +1,66 @@
+This script is used for anignment between differenr genomes. As the published VdLs.17 genome is the represent for V.dahliae race 2 strains, it ia used for alignment of our 5 race 2 strains.
 
+
+#Promer alignment of Assemblies
+
+##against 12008 genome
+
+MUMmer was run to align assemblies against the reference genome.
+
+```bash
+Reference=assembly/merged_canu_spades/V.dahliae/Ls17/ensembl/Verticillium_dahliae.ASM15067v2.dna.toplevel.fa
+#Query=repeat_masked/V.dahliae/12008/ncbi_filtered_contigs_repmask/12008_contigs_unmasked.fa
+#Query=repeat_masked/V.dahliae/61/ncbi_filter_contigs/*_contigs_unmasked.fa
+Query=assembly/spades_pacbio/V.dahliae/12008/filtered_contigs/contigs_min_500bp.fasta
+Strain=$(echo $Query | rev | cut -f3 -d '/' | rev)
+Organism=$(echo $Query | rev | cut -f4 -d '/' | rev)
+echo "$Organism - $Strain"
+Prefix="$Strain"_vs_Ls17
+OutDir=analysis/genome_alignment/mummer/$Organism/$Strain/$Prefix
+ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/promer
+qsub $ProgDir/sub_MUMmer.sh $Reference $Query $Prefix $OutDir
+```
+
+The number of bases of the quary covered with aligned reads were identified. The script below converts any base involved in an alignment to a 'Q' and then counts the number of Qs in each fasta sequence.
+
+```bash
+Reference=repeat_masked/V.dahliae/51/ncbi_filter_contigs/*_contigs_unmasked.fa
+Coordinates=analysis/genome_alignment/mummer/V.dahliae/51/51_vs_Ls17/*_vs_Ls17_coords.tsv
+Strain=$(echo $Coordinates | rev | cut -f3 -d '/' | rev)
+Organism=$(echo $Coordinates | rev | cut -f4 -d '/' | rev)
+echo "$Organism - $Strain"
+OutFile=$(echo $Coordinates | sed 's/_coords.tsv/_results.tsv/g')
+Out10kb=$(echo $Coordinates | sed 's/_coords.tsv/_results_10kb.tsv/g')
+ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/promer
+$ProgDir/mummer_ls_regions.py --coord $Coordinates --fasta $Reference --out_contig $OutFile --out_10kb $Out10kb
+paste analysis/genome_alignment/mummer/*/51*/*/*_vs_Ls17_results.tsv > analysis/genome_alignment/mummer/vs_Ls17_new.tsv
+```
+
+##against SCRP333 genome
+
+```bash
+Reference=../phytophthora_rubi/repeat_masked/spades/P.rubi/SCRP333/filtered_contigs_repmask/SCRP333_contigs_softmasked_repeatmasker_TPSI_appended.fa
+Query=assembly/downloaded/P.fragariae/309.62/GCA_000686205.3_ASM68620v3_genomic.fna
+Strain=$(echo $Query | rev | cut -f2 -d '/' | rev)
+Organism=$(echo $Query | rev | cut -f3 -d '/' | rev)
+echo "$Organism - $Strain"
+Prefix="$Strain"_vs_SCRP333
+OutDir=analysis/genome_alignment/mummer/$Organism/$Strain/$Prefix
+ProgDir=/home/adamst/git_repos/tools/seq_tools/genome_alignment/promer
+qsub $ProgDir/sub_MUMmer.sh $Reference $Query $Prefix $OutDir
+```
+
+The number of bases of the reference covered with aligned reads were identified. The script below converts any base involved in an alignment to a 'Q' and then counts the number of Qs in each fasta sequence.
+
+```bash
+Reference=../phytophthora_rubi/repeat_masked/spades/P.rubi/SCRP333/filtered_contigs_repmask/SCRP333_contigs_softmasked_repeatmasker_TPSI_appended.fa
+Coordinates=analysis/genome_alignment/mummer/P.fragariae/309.62/309.62_vs_SCRP333/*_vs_SCRP333_coords.tsv
+Strain=$(echo $Coordinates | rev | cut -f3 -d '/' | rev)
+Organism=$(echo $Coordinates | rev | cut -f4 -d '/' | rev)
+echo "$Organism - $Strain"
+OutFile=$(echo $Coordinates | sed 's/_coords.tsv/_results.tsv/g')
+Out10kb=$(echo $Coordinates | sed 's/_coords.tsv/_results_10kb.tsv/g')
+ProgDir=/home/adamst/git_repos/tools/seq_tools/genome_alignment/promer
+$ProgDir/mummer_ls_regions.py --coord $Coordinates --fasta $Reference --out_contig $OutFile --out_10kb $Out10kb
+paste analysis/genome_alignment/mummer/P*/*/*/*_vs_SCRP333_results.tsv > analysis/genome_alignment/mummer/vs_SCRP333_new.tsv
+```
