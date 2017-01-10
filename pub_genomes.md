@@ -13,6 +13,30 @@ assembly/merged_canu_spades/V.dahliae/JR2/ensembl
 assembly/merged_canu_spades/V.dahliae/Ls17/ensembl
 10535
 
+If parse the LS17 genome using our pepline, we can compare the home generated results with the public one.
+##)Interproscan
+```bash
+screen -a
+  cd /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
+  ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
+  for Genes in $(ls gene_pred/final_genes/*/*/*/final_genes_combined.pep.fasta); do
+  echo $Genes
+  $ProgDir/sub_interproscan.sh $Genes
+  done 2>&1 | tee -a interproscan_submisison.log
+  ```
+```bash
+ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
+  for Proteins in $(ls assembly/merged_canu_spades/V.dahliae/Ls17/ensembl/GCA_000150675.2_ASM15067v2_protein.faa); do
+    Strain=$(echo $Proteins | rev | cut -d '/' -f3 | rev)
+    Organism=$(echo $Proteins | rev | cut -d '/' -f4 | rev)
+    echo "$Organism - $Strain"
+    echo $Strain
+    InterProRaw=gene_pred/interproscan/$Organism/$Strain/raw
+    $ProgDir/append_interpro.sh $Proteins $InterProRaw
+      done
+```
+
+
 ## Effector genes
 
 Putative pathogenicity and effector related genes were identified within Braker
@@ -139,7 +163,7 @@ gene models using a number of approaches:
 V.alfafae - VaMs102
 866
 V.dahliae - 12008
-943
+951
 V.dahliae - JR2
 867
 V.dahliae - Ls17
@@ -398,6 +422,46 @@ Number of effectors predicted by EffectorP:
 155
 Number of SSCPs predicted by both effectorP and this approach
 120
+
+
+##E) AntiSMASH
+Do it in the website: http://antismash.secondarymetabolites.org/
+```bash
+for Assembly in $(ls assembly/merged_canu_spades/V.dahliae/*/ensembl/*dna.toplevel.fa | grep -e 'Ls17' -e 'JR2' | grep -v '12008'); do
+Organism=$(echo $Assembly | rev | cut -f4 -d '/' | rev)
+Strain=$(echo $Assembly | rev | cut -f3 -d '/' | rev)
+OutDir=analysis/antismash/$Organism/$Strain
+mkdir -p $OutDir
+done
+```
+```bash
+for Zip in $(ls analysis/antismash/V.dahliae/*/*.zip | grep -e 'Ls17' -e 'JR2' | grep -v -e '12008' -e '51' -e '53' -e '58' -e '61'); do
+OutDir=$(dirname $Zip)
+unzip -d $OutDir $Zip
+done
+```
+```bash
+for AntiSmash in $(ls analysis/antismash/V.dahliae/*/*/*.final.gbk | grep -e 'Ls17' -e 'JR2' | grep -v -e '12008' -e '51' -e '53' -e '58' -e '61'); do
+Organism=$(echo $AntiSmash | rev | cut -f4 -d '/' | rev)
+Strain=$(echo $AntiSmash | rev | cut -f3 -d '/' | rev)
+echo "$Organism - $Strain"
+OutDir=analysis/antismash/$Organism/$Strain
+ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation/secondary_metabolites
+$ProgDir/antismash2gff.py --inp_antismash $AntiSmash > $OutDir/"$Strain"_secondary_metabolite_regions.gff
+printf "Number of clusters detected:\t"
+cat $OutDir/"$Strain"_secondary_metabolite_regions.gff | grep 'antismash_cluster' | wc -l
+GeneGff=assembly/merged_canu_spades/$Organism/$Strain/ensembl/*.gff3
+echo "$GeneGff"
+bedtools intersect -u -a $GeneGff -b $OutDir/"$Strain"_secondary_metabolite_regions.gff > $OutDir/metabolite_cluster_genes.gff
+cat $OutDir/metabolite_cluster_genes.gff | grep -w 'mRNA' | cut -f9 | cut -f2 -d '=' | cut -f1 -d ';' > $OutDir/metabolite_cluster_gene_headers.txt
+printf "Number of predicted genes in clusters:\t"
+cat $OutDir/metabolite_cluster_gene_headers.txt | wc -l
+done
+```
+
+
+
+
 
 
 number of LysM and NPP1 in verticillium strains
