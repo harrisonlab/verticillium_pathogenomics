@@ -748,7 +748,7 @@ therefore features can not be restricted by strand when they are intersected.
 Secondly, genes were predicted using CodingQuary: 
 
 ```bash
-  for Assembly in $(ls repeat_masked/*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+  for Assembly in $(ls repeat_masked/*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa | grep -e '51' -e '53' -e '58' -e '61'); do
   Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
   Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
   echo "$Organism - $Strain"
@@ -761,7 +761,7 @@ Secondly, genes were predicted using CodingQuary:
 
 Then, additional transcripts were added to Braker gene models, when CodingQuary genes were predicted in regions of the genome, not containing Braker gene models:
 ```
-for BrakerGff in $(ls gene_pred/braker/*/*/*/augustus.gff3); do
+for BrakerGff in $(ls gene_pred/braker/*/*/*/augustus.gff3 | grep -v '12008'); do
 Strain=$(echo $BrakerGff| rev | cut -d '/' -f3 | rev)
 Organism=$(echo $BrakerGff | rev | cut -d '/' -f4 | rev)
 echo "$Organism - $Strain"
@@ -1198,7 +1198,23 @@ The Hmm parser was used to filter hits by an E-value of E1x10-5 or E 1x10-e3 if 
 Those proteins with a signal peptide were extracted from the list and gff files
 representing these proteins made.
 
-
+```bash
+  for File in $(ls gene_pred/CAZY/*/12008/*CAZY.out.dm); do
+    Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
+    Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
+    OutDir=$(dirname $File)
+    echo "$Organism - $Strain"
+    ProgDir=/home/groups/harrisonlab/dbCAN
+    $ProgDir/hmmscan-parser.sh $OutDir/12008_CAZY.out.dm > $OutDir/12008_CAZY.out.dm.ps
+    SecretedProts=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/"$Strain"_final_sp_no_trans_mem.aa)
+    SecretedHeaders=$(echo $SecretedProts | sed 's/.aa/_headers.txt/g')
+    cat $SecretedProts | grep '>' | tr -d '>' > $SecretedHeaders
+    Gff=$(ls gene_pred/final_genes/*/12008/*/final_genes_appended.gff3)
+    CazyGff=$OutDir/12008_CAZY.gff
+    ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
+    $ProgDir/extract_gff_for_sigP_hits.pl $SecretedHeaders $Gff CAZyme ID > $CazyGff
+  done
+```
 ```bash
 for File in $(ls gene_pred/CAZY/*/12008/*CAZY.out.dm); do
       Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
@@ -1233,6 +1249,14 @@ number of CAZY genes identified:
 number of Secreted CAZY genes identified:
 306
 
+```bash
+for file in $(ls gene_pred/CAZY/V.*/*/onlinesigp_result.txt); do
+Strain=$(echo $file | rev | cut -d '/' -f2 | rev)
+Organism=$(echo $file | rev | cut -d '/' -f3 | rev)
+echo "$Organism - $Strain"
+cat $file | grep 'CE' | wc -l
+done
+```
 Note - the CAZY genes identified may need further filtering based on e value and
 cuttoff length - see below:
 
@@ -1322,4 +1346,30 @@ Number of predicted genes in clusters:  251
 
 
 
+##F)Identifying PHIbase homologs
+
+The PHIbase database was searched against the assembled genomes using tBLASTx. The default output location is analysis/blast_homology/V.dahliae/*/*_PHI_accessions.fa_homologs.csv
+
+```bash
+# mkdir -p blast_homology/PHIbase
+# cp ../fusarium/analysis/blast_homology/PHIbase/PHI_36_accessions.fa analysis/blast_homology/PHIbase/PHI_36_accessions.fa
+for Assembly in $(ls repeat_masked/*/61/ncbi*/*_contigs_unmasked.fa); do
+# Version 4.2 October 3rd 2016
+Version=v4.2
+DbDir=$(ls -d ../../../phibase/$Version)
+ProgDir=/home/fanron/git_repos/tools/pathogen/blast
+qsub $ProgDir/blast_pipe.sh $DbDir/PHI_accessions.fa protein $Assembly
+done
+```
+cat analysis/blast_homology/V.dahliae/12008/12008_PHI_accessions.fa_homologs.csv | cut -f1,577- | less -S 
+cat analysis/blast_homology/V.dahliae/12008/12008_PHI_accessions.fa_homologs.csv | cut -f1,575- > cat analysis/blast_homology/V.dahliae/12008/12008_PHI.csv
+
+Then download the 12008_PHI.csv and inport it to excel.
+
+
+
+
+following blasting PHIbase to the genome, the hits were filtered by effect on virulence.
+
+First the a tab seperated file was made in the clusters core directory containing PHIbase. These commands were run as part of previous projects but have been included here for completeness.
 
