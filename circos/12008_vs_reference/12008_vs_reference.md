@@ -22,6 +22,9 @@ After an initial round of plotting the order of contigs was manually changed usi
 nano $OutDir/12008_JR2_genome_edited.txt
 ```
 
+links were made between single copy orthologous genes. These links were ordered by
+JR2 chromosome order to aid the re-ordering of contigs to plot in the
+$OutDir/12008_JR2_genome_edited.txt file.
 
 ```bash
   ProgDir=/home/armita/git_repos/emr_repos/scripts/verticillium_pathogenomics/circos/12008_vs_reference
@@ -31,7 +34,7 @@ nano $OutDir/12008_JR2_genome_edited.txt
   --gff1 gene_pred/final_genes/V.dahliae/12008/final/final_genes_appended.gff3 \
   --name2 JR2 \
   --gff2 assembly/merged_canu_spades/V.dahliae/JR2/ensembl/Verticillium_dahliaejr2.GCA_000400815.2.33.gff3 \
-  | sort -k3 -t '_' -n > $OutDir/12008_JR2_links.txt
+  | sort -k4,5 -V > $OutDir/12008_JR2_links.txt
   cat $OutDir/12008_JR2_links.txt > $OutDir/12008_JR2_links_edited.txt
   ProgDir=/home/armita/git_repos/emr_repos/scripts/verticillium_pathogenomics/circos/12008_vs_reference
   circos -conf $ProgDir/12008_vs_JR2_circos.conf -outputdir $OutDir
@@ -39,6 +42,11 @@ nano $OutDir/12008_JR2_genome_edited.txt
   mv $OutDir/circos.svg $OutDir/12008_JR2_circos.svg
 ```
 
+a file showing contig orders was made using:
+
+```bash
+  cat $OutDir/12008_JR2_links_edited.txt | cut -f1 | uniq > $OutDir/12008_contig_order.txt
+```
 
 
 ```bash
