@@ -46,6 +46,8 @@ a file showing contig orders was made using:
 
 ```bash
   cat $OutDir/12008_JR2_links_edited.txt | cut -f1 | uniq > $OutDir/12008_contig_order.txt
+  ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/circos
+  $ProgDir/find_contig_orientation.py --links_file $OutDir/12008_JR2_links.txt > $OutDir/12008_JR2_contig_orientation.txt
 ```
 
 
