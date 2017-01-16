@@ -350,7 +350,119 @@ Andy's
  *SEQ_FEAT.ProteinNameEndsInBracket. These gene names include brackets for good
  reason
 
+*****************************************************************************
+Andy made some minor changes for the final submission script, so his new script was pasted here:
 
+# Final Submission
+
+These commands were used in the final submission of the FoN genome:
+
+
+```bash
+for Assembly in $(ls repeat_masked/V.dahliae/12008/ncbi_filtered_contigs_repmask/12008_contigs_unmasked.fa); do
+# tbl2asn options:
+Organism=$(echo $Assembly | rev | cut -f4 -d '/' | rev)
+Strain=$(echo $Assembly | rev | cut -f3 -d '/' | rev)
+#OrganismOfficial=$(echo $Organism | sed 's/F./Fusarium /g' | sed 's/_fsp_/ f.sp. /g')
+#StrainOfficial=$(echo $Strain | sed 's/_ncbi//g')
+ProjDir=/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomic
+OutDir="genome_submission/$Organism/$Strain"
+mkdir -p $OutDir
+done
+
+# Program locations:
+AnnieDir="/home/armita/prog/annie/genomeannotation-annie-c1e848b"
+ProgDir="/home/armita/git_repos/emr_repos/tools/genbank_submission"
+# File locations:
+# Assembly=$(ls repeat_masked/$Organism/$Strain/ncbi_filtered_contigs_repmask/12008_contigs_unmasked.fa)
+InterProTab=$(ls gene_pred/interproscan/$Organism/$Strain/"$Strain"_interproscan.tsv)
+SwissProtBlast=$(ls gene_pred/swissprot/$Organism/$Strain/swissprot_vJul2016_tophit_parsed.tbl)
+SwissProtFasta=$(ls /home/groups/harrisonlab/uniprot/swissprot/uniprot_sprot.fasta)
+GffFile=$(ls gene_pred/final_genes/$Organism/$Strain/final/final_genes_appended.gff3)
+SbtFile=genome_submission/V.dahliae/12008/template.sbt
+BioProject="PRJNA344737"
+BioSample="SAMN05832575"
+
+
+# ncbi_tbl_corrector script options:
+SubmissionID="BJF96"
+LabID="ArmitageEMR"
+# Final submisison file name:
+FinalName="$Organism"_"$Strain"_Armitage_2016
+
+python3 $AnnieDir/annie.py -ipr $InterProTab -g $GffFile -b $SwissProtBlast -db $SwissProtFasta -o $OutDir/annie_output.csv --fix_bad_products
+$ProgDir/edit_tbl_file/annie_corrector.py --inp_csv $OutDir/annie_output.csv --out_csv $OutDir/annie_corrected_output.csv
+
+mkdir -p $OutDir/gag/round1
+gag.py -f $Assembly -g $GffFile -a $OutDir/annie_corrected_output.csv --fix_start_stop -o $OutDir/gag/round1 2>&1 | tee $OutDir/gag_log1.txt
+sed -i 's/Dbxref/db_xref/g' $OutDir/gag/round1/genome.tbl
+
+cp $Assembly $OutDir/gag/round1/genome.fsa  
+cp $SbtFile $OutDir/gag/round1/genome.sbt
+mkdir -p $OutDir/tbl2asn/round1
+
+tbl2asn -p $OutDir/gag/round1/. -t $OutDir/gag/round1/genome.sbt -r $OutDir/tbl2asn/round1 -M n -X E -Z $OutDir/gag/round1/discrep.txt -j "[organism=Verticillium dahliae] [strain=12008]"
+
+mkdir -p $OutDir/gag/edited
+$ProgDir/edit_tbl_file/ncbi_tbl_corrector.py --inp_tbl $OutDir/gag/round1/genome.tbl --inp_val $OutDir/tbl2asn/round1/genome.val --locus_tag $SubmissionID --lab_id $LabID --gene_id "remove" --edits stop pseudo unknown_UTR correct_partial --rename_genes "vAg" --remove_product_locus_tags "True" --out_tbl $OutDir/gag/edited/genome.tbl
+printf "StructuredCommentPrefix\t##Genome-Annotation-Data-START##
+Annotation Provider\tHarrison Lab NIAB-EMR
+Annotation Date\tSEP-2016
+Annotation Version\tRelease 1.01
+Annotation Method\tAb initio gene prediction: Braker 1.9 and CodingQuary 2.0; Functional annotation: Swissprot (July 2016 release) and Interproscan 5.18-57.0" \
+> $OutDir/gag/edited/annotation_methods.strcmt.txt
+
+cp $Assembly $OutDir/gag/edited/genome.fsa
+cp $SbtFile $OutDir/gag/edited/genome.sbt
+mkdir $OutDir/tbl2asn/final
+tbl2asn -p $OutDir/gag/edited/. -t $OutDir/gag/edited/genome.sbt -r $OutDir/tbl2asn/final -M n -X E -Z $OutDir/tbl2asn/final/discrep.txt -j "[organism=Verticillium dahliae] [strain=12008]" -l paired-ends -a r10k -w $OutDir/gag/edited/annotation_methods.strcmt.txt
+cat $OutDir/tbl2asn/final/genome.sqn | sed 's/_pilon//g' | sed 's/\. subunit/kDa subunit/g' | sed 's/, mitochondrial//g' > $OutDir/tbl2asn/final/$FinalName.sqn
+
+```
+
+```bash
+for File in $(ls genome_submission/V.*/*/tbl2asn/final/errorsummary.val | grep '12008'); do
+Organism=$(echo $File | rev | cut -f5 -d '/' | rev);
+Strain=$(echo $File | rev | cut -f4 -d '/' | rev);
+echo "$Organism - $Strain";
+cat $File;
+echo "Duplicated genes:"
+cat genome_submission/$Organism/$Strain/tbl2asn/round1/genome.val | grep 'DuplicateFeat' | cut -f4 -d ':' | cut -f2 -d' '
+echo "";
+done > genome_submission/Vd12008_isolate_errors.txt
+```
+
+
+The final error report contained the following warnings. These were judged to be
+legitimate concerns but biologically explainable.
+
+V.dahliae - 12008
+     4 WARNING: SEQ_FEAT.NotSpliceConsensusAcceptor
+     4 WARNING: SEQ_FEAT.NotSpliceConsensusDonor
+    38 WARNING: SEQ_FEAT.PartialProblem
+     5 WARNING: SEQ_FEAT.ProteinNameEndsInBracket
+   147 WARNING: SEQ_FEAT.ShortExon
+     1 INFO:    SEQ_FEAT.PartialProblem
+   336 INFO:    SEQ_FEAT.RareSpliceConsensusDonor
+
+
+
+Andy's
+67 WARNING: SEQ_FEAT.PartialProblem
+ 5 WARNING: SEQ_FEAT.ProteinNameEndsInBracket
+211 WARNING: SEQ_FEAT.ShortExon
+18 WARNING: SEQ_FEAT.SuspiciousFrame
+ 5 INFO:    SEQ_FEAT.PartialProblem
+
+ Note -
+ *SEQ_FEAT.partial problem. In this case, upon investigation these genes were hannging
+ off the end of a contig but did not have an mRNA feature that went off of the
+ end of the contig. This was occuring due to an intron being predicted hanging
+ off the contig. An example on the ncbi guidelines here shows this to be
+ acceptable:
+ http://www.ncbi.nlm.nih.gov/genbank/eukaryotic_genome_submission_annotation#Partialcodingregionsinincompletegenomes
+ *SEQ_FEAT.ProteinNameEndsInBracket. These gene names include brackets for good
+ reason
 
 
 

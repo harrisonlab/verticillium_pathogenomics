@@ -396,10 +396,7 @@ using the following commands:
   The number of bases masked by RepeatMasker:     3014429
   The number of bases masked by TransposonPSI:    859780
   The total number of masked bases are:   3161584
-  ncbi-V.dahliae       12008
-  The number of bases masked by RepeatMasker:     3280336
-  The number of bases masked by TransposonPSI:    859780
-  The total number of masked bases are:   3372268
+  
 
 ```bash
   for File in $(ls repeat_masked/*/*/ncbi_filtered_contigs_repmask/*_contigs_softmasked.fa); do
@@ -577,6 +574,7 @@ cufflinks was running.
 72.8% concordant pair alignment rate.
 
 
+
 ```bash
   for Assembly in $(ls repeat_masked/*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
     Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
@@ -596,7 +594,9 @@ cufflinks was running.
 80.4% overall read mapping rate.
 70.9% concordant pair alignment rate.
 
-**Alignments were concatenated prior to running cufflinks:
+
+
+Alignments were concatenated prior to running cufflinks:
 Cufflinks was run to produce the fragment length and stdev statistics:
 
 
@@ -628,14 +628,14 @@ if run the commands on cluster other than a node:
 # qlogin -pe smp 8 -l virtual_free=1G
 ```
 ```bash
-  for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+  for Assembly in $(ls repeat_masked/*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
   Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
   Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
   echo "$Organism - $Strain"
-  for AcceptedHits in $(ls alignment/$Organism/$Strain/*/accepted_hits.bam); do
+  for AcceptedHits in $(ls ncbi_alignment/$Organism/$Strain/*/accepted_hits.bam); do
   Timepoint=$(echo $AcceptedHits | rev | cut -f2 -d '/' | rev)
   echo $Timepoint
-  OutDir=gene_pred/cufflinks/$Organism/$Strain/"$Timepoint"_prelim
+  OutDir=gene_pred/ncbi_cufflinks/$Organism/$Strain/"$Timepoint"_prelim
   ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
   qsub $ProgDir/sub_cufflinks.sh $AcceptedHits $OutDir
   # cufflinks -o $OutDir/cufflinks -p 8 --max-intron-length 4000 $AcceptedHits 2>&1 | tee $OutDir/cufflinks/cufflinks.log
@@ -752,34 +752,11 @@ Before braker predictiction was performed, I double checked that I had the genem
 ls ~/.gm_key
 cp /home/armita/prog/genemark/gm_key_64 ~/.gm_key
 ```
-```bash
-    #for Assembly in $(ls repeat_masked/N.ditissima/R0905_pacbio_canu/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
-    #Jobs=$(qstat | grep 'tophat' | grep -w 'r' | wc -l)
-    #while [ $Jobs -gt 1 ]; do
-    #sleep 10
-    #printf "."
-    #Jobs=$(qstat | grep 'tophat' | grep -w 'r' | wc -l)
-    #done
-    #printf "\n"
-    #Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
-    #Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
-    #echo "$Organism - $Strain"
-    #mkdir -p alignment/$Organism/$Strain/concatenated
-    #samtools merge -f alignment/$Organism/$Strain/concatenated/concatenated.bam \
-    #alignment/$Organism/R0905_pacbio_canu/R0905/accepted_hits.bam
-    #OutDir=gene_pred/braker/$Organism/"$Strain"_braker_first
-    #AcceptedHits=alignment/$Organism/$Strain/concatenated/concatenated.bam
-    #GeneModelName="$Organism"_"$Strain"_braker_first
-    #rm -r /home/gomeza/prog/augustus-3.1/config/species/"$Organism"_"$Strain"_braker_first
-    #ProgDir=/home/gomeza/git_repos/emr_repos/tools/gene_prediction/braker1
-    #qsub $ProgDir/sub_braker_fungi.sh $Assembly $OutDir $AcceptedHits $GeneModelName
-    #done
-```
 
 Braker predictiction was performed using softmasked genome, not unmasked one.
 
 ```bash
-  for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+  for Assembly in $(ls repeat_masked/*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
   Jobs=$(qstat | grep 'tophat' | grep -w 'r' | wc -l)
   while [ $Jobs -gt 1 ]; do
   sleep 10
@@ -791,8 +768,8 @@ Braker predictiction was performed using softmasked genome, not unmasked one.
   Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
   echo "$Organism - $Strain"
   OutDir=gene_pred/braker/$Organism/"$Strain"_braker_sixth
-  AcceptedHits=alignment/$Organism/$Strain/concatenated/concatenated.bam
-  mkdir -p alignment/$Organism/$Strain/concatenated
+  AcceptedHits=ncbi_alignment/$Organism/$Strain/concatenated/concatenated.bam
+  mkdir -p ncbi_alignment/$Organism/$Strain/concatenated
   samtools merge -f $AcceptedHits \
   alignment/repeat_masked/12008CD_accurate/accepted_hits.bam \
   alignment/repeat_masked/12008PDA_accurate/accepted_hits.bam
@@ -801,28 +778,6 @@ Braker predictiction was performed using softmasked genome, not unmasked one.
   ProgDir=/home/fanron/git_repos/tools/gene_prediction/braker1
   qsub $ProgDir/sub_braker_fungi.sh $Assembly $OutDir $AcceptedHits $GeneModelName
   done
-```
-
-
-```bash
-  #for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
-  #Jobs=$(qstat | grep 'tophat' | grep -w 'r' | wc -l)
-  #while [ $Jobs -gt 1 ]; do
-  #sleep 10
-  #printf "."
-  #Jobs=$(qstat | grep 'tophat' | grep -w 'r' | wc -l)
-  #done
-  #printf "\n"
-  #Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
-  #Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
-  #echo "$Organism - $Strain"
-  #OutDir=gene_pred/braker/$Organism/"$Strain"_CD_braker_fifth
-  #AcceptedHits=alignment/repeat_masked/12008CD_accurate/accepted_hits.bam
-  #GeneModelName="$Organism"_"$Strain"_braker_fifth_CD
-  #rm -r /home/gomeza/prog/augustus-3.1/config/species/"$Organism"_"$Strain"_braker_fifth_CD
-  #ProgDir=/home/fanron/git_repos/tools/gene_prediction/braker1
-  #qsub $ProgDir/sub_braker_fungi.sh $Assembly $OutDir $AcceptedHits $GeneModelName
-  #done
 ```
 
 Amino acid sequences and gff files were extracted from Braker1 output.
@@ -846,30 +801,6 @@ Fistly, aligned RNAseq data was assembled into transcripts using Cufflinks.
 Note - cufflinks doesn't always predict direction of a transcript and
 therefore features can not be restricted by strand when they are intersected.
 
-```bash
-    #for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
-    #Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
-    #Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
-    #echo "$Organism - $Strain"
-    #OutDir=gene_pred/cufflinks/$Organism/$Strain/PDA_concatenated_prelim
-    #mkdir -p $OutDir
-    #AcceptedHits=alignment/$Organism/$Strain/12008PDA/accepted_hits.bam
-    #ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
-    #qsub $ProgDir/sub_cufflinks.sh $AcceptedHits $OutDir
-    #done
-```
-```bash
-    #for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
-    #Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
-    #Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
-    #echo "$Organism - $Strain"
-    #OutDir=gene_pred/cufflinks/$Organism/$Strain/CD_concatenated_prelim
-    #mkdir -p $OutDir
-    #AcceptedHits=alignment/$Organism/$Strain/12008CD/accepted_hits.bam
-    #ProgDir=/home/fanron/git_repos/tools/seq_tools/RNAseq
-    #qsub $ProgDir/sub_cufflinks.sh $AcceptedHits $OutDir
-    #done
-```
 
 ```bash 
   for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
@@ -1030,8 +961,7 @@ corrected using the following commands:
 
 The final number of genes per isolate was observed using:
 ```bash
-for DirPath in $(ls -d gene_pred/ORF_finder/*/$Strain)
-do
+for DirPath in $(ls -d gene_pred/ORF_finder/*/$Strain); do
 echo $DirPath
 cat $DirPath/*aa_cat.fa | grep '>' | wc -l
 echo ""

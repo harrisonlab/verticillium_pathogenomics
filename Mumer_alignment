@@ -64,3 +64,17 @@ ProgDir=/home/adamst/git_repos/tools/seq_tools/genome_alignment/promer
 $ProgDir/mummer_ls_regions.py --coord $Coordinates --fasta $Reference --out_contig $OutFile --out_10kb $Out10kb
 paste analysis/genome_alignment/mummer/P*/*/*/*_vs_SCRP333_results.tsv > analysis/genome_alignment/mummer/vs_SCRP333_new.tsv
 ```
+
+
+Aganist JR2 PacBio genome.
+```bash
+Reference=assembly/merged_canu_spades/V.dahliae/JR2/ensembl/Verticillium_dahliaejr2.GCA_000400815.2.dna.toplevel.fa
+Query=repeat_masked/V.dahliae/12008/ncbi_filtered_contigs_repmask/12008_contigs_unmasked.fa
+Strain=$(echo $Query | rev | cut -f3 -d '/' | rev)
+Organism=$(echo $Query | rev | cut -f4 -d '/' | rev)
+echo "$Organism - $Strain"
+Prefix="$Strain"_vs_JR2
+OutDir=analysis/genome_alignment/mummer/$Organism/$Strain/$Prefix
+ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/promer
+qsub $ProgDir/sub_MUMmer.sh $Reference $Query $Prefix $OutDir
+```

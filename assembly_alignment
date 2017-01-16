@@ -1,1 +1,30 @@
 
+https://github.com/harrisonlab/phytophthora_fragariae/blob/master/Published_sequence_analysis.md#promer-alignment-of-assemblies
+
+#Alignment of Assemblies
+##against V.dahliae 12008 genome
+
+MUMmer was run to align assemblies against the reference softmasked_genome, result files are moved to JR2_vs_12008_softmasked directory.
+
+Reference=repeat_masked/V.dahliae/12008/ncbi_filtered_contigs_repmask/*_softmasked_repeatmasker_TPSI_appended.fa
+Query=assembly/merged_canu_spades/V.dahliae/JR2/ensembl/Verticillium_dahliaejr2.GCA_000400815.2.dna_sm.toplevel.fa
+Strain=$(echo $Query | rev | cut -f3 -d '/' | rev)
+Organism=$(echo $Query | rev | cut -f4 -d '/' | rev)
+echo "$Organism - $Strain"
+Prefix="$Strain"_vs_12008
+OutDir=analysis/genome_alignment/mummer/$Organism/$Strain/$Prefix
+ProgDir=/home/adamst/git_repos/tools/seq_tools/genome_alignment/promer
+qsub $ProgDir/sub_MUMmer.sh $Reference $Query $Prefix $OutDir
+
+
+we think it would be better if use the unmasked genome.
+
+Reference=repeat_masked/V.dahliae/12008/ncbi_filtered_contigs_repmask/*_unmasked.fa
+Query=assembly/merged_canu_spades/V.dahliae/JR2/ensembl/Verticillium_dahliaejr2.GCA_000400815.2.dna.toplevel.fa
+Strain=$(echo $Query | rev | cut -f3 -d '/' | rev)
+Organism=$(echo $Query | rev | cut -f4 -d '/' | rev)
+echo "$Organism - $Strain"
+Prefix="$Strain"_vs_12008
+OutDir=analysis/genome_alignment/mummer/$Organism/$Strain/$Prefix
+ProgDir=/home/adamst/git_repos/tools/seq_tools/genome_alignment/promer
+qsub $ProgDir/sub_MUMmer.sh $Reference $Query $Prefix $OutDir
