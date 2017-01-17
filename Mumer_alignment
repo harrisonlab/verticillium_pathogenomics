@@ -73,7 +73,7 @@ Query=repeat_masked/V.dahliae/12008/ncbi_filtered_contigs_repmask/12008_contigs_
 Strain=$(echo $Query | rev | cut -f3 -d '/' | rev)
 Organism=$(echo $Query | rev | cut -f4 -d '/' | rev)
 echo "$Organism - $Strain"
-Prefix="$Strain"_vs_JR2
+Prefix="$Strain"_vs_JR2_after_ncbi
 OutDir=analysis/genome_alignment/mummer/$Organism/$Strain/$Prefix
 ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/promer
 qsub $ProgDir/sub_MUMmer.sh $Reference $Query $Prefix $OutDir
