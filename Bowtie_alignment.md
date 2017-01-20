@@ -17,6 +17,10 @@ ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment
 qsub $ProgDir/bowtie/sub_bowtie.sh $Reference $F_Read $R_Read $OutDir $Strain
 done
 ```
+
+
+
+
 ##Alignment of raw reads vs the JR2 genome
 Reference=$(ls assembly/merged_canu_spades/V.dahliae/JR2/ensembl/Verticillium_dahliaejr2.GCA_000400815.2.dna.toplevel.fa)
 for StrainPath in $(ls -d qc_dna/paired/*/* | grep -e '12008' -e '51')
