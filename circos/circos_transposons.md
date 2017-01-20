@@ -40,7 +40,7 @@ GffEffP=analysis/effectorP/V.dahliae/12008/V.dahliae_12008_EffectorP_secreted.gf
 $ProgDir/gff2circos_scatterplot.py --gff $GffEffP --feature gene --value 0.5 > $OutDir/12008_effectorP_plot.txt
 CAZy=gene_pred/CAZY/V.dahliae/12008/12008_CAZY_secreted.gff
 $ProgDir/gff2circos_scatterplot.py --gff $CAZy --feature gene --value 0.5 > $OutDir/12008_CAZY_plot.txt
-Antismach=analysis/antismash/V.dahliae/12008/12008_secondary_metabolite_regions.gff
+Antismach=analysis/antismash/V.dahliae/12008/metabolite_cluster_genes.gff
 $ProgDir/gff2circos_scatterplot.py --gff $Antismach --feature t1pks --value 0.5 > $OutDir/12008_Antismach_plot.txt
 
 circos -conf /home/fanron/git_repos/scripts/verticillium_pathogenomics/circos/circos.conf -outputdir ./$OutDir
