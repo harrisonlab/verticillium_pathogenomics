@@ -473,3 +473,27 @@ LysM  11     11   11     11    11  11  11  11
 
 NPP1   7     7    9      8     7   7   7    8
    
+
+
+   Download V. dahlaie strain ST100 reads from NCBI:
+##ownload:
+fastqdump=/home/sobczm/bin/sratoolkit.2.8.0-ubuntu64/bin/fastq-dump
+$fastqdump --outdir public_genomes/V.dahliae/ST100 --gzip --skip-technical --readids --dumpbase  \
+--split-files --clip SRR572356
+
+##reads qc:
+scripts=/home/sobczm/bin/popgen/renseq
+fastqdump=/home/sobczm/bin/sratoolkit.2.8.0-ubuntu64/bin/fastq-dump
+input=/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
+for reads in $input/public_genomes/V.dahliae/ST100/*_1.fastq.gz
+do
+    Jobs=$(qstat | grep 'sub_read_q' | wc -l)
+    while [ $Jobs -gt 5 ]
+    do
+        sleep 10
+        printf "."
+        Jobs=$(qstat | grep 'sub_read_q' | wc -l)
+    done
+reads2=$(echo "$reads" | sed 's/_1.fastq.gz/_2.fastq.gz/g')
+qsub $scripts/sub_read_qc.sh $reads $reads2
+done
