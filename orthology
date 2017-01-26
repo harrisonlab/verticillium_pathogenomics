@@ -150,189 +150,271 @@
 
 ## 4.5.a Manual identification of numbers of orthologous and unique genes
 ```bash
-for num in 1; do
 echo "The total number of orthogroups is:"
 cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | wc -l
+9697
 echo "The total number of genes in orthogroups is:"
 cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -o '|' | wc -l
+80518
 
 echo "The number of orthogroups common to V.dahliae strains is:"
 cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v 'VaMs102|' | grep '12008|' | grep '51|' | grep '53|' | grep '58|' | grep '61|' | grep 'Ls17|' | grep 'JR2|' | wc -l
+501
 echo "This represents the following number of genes:"
 cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v 'VaMs102|' | grep '12008|' | grep '51|' | grep '53|' | grep '58|' | grep '61|' | grep 'Ls17|' | grep 'JR2|' | grep -o '|' | wc -l
-
-echo "The number of ortholog groups found in V.dahliae race2 but absent in race1 is:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' | grep '12008|' | grep '51|' | grep '53|' | grep '58|' | grep '61|' | grep 'Ls17|' | wc -l    
-echo "This represents the following number of genes:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' | grep '12008|' | grep '51|' | grep '53|' | grep '58|' | grep '61|' | grep 'Ls17|' | grep -o '|' | wc -l    
-
-echo "The number of ortholog groups found in race 1 strain but absent in race2 is:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -e 'JR2|' | grep -v -e 'VaMs102|' -e '12008|' -e '51|' -e '53|' -e '58|' -e '61|' -e 'Ls17|' | wc -l  
-echo "This represents the following number of genes:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -e 'JR2|' | grep -v -e 'VaMs102|' -e '12008|' -e '51|' -e '53|' -e '58|' -e '61|' -e 'Ls17|' | grep -o '|' | wc -l 
-
-echo "The number of orthogroups in 12008 but absent in 51 53 58 61 Ls17 JR2 and VaMa102 is:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' -e 'Ls17|' -e '51|' -e '58|' -e '53|' -e '61|' | grep '12008|' | wc -l 
-echo "This represents the following number of genes:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' -e 'Ls17|' -e '51|' -e '58|' -e '53|' -e '61|' | grep '12008|' | grep -o '|' | wc -l 
-
-echo "The number of orthogroups in 51 but absent in 12008 53 58 61 Ls17 JR2 and VaMa102 is:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' -e 'Ls17|' -e '12008|' -e '58|' -e '53|' -e '61|' | grep -e '51|' | wc -l 
-echo "This represents the following number of genes:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' -e 'Ls17|' -e '12008|' -e '58|' -e '53|' -e '61|' | grep -e '51|' | grep -o '|'  | wc -l 
-
-echo "The number of orthogroups in 53 but absent in 12008 51 58 61 Ls17 JR2 and VaMa102 is:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' -e 'Ls17|' -e '12008|' -e '58|' -e '51|' -e '61|' | grep -e '53|' | wc -l 
-
-echo "The number of orthogroups in 58 but absent in 12008 51 53 61 Ls17 JR2 and VaMa102 is:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' -e 'Ls17|' -e '12008|' -e '53|' -e '51|' -e '61|' | grep -e '58|' | wc -l 
-
-echo "The number of orthogroups in 61 but absent in 12008 51 53 58 Ls17 JR2 and VaMa102 is:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' -e 'Ls17|' -e '12008|' -e '53|' -e '51|' -e '58|' | grep -e '61|' | wc -l
-echo "This represents the following number of genes:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' -e 'Ls17|' -e '12008|' -e '53|' -e '51|' -e '58|' | grep -e '61|' | grep -o '|' | wc -l
-
-echo "The number of orthogroups in VaMa102 but absent in 12008 51 53 58 Ls17 JR2 and 61 is:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e '61|' -e 'Ls17|' -e '12008|' -e '53|' -e '51|' -e '58|' | grep -e 'VaMs102|' | wc -l
-echo "This represents the following number of genes:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e '61|' -e 'Ls17|' -e '12008|' -e '53|' -e '51|' -e '58|' | grep -e 'VaMs102|' | grep -o '|' | wc -l
-
-echo "The number of orthogroups in 12008 and JR2 but absent in 51 53 58 61 Ls17 and VaMa102 is:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'VaMs102|' -e 'Ls17|' -e '51|' -e '58|' -e '53|' -e '61|' | grep -e '12008|' -e 'JR2|' | wc -l
-echo "This represents the following number of genes:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'VaMs102|' -e 'Ls17|' -e '51|' -e '58|' -e '53|' -e '61|' | grep -e '12008|' -e 'JR2|' | grep -o '|' | wc -l
-
-echo "The number of orthogroups common to UK strains is:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' -e 'Ls17|' | grep '12008|' | grep '51|' | grep '53|' | grep '58|' | grep '61|' | wc -l    
-echo "This represents the following number of genes:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' -e 'Ls17|' | grep '12008|' | grep '51|' | grep '53|' | grep '58|' | grep '61|' | grep -o '|' | wc -l
-
-echo "The number of orthogroups exist in Ls17 but absent in others is:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' -e '61|' -e '12008|' -e '51|' -e '53|' -e '58|' | grep 'Ls17|' | wc -l    
-echo "This represents the following number of genes:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' -e '61|' -e '12008|' -e '51|' -e '53|' -e '58|' | grep 'Ls17|' | grep -o '|' | wc -l
-
-
-
-
-echo "The number of orthogroups common to all strains is:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep 'JR2|' | grep 'VaMs102|' | grep 'Ls17|' | grep '12008|' | grep '51|' | grep '53|' | grep '58|' | grep '61|' | wc -l    
-echo "This represents the following number of genes:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep 'JR2|' | grep 'VaMs102|' | grep 'Ls17|' | grep '12008|' | grep '51|' | grep '53|' | grep '58|' | grep '61|' | grep -o '|' | wc -l
-
-echo "The number of orthogroups common to 12008 and 51 but absent in 53 58 61 and other strains is:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' -e 'Ls17|' -e '53' -e '58' -e '61'| grep '12008|' | grep '51|' | wc -l    
-echo "This represents the following number of genes:"
-cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' -e 'Ls17|' -e '53' -e '58' -e '61'| grep '12008|' | grep '51|' | grep -o '|' | wc -l
-done
-```
-
-The total number of orthogroups is:
-9697
-The total number of genes in orthogroups is:
-80518
-The number of orthogroups common to V.dahliae strains is:
-501
-This represents the following number of genes:
 3639
-The number of ortholog groups found in V.dahliae race2 but absent in race1 is:
-76
-This represents the following number of genes:
-463
-The number of ortholog groups found in race 1 strain but absent in race2 is:
-10
-This represents the following number of genes:
-18
 
-The number of orthogroups in 12008 but absent in 51 53 58 61 Ls17 JR2 and VaMa102 is:
-1
-This represents the following number of genes:
-16
-The 16 genes are:
-orthogroup325: 12008|g9019.t1 12008|NS_04525.t1 12008|NS_04524.t1 12008|NS_04499.t1 12008|NS_04496.t1 12008|NS_04485.t1 12008|NS_04376.t1 12008|NS_03994.t1 12008|NS_03801.t1 12008|NS_03575.t1 12008|NS_03328.t1 12008|NS_03238.t1 12008|NS_03079.t1 12008|NS_02608.t1 12008|NS_01929.t1 12008|NS_00324.t1
+1) Find common genes in paired strains(12008_Ls17, 12008_JR2, JR2_Ls17)
+   ### echo "The number of ortholog groups found in V.dahliae 12008 and VdLs17 but absent in 51 53 58 61 JR2 is:"
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e '51|'  -e '53|' -e '58|' -e '61|' | grep -e 'Ls17|' | grep -e '12008|' | wc -l
+  3
+  this represent the number of genes:
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e '51|'  -e '53|' -e '58|' -e '61|' | grep -e 'Ls17|' | grep -e '12008|' | grep -o '|' | wc -l
+  10
+  orthogroup8809: 12008|NS_04190.t1 Ls17|EGY23767 Ls17|EGY19078 VaMs102|EEY24059
+  orthogroup8931: 12008|g5991.t1 Ls17|EGY21377 VaMs102|EEY16319
+  orthogroup9002: 12008|PGN_CUFF_3949_1_2.t1 Ls17|EGY21398 VaMs102|EEY16339
 
+  ### echo "The number of orthogroups in 12008 and JR2 but absent in 51 53 58 61 Ls17 and VaMa102 is:"
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'Ls17|' -e '51|'  -e '53|' -e '58|' -e '61|' | grep -e '12008|' | grep -e 'JR2|' | wc -l
+  9
+  echo "This represents the following number of genes:"
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'Ls17|' -e 'VaMs102|' -e '51|'  -e '53|' -e '58|' -e '61|' | grep -e '12008|' | grep -e 'JR2|' | grep -o '|' | wc -l
+  30
+  orthogroup654: 12008|g536.t1 12008|g9634.t1 JR2|VDAG_JR2_Chr1g01860.p1 12008|g8527.t1 12008|g6811.t1 JR2|VDAG_JR2_Chr2g09590.p1 JR2|VDAG_JR2_Chr2g09600.p1 JR2|VDAG_JR2_Chr6g07190.p1 JR2|VDAG_JR2_Chr1g22550.p1 JR2|VDAG_JR2_Chr1g22560.p1 1
+  orthogroup8778: 12008|g9085.t1 JR2|VDAG_JR2_Chr2g10930.p1 JR2|VDAG_JR2_Chr2g09450.p1 JR2|VDAG_JR2_Chr2g10320.p1
+  orthogroup8936: 12008|g6810.t1 JR2|VDAG_JR2_Chr2g10300.p1 12008|g8867.t1
+  orthogroup9223: 12008|g1104.t1 JR2|VDAG_JR2_Chr1g05340.p1
+  orthogroup9225: 12008|g2083.t1 JR2|VDAG_JR2_Chr3g06510.p1
+  orthogroup9247: 12008|g7678.t1 JR2|VDAG_JR2_Chr6g10840.p1
+  orthogroup9250: 12008|g8709.t1 JR2|VDAG_JR2_Chr5g03570.p1
+  orthogroup9252: 12008|g9349.t1 JR2|VDAG_JR2_Chr2g01540.p1
+  orthogroup9269: 12008|PGN_CUFF_6898_1_3.t1 JR2|VDAG_JR2_Chr5g08000.p1
 
-The number of orthogroups in 12008 and JR2 but absent in 51 53 58 61 Ls17 and VaMa102 is:
-20
-This represents the following number of genes:
-64
-These genes are :
-orthogroup654: 12008|g536.t1 12008|g9634.t1 JR2|VDAG_JR2_Chr1g01860.p1 12008|g8527.t1 12008|g6811.t1 JR2|VDAG_JR2_Chr2g09590.p1 JR2|VDAG_JR2_Chr2g09600.p1 JR2|VDAG_JR2_Chr6g07190.p1 JR2|VDAG_JR2_Chr1g22550.p1 JR2|VDAG_JR2_Chr1g22560.p1 12008|g5029.t1
-orthogroup8778: 12008|g9085.t1 JR2|VDAG_JR2_Chr2g10930.p1 JR2|VDAG_JR2_Chr2g09450.p1 JR2|VDAG_JR2_Chr2g10320.p1
-orthogroup8936: 12008|g6810.t1 JR2|VDAG_JR2_Chr2g10300.p1 12008|g8867.t1
-orthogroup9223: 12008|g1104.t1 JR2|VDAG_JR2_Chr1g05340.p1
-orthogroup9225: 12008|g2083.t1 JR2|VDAG_JR2_Chr3g06510.p1
-orthogroup9247: 12008|g7678.t1 JR2|VDAG_JR2_Chr6g10840.p1
-orthogroup9250: 12008|g8709.t1 JR2|VDAG_JR2_Chr5g03570.p1
-orthogroup9252: 12008|g9349.t1 JR2|VDAG_JR2_Chr2g01540.p1
-orthogroup9269: 12008|PGN_CUFF_6898_1_3.t1 JR2|VDAG_JR2_Chr5g08000.p1
+  ### echo "The number of ortholog groups found in V.dahliae JR2 and VdLs17 but absent in 51 53 58 61 12008 and VaMs102 is:"
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e '12008|' -e '51|'  -e '53|' -e '58|' -e '61|' | grep -e 'Ls17|' | grep -e 'JR2|' | wc -l
+  450
+  echo "This represents the following number of genes:"
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e '12008|' -e '51|'  -e '53|' -e '58|' -e '61|' | grep -e 'Ls17|' | grep -e 'JR2|' | grep -o '|' | wc -l
+  1185
 
+2) Find specific genes in V. dahliae strains
+  ### echo "The number of orthogroups in JR2 but absent in 12008 51 53 58 61 Ls17 is:"
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e '12008|' -e 'Ls17|' -e '51|' -e '58|' -e '53|' -e '61|' | grep -e 'JR2|' | wc -l
+  55
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e '12008|' -e 'Ls17|' -e '51|' -e '58|' -e '53|' -e '61|' | grep -e 'JR2|' | grep -o '|' | wc -l
+  111
+  orthogroup9198: VaMs102|EEY19386 VaMs102|EEY19387 JR2|VDAG_JR2_Chr4g04310.p1
+  orthogroup9210: JR2|VDAG_JR2_Chr4g10840.p1 VaMs102|EEY23048 VaMs102|EEY22395
+  orthogroup9218: JR2|VDAG_JR2_Chr7g02690.p1 VaMs102|EEY21221 VaMs102|EEY19575
+  orthogroup9229: JR2|VDAG_JR2_Chr1g22120.p1 VaMs102|EEY15057
+  orthogroup9241: VaMs102|EEY22864 JR2|VDAG_JR2_Chr5g02620.p1
+  orthogroup9244: JR2|VDAG_JR2_Chr1g00050.p1 VaMs102|EEY17325
+  orthogroup9388: VaMs102|EEY21507 JR2|VDAG_JR2_Chr5g03550.p1
+  orthogroup9437: JR2|VDAG_JR2_Chr2g08310.p1 VaMs102|EEY15711
+  orthogroup9449: JR2|VDAG_JR2_Chr2g08960.p1 VaMs102|EEY15770
+  orthogroup9456: JR2|VDAG_JR2_Chr1g21800.p1 VaMs102|EEY15022
+  orthogroup9457: JR2|VDAG_JR2_Chr3g02390.p1 VaMs102|EEY18745
+  orthogroup9461: JR2|VDAG_JR2_Chr2g10710.p1 JR2|VDAG_JR2_Chr5g10650.p1
+  orthogroup9463: JR2|VDAG_JR2_Chr4g04560.p1 JR2|VDAG_JR2_Chr4g04570.p1
+  orthogroup9475: JR2|VDAG_JR2_Chr1g11730.p1 VaMs102|EEY14114
+  orthogroup9476: JR2|VDAG_JR2_Chr1g09520.p1 VaMs102|EEY13921
+  orthogroup9481: JR2|VDAG_JR2_Chr6g02750.p1 VaMs102|EEY16650
+  orthogroup9482: JR2|VDAG_JR2_Chr7g10030.p1 VaMs102|EEY22825
+  orthogroup9489: JR2|VDAG_JR2_Chr1g12270.p1 VaMs102|EEY14165
+  orthogroup9494: JR2|VDAG_JR2_Chr5g00230.p1 VaMs102|EEY20326
+  orthogroup9497: JR2|VDAG_JR2_Chr2g10940.p1 JR2|VDAG_JR2_Chr4g03620.p1
+  orthogroup9498: JR2|VDAG_JR2_Chr4g03600.p1 JR2|VDAG_JR2_Chr5g10520.p1
+  orthogroup9511: JR2|VDAG_JR2_Chr6g07730.p1 VaMs102|EEY23263
+  orthogroup9518: JR2|VDAG_JR2_Chr3g06520.p1 VaMs102|EEY18364
+  orthogroup9520: JR2|VDAG_JR2_Chr4g12280.p1 VaMs102|EEY22912
+  orthogroup9529: JR2|VDAG_JR2_Chr3g02360.p1 VaMs102|EEY18747
+  orthogroup9531: JR2|VDAG_JR2_Chr1g06600.p1 VaMs102|EEY17959
+  orthogroup9537: JR2|VDAG_JR2_Chr2g09260.p1 VaMs102|EEY15796
+  orthogroup9541: JR2|VDAG_JR2_Chr2g09500.p1 JR2|VDAG_JR2_Chr2g10380.p1
+  orthogroup9544: JR2|VDAG_JR2_Chr1g09200.p1 VaMs102|EEY18207
+  orthogroup9546: JR2|VDAG_JR2_Chr2g09110.p1 VaMs102|EEY15783
+  orthogroup9552: JR2|VDAG_JR2_Chr3g06710.p1 VaMs102|EEY18352
+  orthogroup9556: JR2|VDAG_JR2_Chr3g11000.p1 VaMs102|EEY21831
+  orthogroup9564: JR2|VDAG_JR2_Chr4g01630.p1 VaMs102|EEY19554
+  orthogroup9570: JR2|VDAG_JR2_Chr1g12990.p1 VaMs102|EEY14219
+  orthogroup9573: JR2|VDAG_JR2_Chr1g06840.p1 VaMs102|EEY17983
+  orthogroup9577: JR2|VDAG_JR2_Chr1g01540.p1 VaMs102|EEY17477
+  orthogroup9579: JR2|VDAG_JR2_Chr3g11020.p1 VaMs102|EEY21829
+  orthogroup9585: JR2|VDAG_JR2_Chr2g10550.p1 JR2|VDAG_JR2_Chr2g09680.p1
+  orthogroup9588: JR2|VDAG_JR2_Chr6g04630.p1 VaMs102|EEY16827
+  orthogroup9597: JR2|VDAG_JR2_Chr1g20600.p1 VaMs102|EEY14910
+  orthogroup9604: JR2|VDAG_JR2_Chr1g15910.p1 VaMs102|EEY14474
+  orthogroup9610: JR2|VDAG_JR2_Chr1g08650.p1 JR2|VDAG_JR2_Chr1g08660.p1
+  orthogroup9625: JR2|VDAG_JR2_Chr4g08210.p1 VaMs102|EEY18293
+  orthogroup9626: JR2|VDAG_JR2_Chr4g04040.p1 VaMs102|EEY24016
+  orthogroup9627: JR2|VDAG_JR2_Chr8g04570.p1 VaMs102|EEY22114
+  orthogroup9630: JR2|VDAG_JR2_Chr6g07570.p1 VaMs102|EEY23250
+  orthogroup9634: JR2|VDAG_JR2_Chr2g07740.p1 VaMs102|EEY15659
+  orthogroup9647: JR2|VDAG_JR2_Chr5g10450.p1 JR2|VDAG_JR2_Chr5g10490.p1
+  orthogroup9660: JR2|VDAG_JR2_Chr1g22930.p1 VaMs102|EEY15139
+  orthogroup9662: JR2|VDAG_JR2_Chr3g09230.p1 VaMs102|EEY21995
+  orthogroup9663: JR2|VDAG_JR2_Chr1g06620.p1 VaMs102|EEY17962
+  orthogroup9665: JR2|VDAG_JR2_Chr2g09180.p1 VaMs102|EEY15789
+  orthogroup9676: JR2|VDAG_JR2_Chr6g03480.p1 VaMs102|EEY16711
+  orthogroup9690: JR2|VDAG_JR2_Chr7g02560.p1
+  orthogroup9693: JR2|VDAG_JR2_Chr8g10720.p1
 
-The number of orthogroups in 51 but absent in 12008 53 58 61 Ls17 JR2 and VaMa102 is:
-1
-This represents the following number of genes:
-1
-This gene is :
-orthogroup9695: 51|g7944.t1
+  ### echo "The number of orthogroups in 12008 but absent in 51 53 58 61 Ls17 JR2 is:"
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'Ls17|' -e '51|' -e '58|' -e '53|' -e '61|' | grep -e '12008|' | wc -l 
+  1
+  echo "This represents the following number of genes:"
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'Ls17|' -e '51|' -e '58|' -e '53|' -e '61|' | grep -e '12008|' | grep -o '|' | wc -l 
+  16? (1+truncated 15)
+  orthogroup325: 12008|g9019.t1 12008|NS_04525.t1 12008|NS_04524.t1 12008|NS_04499.t1 12008|NS_04496.t1 12008|NS_04485.t1 12008|NS_04376.t1 12008|NS_03994.t1 12008|NS_03801.t1 12008|NS_03575.t1 12008|NS_03328.t1 12008|NS_03238.t1 12008|NS_03079.t1 12008|NS_02608.t1 12008|NS_01929.t1 12008|NS_00324.t1
+  ### echo "The number of orthogroups in 51 but absent in 12008 53 58 61 Ls17 JR2 is:"
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'Ls17|' -e '12008|' -e '58|' -e '53|' -e '61|' | grep -e '51|' | wc -l
+  1
+  echo "This represents the following number of genes:"
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'Ls17|' -e '12008|' -e '58|' -e '53|' -e '61|' | grep -e '51|' | grep -o '|' | wc -l
+  1
+  orthogroup9695: 51|g7944.t1
+  ### echo "The number of orthogroups in 53 but absent in 12008 51 58 61 Ls17 JR2 is:"
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'Ls17|' -e '12008|' -e '58|' -e '51|' -e '61|' | grep -e '53|' | wc -l
 
+  ### The number of orthogroups in 58 but absent in 12008 51 53 61 Ls17 JR2 and VaMa102 is:
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'Ls17|' -e '12008|' -e '53|' -e '51|' -e '61|' | grep -e '58|' | wc -l
+  0
 
-The number of orthogroups in 53 but absent in 12008 51 58 61 Ls17 JR2 and VaMa102 is:
-0
-The number of orthogroups in 58 but absent in 12008 51 53 61 Ls17 JR2 and VaMa102 is:
-0
+  ### The number of orthogroups in 61 but absent in 12008 51 53 58 Ls17 JR2 and VaMa102 is:
+  1
+  This represents the following number of genes:
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'Ls17|' -e '12008|' -e '58|' -e '53|' -e '51|' | grep -e '61|' | grep -o '|' | wc -l
+  1
+  orthogroup9689: 61|g2277.t1 
 
-The number of orthogroups in 61 but absent in 12008 51 53 58 Ls17 JR2 and VaMa102 is:
-1
-This represents the following number of genes:
-1
-This gene is :
-orthogroup9689: 61|g2277.t1
+  ### echo "The number of orthogroups in Ls17 but absent in 12008 51 53 58 61 JR2 is:"
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e '12008|' -e 'JR2|' -e '51|' -e '58|' -e '53|' -e '61|' | grep -e 'Ls17|' | wc -l
+  57
+  echo "This represents the following number of genes:"
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e '12008|' -e 'JR2|' -e '51|' -e '58|' -e '53|' -e '61|' | grep -e 'Ls17|' | grep -o '|' | wc -l
+  118
+  orthogroup8861: Ls17|EGY23717 VaMs102|EEY22873 VaMs102|EEY24077 Ls17|EGY23774
+  orthogroup9104: Ls17|EGY23707 Ls17|EGY23768 VaMs102|EEY24060
+  orthogroup9105: VaMs102|EEY24074 Ls17|EGY23805 VaMs102|EEY22886
+  orthogroup9106: Ls17|EGY23718 Ls17|EGY23775 VaMs102|EEY22874
+  orthogroup9109: Ls17|EGY23804 VaMs102|EEY24073 VaMs102|EEY22869
+  orthogroup9228: VaMs102|EEY16194 Ls17|EGY21248
+  orthogroup9230: VaMs102|EEY15669 Ls17|EGY19757
+  orthogroup9237: VaMs102|EEY18301 Ls17|EGY18809
+  orthogroup9239: Ls17|EGY18644 VaMs102|EEY15153
+  orthogroup9243: Ls17|EGY23652 VaMs102|EEY20440
+  orthogroup9249: Ls17|EGY20318 VaMs102|EEY21322
+  orthogroup9323: Ls17|EGY15776 VaMs102|EEY19180
+  orthogroup9387: Ls17|EGY14380 VaMs102|EEY21865
+  orthogroup9389: Ls17|EGY15410 VaMs102|EEY23860
+  orthogroup9390: Ls17|EGY22277 VaMs102|EEY16689
+  orthogroup9391: Ls17|EGY19610 VaMs102|EEY17335
+  orthogroup9392: Ls17|EGY19196 VaMs102|EEY23687
+  orthogroup9393: Ls17|EGY18391 VaMs102|EEY18400
+  orthogroup9394: Ls17|EGY18485 VaMs102|EEY19016
+  orthogroup9395: Ls17|EGY23763 VaMs102|EEY23993
+  orthogroup9396: Ls17|EGY23715 VaMs102|EEY22870
+  orthogroup9397: Ls17|EGY23753 VaMs102|EEY24011
+  orthogroup9398: Ls17|EGY23761 VaMs102|EEY23995
+  orthogroup9399: Ls17|EGY23762 VaMs102|EEY23994
+  orthogroup9401: Ls17|EGY20843 VaMs102|EEY17466
+  orthogroup9402: Ls17|EGY20899 Ls17|EGY23784
+  orthogroup9403: Ls17|EGY21358 VaMs102|EEY16301
+  orthogroup9404: Ls17|EGY21397 VaMs102|EEY16338
+  orthogroup9405: Ls17|EGY21412 VaMs102|EEY16352
+  orthogroup9406: Ls17|EGY18220 VaMs102|EEY14164
+  orthogroup9407: Ls17|EGY19426 VaMs102|EEY21649
+  orthogroup9408: Ls17|EGY19486 VaMs102|EEY21712
+  orthogroup9409: Ls17|EGY17161 VaMs102|EEY17503
+  orthogroup9410: Ls17|EGY17315 VaMs102|EEY17656
+  orthogroup9411: Ls17|EGY17406 VaMs102|EEY17751
+  orthogroup9412: Ls17|EGY17550 VaMs102|EEY17894
+  orthogroup9413: Ls17|EGY17814 VaMs102|EEY18157
+  orthogroup9414: Ls17|EGY20527 VaMs102|EEY22234
+  orthogroup9415: Ls17|EGY22054 VaMs102|EEY20234
+  orthogroup9416: Ls17|EGY16052 VaMs102|EEY22958
+  orthogroup9418: Ls17|EGY16295 VaMs102|EEY23194
+  orthogroup9419: Ls17|EGY14911 VaMs102|EEY22630
+  orthogroup9420: Ls17|EGY13502 VaMs102|EEY14468
+  orthogroup9421: Ls17|EGY13669 VaMs102|EEY14630
+  orthogroup9422: Ls17|EGY23155 VaMs102|EEY23245
+  orthogroup9424: Ls17|EGY23052 VaMs102|EEY18840
+  orthogroup9425: Ls17|EGY19704 VaMs102|EEY15724
+  orthogroup9426: Ls17|EGY19722 VaMs102|EEY15705
+  orthogroup9427: Ls17|EGY19789 VaMs102|EEY15635
+  orthogroup9428: Ls17|EGY19987 VaMs102|EEY15442
+  orthogroup9429: Ls17|EGY20317 VaMs102|EEY21323
+  orthogroup9430: Ls17|EGY14580 VaMs102|EEY20577
+  orthogroup9431: Ls17|EGY15920 VaMs102|EEY19326
+  orthogroup9433: Ls17|EGY15603 VaMs102|EEY21014
+  orthogroup9434: Ls17|EGY16631 VaMs102|EEY15343
+  orthogroup9688: Ls17|EGY22724
+  orthogroup9697: Ls17|
+  #### genes common in 12008, Ls17 and JR2 are:
+    echo "The number of orthogroups in 12008 Ls17 and JR2 but absent in 51 53 58 61 is:"
+    cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e '51|' -e '58|' -e '53|' -e '61|' | grep -e '12008|' | grep -e 'JR2|' | grep -e 'Ls17' | wc -l 
+    10
+    echo "This represents the following number of genes:"
+    cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e '51|' -e '58|' -e '53|' -e '61|' | grep -e '12008|' | grep -e 'JR2|' | grep -e 'Ls17' | grep -o '|' | wc -l
+    41
+3) It's easy to find 12008 genome has more honologues with 51 genome compared to 53, 58 and 61.
+   ###echo "The number of orthogroups common to 12008 and 53 but absent in 51 58 61 and other strains is:"
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e '51' -e '58' -e '61'| grep '12008|' | grep '53|' | wc -l
+  11
+  echo "This represents the following number of genes:"
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e '51' -e '58' -e '61'| grep '12008|' | grep '53|' | grep -o '|' | wc -l
+  32
+  ###echo "The number of orthogroups common to 12008 and 58 but absent in 51 53 61 and other strains is:"
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e '51' -e '53' -e '61'| grep '12008|' | grep '58|' | wc -l
+  3
+  echo "This represents the following number of genes:"
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e '51' -e '53' -e '61'| grep '12008|' | grep '58|' | grep -o '|' | wc -l
+  6
+  ###echo "The number of orthogroups common to 12008 and 61 but absent in 51 53 58 and other strains is:"
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e '51' -e '53' -e '58'| grep '12008|' | grep '61|' | wc -l
+  0
 
-The number of orthogroups in VaMa102 but absent in 12008 51 53 58 Ls17 JR2 and 61 is:
-17
-This represents the following number of genes (these genes possiably are Va specific or Va-alfafae interaction genes):
-25
-
-The number of orthogroups common to UK strains is:
-131
-This represents the following number of genes (these genes possiably are Vd-strawberry specific interaction genes):
-767
-
-The number of orthogroups common to all strains is:
-7285
-This represents the following number of genes :
-67890
-
-The number of orthogroups common to 12008 and 51 but absent in 53 58 61 and other strains is (pathogenicity test results showed that 12008 and 51 are significantly highler than 53 58 61, so these genes probably are high virulence factors. Next step can search them in Effector or CAZy results.)
-4
-This represents the following number of genes:
-8
-These genes are
-orthogroup9256: 12008|NS_00849.t1 51|NS_03230.t1
-orthogroup9262: 12008|NS_03788.t1 51|NS_03150.t1
-orthogroup9267: 12008|PGN_07426.t1 51|PGN_01319.t1
-orthogroup9272: 12008|PGN_CUFF_10127_1_1.t1 51|PGN_CUFF_7021_1_1.t1
-
-The number of orthogroups exist in Ls17 but absent in others is:
-3
-This represents the following number of genes (these genes possiably are Vd-lettucespecific interaction genes):
-4
-these genes are 
-orthogroup9402: Ls17|EGY20899 Ls17|EGY23784
-orthogroup9688: Ls17|EGY22724
-orthogroup9697: Ls17|EGY19619
+4) These probably are V.dahliae-strawberry interaction genes
+  ###echo "The number of orthogroups common to UK strains is:" 
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' -e 'Ls17|' | grep '12008|' | grep '51|' | grep '53|' | grep '58|' | grep '61|' | wc -l    
+  131
+  echo "This represents the following number of genes:"
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e 'JR2|' -e 'VaMs102|' -e 'Ls17|' | grep '12008|' | grep '51|' | grep '53|' | grep '58|' | grep '61|' | grep -o '|' | wc -l
+  767
+5) As pathogenicity result showed 12008 and 51 had significantly higher virulence that 53, 58 and 61, below genes possiable are related to high virulence.
+  ###echo "The number of orthogroups common to 12008 and 51 but absent in 53 58 61 and other strains is:"
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e '53' -e '58' -e '61'| grep '12008|' | grep '51|' | wc -l    
+  14
+  echo "This represents the following number of genes:"
+  cat $WorkDir/"$IsolateAbrv"_orthogroups.txt | grep -v -e '53' -e '58' -e '61'| grep '12008|' | grep '51|'| grep -o '|' | wc -l
+  43
+  orthogroup8566: 12008|g4315.t1 51|g7652.t1 JR2|VDAG_JR2_Chr7g06720.p1 Ls17|EGY14800 VaMs102|EEY22520
+  orthogroup8647: 12008|CUFF_4916_1_64.t1 51|CUFF_2623_1_10.t1 JR2|VDAG_JR2_Chr8g05640.p1 Ls17|EGY21647 VaMs102|EEY19819
+  orthogroup8812: 12008|PGN_04165.t1 51|PGN_10646.t1 JR2|VDAG_JR2_Chr1g29260.p1 Ls17|EGY21413
+  orthogroup8935: 12008|g6750.t1 51|g2790.t1 Ls17|EGY18249
+  orthogroup8947: 12008|g9209.t1 Ls17|EGY21935 51|g7510.t1
+  orthogroup8966: 12008|NS_01012.t1 51|NS_00287.t1 JR2|VDAG_JR2_Chr8g02320.p1
+  orthogroup8979: 12008|CUFF_7134_1_406.t1 51|CUFF_9207_1_1.t1 Ls17|EGY23460
+  orthogroup8980: 12008|CUFF_7167_1_50.t1 51|CUFF_4846_1_22.t1 Ls17|EGY16835
+  orthogroup8996: 12008|PGN_CUFF_691_1_16.t1 51|PGN_CUFF_3832_1_1.t1 VaMs102|EEY24023
+  orthogroup9008: 12008|PGN_08692.t1 51|PGN_09127.t1 JR2|VDAG_JR2_Chr3g06680.p1
+  orthogroup9256: 12008|NS_00849.t1 51|NS_03230.t1
+  orthogroup9262: 12008|NS_03788.t1 51|NS_03150.t1
+  orthogroup9267: 12008|PGN_07426.t1 51|PGN_01319.t1
+  orthogroup9272: 12008|PGN_CUFF_10127_1_1.t1 51|PGN_CUFF_7021_1_1.t1
+```
 
 
 
 ## 4.5.b Plot venn diagrams:
-Note that the venn can only run with up to 5 genomes once.
+#Note that the venn can only run with up to 5 genomes once.
 
 ```bash
-  ProgDir=/home/adamst/git_repos/scripts/fusarium/pathogen/orthology
-  $ProgDir/FoC_path_vs_non_path_venn_diag.r --inp $WorkDir/"$IsolateAbrv"_orthogroups.tab --out $WorkDir/"$IsolateAbrv"_orthogroups.pdf
+  #ProgDir=/home/adamst/git_repos/scripts/fusarium/pathogen/orthology
+  #$ProgDir/FoC_path_vs_non_path_venn_diag.r --inp $WorkDir/"$IsolateAbrv"_orthogroups.tab --out $WorkDir/"$IsolateAbrv"_orthogroups.pdf
 ```
-Error in library(optparse) : there is no package called ‘optparse’
-Execution halted
+
 
 ## 4.6.a Extracting fasta files orthogroups
 ```bash
