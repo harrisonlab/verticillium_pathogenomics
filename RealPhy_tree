@@ -1,1 +1,16 @@
+##Creat a cinfig.txt file, this configure fiile contains softwares needed and their path. The config.txt should be in the same folder with output file.
+##As the programme will run for several days, so we need to use the command of screen and qlogin to run it. Be aware that we can use any of the blacklace more than 6 as we need more memrry to run it. 
 
+
+
+screen -a
+qlogin ssh blacklace11
+
+
+# use one reference 
+java -Xmx6000m -jar RealPhy_v112.jar . /home/fanron/programs/RealPhy/out/ -treeBuilder 2 -ref JR2
+
+
+# use more than one reference 
+
+java -Xmx6000m -jar RealPhy_v112.jar . /home/fanron/programs/RealPhy/out/ -treeBuilder 2 -ref1 JR2 -ref2 Ls17 -merge 
