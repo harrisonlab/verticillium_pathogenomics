@@ -24,7 +24,7 @@ qsub $ProgDir/sub_MUMmer.sh $Reference $Query $Prefix $OutDir
 ```
 
 
-Aganist JR2 PacBio genome.
+## Aganist JR2 PacBio genome.
 ```bash
 Reference=assembly/merged_canu_spades/V.dahliae/JR2/ensembl/Verticillium_dahliaejr2.GCA_000400815.2.dna.toplevel.fa
 Query=repeat_masked/V.dahliae/12008/ncbi_filtered_contigs_repmask/12008_contigs_unmasked.fa
@@ -44,6 +44,19 @@ Strain=$(echo $Query | rev | cut -f3 -d '/' | rev)
 Organism=$(echo $Query | rev | cut -f4 -d '/' | rev)
 echo "$Organism - $Strain"
 Prefix="$Strain"_vs_JR2
+OutDir=analysis/genome_alignment/mummer/$Organism/$Strain/$Prefix
+ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/promer
+qsub $ProgDir/sub_MUMmer.sh $Reference $Query $Prefix $OutDir
+
+
+## Align 51,53,58,61 genome aganist 12008 genome
+
+Reference=repeat_masked/V.dahliae/12008/ncbi_filtered_contigs_repmask/12008_contigs_unmasked.fa
+Query=repeat_masked/V.dahliae/58/ncbi_filter_contigs/*_contigs_unmasked.fa
+Strain=$(echo $Query | rev | cut -f3 -d '/' | rev)
+Organism=$(echo $Query | rev | cut -f4 -d '/' | rev)
+echo "$Organism - $Strain"
+Prefix="$Strain"_vs_J12008_after_ncbi
 OutDir=analysis/genome_alignment/mummer/$Organism/$Strain/$Prefix
 ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/promer
 qsub $ProgDir/sub_MUMmer.sh $Reference $Query $Prefix $OutDir
