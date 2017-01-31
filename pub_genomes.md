@@ -497,3 +497,5 @@ do
 reads2=$(echo "$reads" | sed 's/_1.fastq.gz/_2.fastq.gz/g')
 qsub $scripts/sub_read_qc.sh $reads $reads2
 done
+
+
