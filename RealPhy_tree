@@ -4,13 +4,21 @@
 
 
 screen -a
-qlogin ssh blacklace11
-
+ssh blacklace08
+or qlogin -pe smp 20 -l virtual_free=1.1G
 
 # use one reference 
-java -Xmx6000m -jar RealPhy_v112.jar . /home/fanron/programs/RealPhy/out/ -treeBuilder 2 -ref JR2
+# used this command:
+ #java -Xmx6000m -jar RealPhy_v112.jar . /home/fanron/programs/RealPhy/out/ -treeBuilder 2 -ref1 JR2
+ #but Java always run out of memory. so connect to a node and give 10g(or 10G) of memeory to the job.
+
+qlogin -pe smp 20 -l virtual_free=1.1G
+#using JR2 genome as reference
+java -Xmx25g -jar RealPhy_v112.jar . /home/fanron/programs/RealPhy/out/ -treeBuilder 2 -ref JR2
+#using Ls17 genome as reference
+java -Xmx25g -jar RealPhy_v112.jar . /home/fanron/programs/RealPhy/out/ -treeBuilder 2 -ref Ls17
 
 
-# use more than one reference 
+# use more than one reference (Note: this will need more memory as there are two references)
 
-java -Xmx6000m -jar RealPhy_v112.jar . /home/fanron/programs/RealPhy/out/ -treeBuilder 2 -ref1 JR2 -ref2 Ls17 -merge 
+#java -Xmx6000m -jar RealPhy_v112.jar . /home/fanron/programs/RealPhy/out/ -treeBuilder 2 -ref1 JR2 -ref2 Ls17 -merge 
