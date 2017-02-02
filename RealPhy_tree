@@ -8,15 +8,26 @@ ssh blacklace08
 or qlogin -pe smp 20 -l virtual_free=1.1G
 
 # use one reference 
-# used this command:
  #java -Xmx6000m -jar RealPhy_v112.jar . /home/fanron/programs/RealPhy/out/ -treeBuilder 2 -ref1 JR2
- #but Java always run out of memory. so connect to a node and give 10g(or 10G) of memeory to the job.
+ #but Java always run out of memory. so connect to a node and give 20g(or 20G) of memeory to the job.
 
-qlogin -pe smp 20 -l virtual_free=1.1G
+qlogin -pe smp 20 -l virtual_free=1G
 #using JR2 genome as reference
-java -Xmx25g -jar RealPhy_v112.jar . /home/fanron/programs/RealPhy/out/ -treeBuilder 2 -ref JR2
+java -Xmx25g -jar RealPhy_v112.jar . /home/fanron/programs/RealPhy/out/ -treeBuilder 2 -treeOptions boot.txt -ref JR2
 #using Ls17 genome as reference
 java -Xmx25g -jar RealPhy_v112.jar . /home/fanron/programs/RealPhy/out/ -treeBuilder 2 -ref Ls17
+
+##Specify the bootstraps
+###first, need to creat a txt file (bootstrapt.txt), and provide command line parameters to RAxML in the first line the text file, save it.
+
+raxmlHPC-AVX -s polymorphisms_move.phy -w /home/fanron/programs/RealPhy/out/JR2/PolySeqOut_NoGenes/ -m GTRGAMMA -p 12345 -n raxml -N 100
+
+###then run the command again to get a new tree.
+qlogin -pe smp 20 -l virtual_free=1.1G
+java -Xmx25g -jar RealPhy_v112.jar . /home/fanron/programs/RealPhy/out/ -treeBuilder 2 -treeOptions bootstrapt.txt -ref JR2
+
+
+
 
 
 # use more than one reference (Note: this will need more memory as there are two references)
