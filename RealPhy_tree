@@ -18,18 +18,17 @@ java -Xmx25g -jar RealPhy_v112.jar . /home/fanron/programs/RealPhy/out/ -treeBui
 java -Xmx25g -jar RealPhy_v112.jar . /home/fanron/programs/RealPhy/out/ -treeBuilder 2 -ref Ls17
 
 ##Specify the bootstraps
-###first, need to creat a txt file (bootstrapt.txt), and provide command line parameters to RAxML in the first line the text file, save it.
-
-raxmlHPC-AVX -s polymorphisms_move.phy -w /home/fanron/programs/RealPhy/out/JR2/PolySeqOut_NoGenes/ -m GTRGAMMA -p 12345 -n raxml -N 100
-
-###then run the command again to get a new tree.
+###first, need to creat a txt file (bootstrapt.txt), and provide command line parameters to RAxML in the first line the text file, save it. 
+###then run the command again to get a new tree.( This step is actually not necessary)
 qlogin -pe smp 20 -l virtual_free=1.1G
 java -Xmx25g -jar RealPhy_v112.jar . /home/fanron/programs/RealPhy/out/ -treeBuilder 2 -treeOptions bootstrapt.txt -ref JR2
-
-
+java -Xmx25g -jar RealPhy_v112.jar . /home/fanron/programs/RealPhy/out/ -treeBuilder 2 -treeOptions bootstrapt.txt -ref Ls17
+##Run this command in your (each) output folder because the file of polymorphisms_move.phy is in the output folder. ##This is to generate a bootstraped tree with the output file named RAxML_bipartitions.out2
+/home/hulinm/local/src/standard-RAxML/raxmlHPC-AVX -s polymorphisms_move.phy -n out2 -m GTRGAMMA -f a -x $RANDOM -N 100 -p 12345
 
 
 
 # use more than one reference (Note: this will need more memory as there are two references)
 
 #java -Xmx6000m -jar RealPhy_v112.jar . /home/fanron/programs/RealPhy/out/ -treeBuilder 2 -ref1 JR2 -ref2 Ls17 -merge 
+
