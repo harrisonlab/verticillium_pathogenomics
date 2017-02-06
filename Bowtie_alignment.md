@@ -56,3 +56,10 @@ OutDir=analysis/genome_alignment/bowtie/$Organism/$Strain/vs_12008unmasked
 ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment
 qsub $ProgDir/bowtie/sub_bowtie.sh $Reference $F_Read $R_Read $OutDir $Strain
 done
+
+##Alignment of 12008 PacBio reads vs the 12008 genome to see the assembly status.
+  Assembly=repeat_masked/V.dahliae/12008/ncbi*/*_contigs_unmasked.fa
+  Reads=raw_dna/pacbio/V.dahliae/12008/extracted/concatenated_pacbio.fastq
+  OutDir=analysis/genome_alignment/bwa/Verticillium/12008/PacReads_vs_12008merge
+  ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/bwa
+  qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
