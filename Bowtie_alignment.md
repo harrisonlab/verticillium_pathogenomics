@@ -17,9 +17,8 @@ ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment
 qsub $ProgDir/bowtie/sub_bowtie.sh $Reference $F_Read $R_Read $OutDir $Strain
 done
 ```
-
-
-
+*************************************************************************************
+Inbestigate the inversion event in 12008 genome. Fistly, check the assembly status of 12008 genome.
 
 ##Alignment of raw reads vs the JR2 genome
 Reference=$(ls assembly/merged_canu_spades/V.dahliae/JR2/ensembl/Verticillium_dahliaejr2.GCA_000400815.2.dna.toplevel.fa)
@@ -63,3 +62,28 @@ done
   OutDir=analysis/genome_alignment/bwa/Verticillium/12008/PacReads_vs_12008merge
   ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/bwa
   qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
+
+##Alignment of 12008 PacBio reads vs the JR2 genome to see the assembly status.
+Assembly=assembly/merged_canu_spades/V.dahliae/JR2/ensembl/Verticillium_dahliaejr2.GCA_000400815.2.dna.toplevel.fa
+Reads=raw_dna/pacbio/V.dahliae/12008/extracted/concatenated_pacbio.fastq
+OutDir=analysis/genome_alignment/bwa/Verticillium/12008/PacReads_vs_JR2
+ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/bwa
+qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
+
+##Alignment of 12008 Miseq reads vs the JR2 genome to see the assembly status.
+
+Reference=$(ls assembly/merged_canu_spades/V.dahliae/JR2/ensembl/Verticillium_dahliaejr2.GCA_000400815.2.dna.toplevel.fa)
+for StrainPath in $(ls -d qc_dna/paired/V.dahliae/12008)
+do
+echo $StrainPath
+Strain=$(echo $StrainPath | rev | cut -f1 -d '/' | rev)
+Organism=$(echo $StrainPath | rev | cut -f2 -d '/' | rev)
+echo "$Organism - $Strain"
+F_Read=$(ls $StrainPath/F/*_trim.fq.gz | head -n1 | tail -n1)
+R_Read=$(ls $StrainPath/R/*_trim.fq.gz | head -n1 | tail -n1)
+echo $F_Read
+echo $R_Read
+OutDir=analysis/genome_alignment/bowtie/$Organism/$Strain/Miseq_vs_JR2
+ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment
+qsub $ProgDir/bowtie/sub_bowtie.sh $Reference $F_Read $R_Read $OutDir $Strain
+done
