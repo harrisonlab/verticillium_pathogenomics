@@ -87,3 +87,40 @@ OutDir=analysis/genome_alignment/bowtie/$Organism/$Strain/Miseq_vs_JR2
 ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment
 qsub $ProgDir/bowtie/sub_bowtie.sh $Reference $F_Read $R_Read $OutDir $Strain
 done
+
+
+##Alignment of 12008 Miseq reads vs the 12008 canu genome to revise the assembly status.
+
+Reference=$(ls assembly/canu/V.dahliae/12008/polished/pilon.fasta)
+for StrainPath in $(ls -d qc_dna/paired/V.dahliae/12008)
+do
+echo $StrainPath
+Strain=$(echo $StrainPath | rev | cut -f1 -d '/' | rev)
+Organism=$(echo $StrainPath | rev | cut -f2 -d '/' | rev)
+echo "$Organism - $Strain"
+F_Read=$(ls $StrainPath/F/*_trim.fq.gz | head -n1 | tail -n1)
+R_Read=$(ls $StrainPath/R/*_trim.fq.gz | head -n1 | tail -n1)
+echo $F_Read
+echo $R_Read
+OutDir=analysis/genome_alignment/bowtie/$Organism/$Strain/Miseq_vs_12008canu
+ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment
+qsub $ProgDir/bowtie/sub_bowtie.sh $Reference $F_Read $R_Read $OutDir $Strain
+done
+
+##Alignment of 12008 Miseq reads vs the 12008 Spades genome to revise the assembly status.
+
+Reference=$(ls assembly/spades_pacbio/V.dahliae/12008/filtered_contigs/contigs_min_500bp.fasta)
+for StrainPath in $(ls -d qc_dna/paired/V.dahliae/12008)
+do
+echo $StrainPath
+Strain=$(echo $StrainPath | rev | cut -f1 -d '/' | rev)
+Organism=$(echo $StrainPath | rev | cut -f2 -d '/' | rev)
+echo "$Organism - $Strain"
+F_Read=$(ls $StrainPath/F/*_trim.fq.gz | head -n1 | tail -n1)
+R_Read=$(ls $StrainPath/R/*_trim.fq.gz | head -n1 | tail -n1)
+echo $F_Read
+echo $R_Read
+OutDir=analysis/genome_alignment/bowtie/$Organism/$Strain/Miseq_vs_12008spades
+ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment
+qsub $ProgDir/bowtie/sub_bowtie.sh $Reference $F_Read $R_Read $OutDir $Strain
+done
