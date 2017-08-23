@@ -145,7 +145,7 @@ Assembly stats were collected using quast
     qsub $ProgDir/sub_quast.sh $Assembly $OutDir
   done
 ```
-Checking PacBio coverage against Canu assembly 
+Checking PacBio coverage against Canu assembly
 
 ```bash
   Assembly=assembly/canu/V.dahliae/12008/polished/pilon.fasta
@@ -170,7 +170,7 @@ Checking PacBio coverage against Canu assembly
   done
   rm tmp.csv
 ``` -->
- 
+
 ### Spades Assembly
 
 ```bash
@@ -199,7 +199,7 @@ Contigs shorter thaan 500bp were removed from the assembly
   done
 ```
 
-Checking PacBio coverage against Spades assembly 
+Checking PacBio coverage against Spades assembly
 
 ```bash
   Assembly=assembly/spades_pacbio/V.dahliae/12008/filtered_contigs/contigs_min_500bp.fasta
@@ -396,7 +396,7 @@ using the following commands:
   The number of bases masked by RepeatMasker:     3014429
   The number of bases masked by TransposonPSI:    859780
   The total number of masked bases are:   3161584
-  
+
 
 ```bash
   for File in $(ls repeat_masked/*/*/ncbi_filtered_contigs_repmask/*_contigs_softmasked.fa); do
@@ -469,7 +469,38 @@ less gene_pred/cegma/cegma_results_dna_summary.txt
 #    Total = total number of CEGs present including putative orthologs     #
 #    Average = average number of orthologs per CEG                         #
 #    %Ortho = percentage of detected CEGS that have more than 1 ortholog   #
+```
 There are 237 complete and 7 partial core eukaryotic genes (out of total 248 genes) present in my assembly
+
+
+Busco has replaced CEGMA and was run to check gene space in assemblies
+
+```bash
+for Assembly in $(ls repeat_masked/V.*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
+Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
+echo "$Organism - $Strain"
+ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/busco
+BuscoDB="Eukaryotic"
+OutDir=gene_pred/busco/$Organism/$Strain/assembly
+qsub $ProgDir/sub_busco2.sh $Assembly $BuscoDB $OutDir
+done
+```
+
+```bash
+  for File in $(ls gene_pred/busco/*/*/assembly/*/short_summary_*.txt); do
+  Strain=$(echo $File| rev | cut -d '/' -f4 | rev)
+  Organism=$(echo $File | rev | cut -d '/' -f5 | rev)
+  Complete=$(cat $File | grep "(C)" | cut -f2)
+  Fragmented=$(cat $File | grep "(F)" | cut -f2)
+  Missing=$(cat $File | grep "(M)" | cut -f2)
+  Total=$(cat $File | grep "Total" | cut -f2)
+  echo -e "$Organism\t$Strain\t$Complete\t$Fragmented\t$Missing\t$Total"
+  done
+```
+
+
+
 
 ## Gene prediction
 
@@ -802,7 +833,7 @@ Note - cufflinks doesn't always predict direction of a transcript and
 therefore features can not be restricted by strand when they are intersected.
 
 
-```bash 
+```bash
   for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
   Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
   Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
@@ -815,7 +846,7 @@ therefore features can not be restricted by strand when they are intersected.
   done
 ```
 
-Secondly, genes were predicted using CodingQuary: 
+Secondly, genes were predicted using CodingQuary:
 
 ```bash
   for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
@@ -833,7 +864,7 @@ Then, additional transcripts were added to Braker gene models, when CodingQuary
 genes were predicted in regions of the genome, not containing Braker gene
 models:
 
-```bash 
+```bash
   # for BrakerGff in $(ls gene_pred/braker/F.*/*_braker_new/*/augustus.gff3 | grep -w -e 'Fus2'); do
   for BrakerGff in $(ls gene_pred/braker/V.*/12008_braker_sixth/*/augustus.gff3); do
   Strain=$(echo $BrakerGff| rev | cut -d '/' -f3 | rev | sed 's/_braker_sixth//g')
@@ -896,7 +927,7 @@ The final number of genes per isolate was observed using:
   #10456
 
 
-```bash 
+```bash
   for DirPath in $(ls -d gene_pred/codingquary1/V.*/*/final); do
   echo $DirPath;
   cat $DirPath/final_genes_Braker.pep.fasta | grep '>' | wc -l;
@@ -935,7 +966,7 @@ the P. infestans genome. Additional functionality was added to this script by
 also printing ORFs in .gff format.
 
 
-```bash 
+```bash
   ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
   for Genome in $(ls repeat_masked/*/*/ncbi*/*_contigs_unmasked.fa | grep -w -e '12008'); do
     qsub $ProgDir/run_ORF_finder.sh $Genome
@@ -1120,7 +1151,7 @@ gene models using a number of approaches:
 
  The batch files of predicted secreted proteins needed to be combined into a
  single file for each strain. This was done with the following commands:
- 
+
  ```bash
   for SplitDir in $(ls -d gene_pred/final_genes_split/*/*); do
     Strain=$(echo $SplitDir | rev |cut -d '/' -f1 | rev)
