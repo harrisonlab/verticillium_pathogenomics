@@ -1,4 +1,48 @@
 
+## Assembly stats
+
+Assembly stats were collected using quast
+
+```bash
+  ProgDir=/home/fanron/git_repos/tools/seq_tools/assemblers/assembly_qc/quast
+  for Assembly in $(ls assembly/merged_canu_spades/*/*/ensembl/*.dna.toplevel.fa); do
+    Strain=$(echo $Assembly | rev | cut -f3 -d '/' | rev)
+    Organism=$(echo $Assembly | rev | cut -f4 -d '/' | rev)  
+    OutDir=$(dirname $Assembly)
+    qsub $ProgDir/sub_quast.sh $Assembly $OutDir
+  done
+```
+
+The gene space in published genomes was checked using BUSCO:
+
+```bash
+  for Assembly in $(ls assembly/merged_canu_spades/*/*/ensembl/*.dna.toplevel.fa); do
+    Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
+    Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
+    echo "$Organism - $Strain"
+    ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/busco
+    BuscoDB="Eukaryotic"
+    OutDir=gene_pred/busco/$Organism/$Strain/assembly
+    qsub $ProgDir/sub_busco2.sh $Assembly $BuscoDB $OutDir
+  done
+```
+
+```bash
+  for File in $(ls gene_pred/busco/*/*/assembly/*/short_summary_*.txt); do
+  Strain=$(echo $File| rev | cut -d '/' -f4 | rev)
+  Organism=$(echo $File | rev | cut -d '/' -f5 | rev)
+  Complete=$(cat $File | grep "(C)" | cut -f2)
+  Fragmented=$(cat $File | grep "(F)" | cut -f2)
+  Missing=$(cat $File | grep "(M)" | cut -f2)
+  Total=$(cat $File | grep "Total" | cut -f2)
+  echo -e "$Organism\t$Strain\t$Complete\t$Fragmented\t$Missing\t$Total"
+  done
+```
+
+
+
+
+
 The final number of genes per isolate was observed using:
 ```bash
 for DirPath in $(ls -d assembly/merged_canu_spades/V.dahliae/*/ensembl); do
@@ -106,7 +150,7 @@ gene models using a number of approaches:
  ```
  The batch files of predicted secreted proteins needed to be combined into a
  single file for each strain. This was done with the following commands:
- 
+
  ```bash
   for SplitDir in $(ls -d gene_pred/final_genes_split/*/*); do
     Strain=$(echo $SplitDir | rev |cut -d '/' -f1 | rev)
@@ -236,7 +280,7 @@ ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
 $ProgDir/extract_gff_for_sigP_hits.pl $OutFileHeaders $Gff effectorP ID > $EffectorP_Gff
 done
 ```
- | 
+ |
   V.dahliae - JR2
 182
 
@@ -472,7 +516,7 @@ cat ..interproscan..gff3 | grep 'LysM' | wc -l
 LysM  11     11   11     11    11  11  11  11
 
 NPP1   7     7    9      8     7   7   7    8
-   
+
 
 
    Download V. dahlaie strain ST100 reads from NCBI:
@@ -497,5 +541,3 @@ do
 reads2=$(echo "$reads" | sed 's/_1.fastq.gz/_2.fastq.gz/g')
 qsub $scripts/sub_read_qc.sh $reads $reads2
 done
-
-
