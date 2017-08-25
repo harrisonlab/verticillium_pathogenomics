@@ -86,6 +86,46 @@ Data quality was visualised once again following trimming:
     qsub $ProgDir/run_fastqc.sh $RawData
   done
 ```
+
+
+### Identifing read depth
+
+```bash
+  for Reads in $(ls raw_dna/pacbio/*/*/extracted/concatenated_pacbio.fastq); do
+    ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/dna_qc
+    OutDir=$(dirname $Reads)
+    qsub $ProgDir/sub_count_nuc.sh 35 $Reads $OutDir
+  done
+  for Reads in $(ls qc_dna/paired/*/*/*/*_trim.fq.gz); do
+    ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/dna_qc
+    OutDir=$(dirname $Reads)
+    qsub $ProgDir/sub_count_nuc.sh 35 $Reads $OutDir
+  done
+```
+
+The predicted coverage was calculated to be:
+
+```bash
+# For PacBio data:
+for StrainDir in $(ls -d raw_dna/pacbio/*/* ); do
+Strain=$(basename $StrainDir)
+printf "$Strain\t"
+for File in $(ls qc_dna/paired/*/"$Strain"/*/*.txt); do
+echo $(basename $File);
+cat $File | tail -n1 | rev | cut -f2 -d ' ' | rev;
+done | grep -v '.txt' | awk '{ SUM += $1} END { print SUM }'
+done
+# For illumina data
+for StrainDir in $(ls -d qc_dna/paired/*/* ); do
+Strain=$(basename $StrainDir)
+printf "$Strain\t"
+for File in $(ls qc_dna/paired/*/"$Strain"/*/*.txt); do
+echo $(basename $File);
+cat $File | tail -n1 | rev | cut -f2 -d ' ' | rev;
+done | grep -v '.txt' | awk '{ SUM += $1} END { print SUM }'
+done
+```
+
 ## Assembly
 
 ### Canu assembly
@@ -145,7 +185,7 @@ Assembly stats were collected using quast
     qsub $ProgDir/sub_quast.sh $Assembly $OutDir
   done
 ```
-Checking PacBio coverage against Canu assembly 
+Checking PacBio coverage against Canu assembly
 
 ```bash
   Assembly=assembly/canu/V.dahliae/12008/polished/pilon.fasta
@@ -170,7 +210,7 @@ Checking PacBio coverage against Canu assembly
   done
   rm tmp.csv
 ``` -->
- 
+
 ### Spades Assembly
 
 ```bash
@@ -199,7 +239,7 @@ Contigs shorter thaan 500bp were removed from the assembly
   done
 ```
 
-Checking PacBio coverage against Spades assembly 
+Checking PacBio coverage against Spades assembly
 
 ```bash
   Assembly=assembly/spades_pacbio/V.dahliae/12008/filtered_contigs/contigs_min_500bp.fasta
@@ -376,8 +416,12 @@ The best assemblies were used to perform repeatmasking
 The number of bases masked by transposonPSI and Repeatmasker were summarised
 using the following commands:
 
+
+The number of bases masked by transposonPSI and Repeatmasker were summarised
+using the following commands:
+
 ```bash
-  for RepDir in $(ls -d repeat_masked/V.*/*/ncbi_filtered_contigs_repmask | grep '12008'); do
+  for RepDir in $(ls -d repeat_masked/V.*/*/ncbi*); do
     Strain=$(echo $RepDir | rev | cut -f2 -d '/' | rev)
     Organism=$(echo $RepDir | rev | cut -f3 -d '/' | rev)  
     RepMaskGff=$(ls $RepDir/*_contigs_hardmasked.gff)
@@ -392,10 +436,34 @@ using the following commands:
     echo
   done
 ```
-ncbi-V.dahliae       12008
-  The number of bases masked by RepeatMasker:     3280336
-  The number of bases masked by TransposonPSI:    859780
-  The total number of masked bases are:   3372268
+Results were as follows:
+```
+V.dahliae	12008
+The number of bases masked by RepeatMasker:	3280336
+The number of bases masked by TransposonPSI:	859780
+The total number of masked bases are:	3372268
+
+V.dahliae	51
+The number of bases masked by RepeatMasker:	1195031
+The number of bases masked by TransposonPSI:	310921
+The total number of masked bases are:	1377060
+
+V.dahliae	53
+The number of bases masked by RepeatMasker:	689605
+The number of bases masked by TransposonPSI:	221954
+The total number of masked bases are:	863683
+
+V.dahliae	58
+The number of bases masked by RepeatMasker:	1258760
+The number of bases masked by TransposonPSI:	360475
+The total number of masked bases are:	1418679
+
+V.dahliae	61
+The number of bases masked by RepeatMasker:	1574548
+The number of bases masked by TransposonPSI:	407135
+The total number of masked bases are:	1726438
+```
+
 ### Pre-gene prediction
 
 Quality of genome assemblies was assessed by looking for the gene space in the assemblies.
@@ -440,7 +508,37 @@ less gene_pred/cegma/cegma_results_dna_summary.txt
 #    Total = total number of CEGs present including putative orthologs     #
 #    Average = average number of orthologs per CEG                         #
 #    %Ortho = percentage of detected CEGS that have more than 1 ortholog   #
+```
 There are 237 complete and 7 partial core eukaryotic genes (out of total 248 genes) present in my assembly
+
+
+Busco has replaced CEGMA and was run to check gene space in assemblies
+
+```bash
+for Assembly in $(ls repeat_masked/V.*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
+Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
+echo "$Organism - $Strain"
+ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/busco
+BuscoDB=$(ls -d /home/groups/harrisonlab/dbBusco/sordariomyceta_odb9)
+OutDir=../tmp/gene_pred/busco/$Organism/$Strain/assembly
+qsub $ProgDir/sub_busco2.sh $Assembly $BuscoDB $OutDir
+done
+```
+
+```bash
+for File in $(ls ../tmp/gene_pred/busco/*/*/assembly/*/short_summary_*.txt); do
+Strain=$(echo $File| rev | cut -d '/' -f4 | rev)
+Organism=$(echo $File | rev | cut -d '/' -f5 | rev)
+Complete=$(cat $File | grep "(C)" | cut -f2)
+Fragmented=$(cat $File | grep "(F)" | cut -f2)
+Duplicated=$(cat $File | grep "(D)" | cut -f2)
+Missing=$(cat $File | grep "(M)" | cut -f2)
+Total=$(cat $File | grep "Total" | cut -f2)
+echo -e "$Organism\t$Strain\t$Complete\t$Fragmented\t$Duplicated\t$Missing\t$Total"
+done
+```
+
 
 ## Gene prediction
 
@@ -632,7 +730,7 @@ Then Rnaseq data was aligned to each genome assembly:
   done
 
   mkdir -p ncbi_alignment/after_cuff/12008PDA_accurate
-  
+
   mv -r 12008PDA/* 12008PDA_accurate/
 ```
 81.5% overall read mapping rate.
@@ -664,7 +762,7 @@ Then Rnaseq data was aligned to each genome assembly:
   done
 
   mkdir -p ncbi_alignment/after_cuff/12008CD_accurate
-  
+
   mv -r 12008CD/* 12008CD_accurate/
 ```
 ### Braker prediction
@@ -733,7 +831,7 @@ Fistly, aligned RNAseq data was assembled into transcripts using Cufflinks.
 
 Note - cufflinks doesn't always predict direction of a transcript and
 therefore features can not be restricted by strand when they are intersected.
-```bash 
+```bash
   for Assembly in $(ls repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
   Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
   Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
@@ -745,7 +843,7 @@ therefore features can not be restricted by strand when they are intersected.
   qsub $ProgDir/sub_cufflinks.sh $AcceptedHits $OutDir
   done
 ```
-Secondly, genes were predicted using CodingQuary: 
+Secondly, genes were predicted using CodingQuary:
 
 ```bash
   for Assembly in $(ls repeat_masked/*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa | grep -e '51' -e '53' -e '58' -e '61'); do
@@ -820,7 +918,7 @@ done
     contig_8        CodingQuarry_v2.0       gene    417120  417650  .       +       .       ID=NS.04274;Name=;                                                                          
     contig_8        CodingQuarry_v2.0       gene    417120  417650  .       +       .       ID=CUFF.9944.1.116;Name=;                                                                            
 #### Remove those lines containing 'CUFF.9944.1.116' because we are not very confident for the cuff results
-  the command used was : 
+  the command used was :
   cd /gene_pred/codingquary1/V.dahliae/12008/additional:
   cat additional_genes.gff | grep -v -w 'CUFF.9944.1.116' > new_additional_genes.gff
 
@@ -889,23 +987,28 @@ done
   done
   ```
 
-The final number of genes per isolate was observed using:
 
-```bash 
-  for DirPath in $(ls -d  gene_pred/final_genes/V.dahliae/12008/final); do
-  echo $DirPath;
-  cat $DirPath/final_genes_Braker.pep.fasta | grep '>' | wc -l;
-  cat $DirPath/final_genes_CodingQuary.pep.fasta | grep '>' | wc -l;
-  cat $DirPath/final_genes_combined.pep.fasta | grep '>' | wc -l;
-  echo "";
-  done
-```
-  gene_pred/codingquary1/V.dahliae/12008/final
-  9881
-  721
-  10601
+  ```bash
+    for DirPath in $(ls -d gene_pred/final_genes/V.*/*/final); do
+    Strain=$(echo $DirPath| rev | cut -d '/' -f2 | rev)
+    Organism=$(echo $DirPath | rev | cut -d '/' -f3 | rev)
+    Braker=$(cat $DirPath/final_genes_Braker.pep.fasta | grep '>' | wc -l);
+    CodingQuary=$(cat $DirPath/final_genes_CodingQuary.pep.fasta | grep '>' | wc -l);
+    TotalProteins=$(cat $DirPath/final_genes_combined.pep.fasta | grep '>' | wc -l);
+    TotalGenes=$(cat $DirPath/final_genes_combined.pep.fasta | grep '>' | cut -f1 -d '.' | sort | uniq | wc -l);
+    printf "$Organism\t$Strain\t$Braker\t$CodingQuary\t$TotalProteins\t$TotalGenes\n";
+    done
+  ```
 
-  ## ORF finder
+  ```
+  V.dahliae	12008	9881	720	10601	10440
+  V.dahliae	51	9655	732	10387	10296
+  V.dahliae	53	9718	716	10434	10332
+  V.dahliae	58	9458	545	10003	9925
+  V.dahliae	61	9457	550	10007	9936
+  ```
+
+## ORF finder
 
   The genome was searched in six reading frames for any start codon and following
   translated identification of a start codon translating sequence until a stop
@@ -914,7 +1017,7 @@ The final number of genes per isolate was observed using:
   also printing ORFs in .gff format.
 
 
-```bash 
+```bash
   ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
   for Genome in $(ls repeat_masked/*/*/ncbi*/*_contigs_unmasked.fa | grep -e '51' -e '53' -e '58' -e '61'); do
     qsub $ProgDir/run_ORF_finder.sh $Genome
@@ -951,7 +1054,7 @@ corrected using the following commands:
   gene_pred/ORF_finder/V.dahliae/12008
   ORF_finder
   329388
-  
+
   gene_pred/ORF_finder/V.dahliae/51
   319733
 
@@ -1003,6 +1106,17 @@ commands:
     InterProRaw=gene_pred/interproscan/$Organism/$Strain/raw
     $ProgDir/append_interpro.sh $Proteins $InterProRaw
   done
+```
+
+The number of NPP-like proteins
+
+```bash
+for InterPro in $(ls gene_pred/interproscan/*/*/*_interproscan.tsv); do
+  Organism=$(echo $InterPro | rev | cut -d '/' -f3 | rev)
+  Strain=$(echo $InterPro | rev | cut -d '/' -f2 | rev)
+  echo "$Organism - $Strain"
+  cat $InterPro | grep 'NPP' | cut -f1 | sort | uniq | wc -l
+done
 ```
 
 ## B) SwissProt
@@ -1074,7 +1188,7 @@ gene models using a number of approaches:
 
 The batch files of predicted secreted proteins needed to be combined into a
  single file for each strain. This was done with the following commands:
- 
+
  ```bash
   for SplitDir in $(ls -d gene_pred/final_genes_split/*/12008); do
     Strain=$(echo $SplitDir | rev |cut -d '/' -f1 | rev)
@@ -1154,20 +1268,20 @@ Required programs:
 Those genes that were predicted as secreted and tested positive by effectorP were identified:
 
 ```bash
-  for File in $(ls analysis/effectorP/*/12008/*_EffectorP.txt); do
+  for File in $(ls analysis/effectorP/*/*/*_EffectorP.txt | grep -e '12008' -e '51' -e '53' -e '58' -e '61'); do
     Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
     Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
     echo "$Organism - $Strain"
     Headers=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_headers.txt/g')
     cat $File | grep 'Effector' | cut -f1 > $Headers
-    Secretome=$(ls gene_pred/final_genes_signalp-4.1/$Organism/12008/*_final_sp_no_trans_mem.aa)
+    Secretome=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/*_final_sp_no_trans_mem.aa)
     OutFile=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted.aa/g')
     ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
     $ProgDir/extract_from_fasta.py --fasta $Secretome --headers $Headers > $OutFile
     OutFileHeaders=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted_headers.txt/g')
     cat $OutFile | grep '>' | tr -d '>' > $OutFileHeaders
     cat $OutFileHeaders | wc -l
-    Gff=$(ls gene_pred/final_genes/V.dahliae/12008/*/final_genes_appended.gff3)
+    Gff=$(ls gene_pred/final_genes/*/$Strain/*/final_genes_appended.gff3)
     EffectorP_Gff=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted.gff/g')
     ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
     $ProgDir/extract_gff_for_sigP_hits.pl $OutFileHeaders $Gff effectorP ID > $EffectorP_Gff
@@ -1199,55 +1313,92 @@ Those proteins with a signal peptide were extracted from the list and gff files
 representing these proteins made.
 
 ```bash
-  for File in $(ls gene_pred/CAZY/*/12008/*CAZY.out.dm); do
+  for File in $(ls gene_pred/CAZY/*/*/*CAZY.out.dm | grep -e '12008' -e '51' -e '53' -e '58' -e '61'); do
     Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
     Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
     OutDir=$(dirname $File)
     echo "$Organism - $Strain"
     ProgDir=/home/groups/harrisonlab/dbCAN
-    $ProgDir/hmmscan-parser.sh $OutDir/12008_CAZY.out.dm > $OutDir/12008_CAZY.out.dm.ps
+    $ProgDir/hmmscan-parser.sh $File > $OutDir/"$Strain"_CAZY.out.dm.ps
     SecretedProts=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/"$Strain"_final_sp_no_trans_mem.aa)
     SecretedHeaders=$(echo $SecretedProts | sed 's/.aa/_headers.txt/g')
     cat $SecretedProts | grep '>' | tr -d '>' > $SecretedHeaders
-    Gff=$(ls gene_pred/final_genes/*/12008/*/final_genes_appended.gff3)
-    CazyGff=$OutDir/12008_CAZY.gff
+    Gff=$(ls gene_pred/final_genes/*/$Strain/*/final_genes_appended.gff3)
+    CazyGff=$OutDir/"$Strain"_CAZY.gff
     ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
     $ProgDir/extract_gff_for_sigP_hits.pl $SecretedHeaders $Gff CAZyme ID > $CazyGff
   done
 ```
 ```bash
-for File in $(ls gene_pred/CAZY/*/12008/*CAZY.out.dm); do
-      Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
-      Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
-      OutDir=$(dirname $File)
-      echo "$Organism - $Strain"
-      ProgDir=/home/groups/harrisonlab/dbCAN
-      $ProgDir/hmmscan-parser.sh $OutDir/"$Strain"_CAZY.out.dm > $OutDir/"$Strain"_CAZY.out.dm.ps
-      CazyHeaders=$(echo $File | sed 's/.out.dm/_headers.txt/g')
-      cat $OutDir/"$Strain"_CAZY.out.dm.ps | cut -f3 | sort | uniq > $CazyHeaders
-      echo "number of CAZY genes identified:"
-      cat $CazyHeaders | wc -l
-      Gff=$(ls gene_pred/final_genes/*/12008/*/final_genes_appended.gff3)
-      CazyGff=$OutDir/"$Strain"_CAZY.gff
-      ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
-      $ProgDir/extract_gff_for_sigP_hits.pl $CazyHeaders $Gff CAZyme ID > $CazyGff
+for File in $(ls gene_pred/CAZY/*/*/*CAZY.out.dm | grep -e '12008' -e '51' -e '53' -e '58' -e '61'); do
+Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
+Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
+OutDir=$(dirname $File)
+echo "$Organism - $Strain"
+ProgDir=/home/groups/harrisonlab/dbCAN
+$ProgDir/hmmscan-parser.sh $OutDir/"$Strain"_CAZY.out.dm > $OutDir/"$Strain"_CAZY.out.dm.ps
+CazyHeaders=$(echo $File | sed 's/.out.dm/_headers.txt/g')
+cat $OutDir/"$Strain"_CAZY.out.dm.ps | cut -f3 | sort | uniq > $CazyHeaders
+echo "number of CAZY genes identified:"
+cat $CazyHeaders | wc -l
+Gff=$(ls gene_pred/final_genes/*/$Strain/*/final_genes_appended.gff3)
+CazyGff=$OutDir/"$Strain"_CAZY.gff
+ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
+$ProgDir/extract_gff_for_sigP_hits.pl $CazyHeaders $Gff CAZyme ID > $CazyGff
 
-      SecretedProts=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/"$Strain"_final_sp_no_trans_mem.aa)
-      SecretedHeaders=$(echo $SecretedProts | sed 's/.aa/_headers.txt/g')
-      cat $SecretedProts | grep '>' | tr -d '>' > $SecretedHeaders
-      CazyGffSecreted=$OutDir/"$Strain"_CAZY_secreted.gff
-      $ProgDir/extract_gff_for_sigP_hits.pl $SecretedHeaders $CazyGff Secreted_CAZyme ID > $CazyGffSecreted
-      echo "number of Secreted CAZY genes identified:"
-      cat $CazyGffSecreted | grep -w 'mRNA' | cut -f9 | tr -d 'ID=' | cut -f1 -d ';' > $OutDir/"$Strain"_CAZY_secreted_headers.txt
-      cat $OutDir/"$Strain"_CAZY_secreted_headers.txt | wc -l
-    done
+SecretedProts=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/"$Strain"_final_sp_no_trans_mem.aa)
+SecretedHeaders=$(echo $SecretedProts | sed 's/.aa/_headers.txt/g')
+cat $SecretedProts | grep '>' | tr -d '>' > $SecretedHeaders
+CazyGffSecreted=$OutDir/"$Strain"_CAZY_secreted.gff
+$ProgDir/extract_gff_for_sigP_hits.pl $SecretedHeaders $CazyGff Secreted_CAZyme ID > $CazyGffSecreted
+echo "number of Secreted CAZY genes identified:"
+cat $CazyGffSecreted | grep -w 'mRNA' | cut -f9 | tr -d 'ID=' | cut -f1 -d ';' > $OutDir/"$Strain"_CAZY_secreted_headers.txt
+cat $OutDir/"$Strain"_CAZY_secreted_headers.txt | wc -l
+done
+```
 ```
 V.dahliae - 12008
 number of CAZY genes identified:
 627
-
 number of Secreted CAZY genes identified:
 306
+V.dahliae - 51
+number of CAZY genes identified:
+627
+number of Secreted CAZY genes identified:
+298
+V.dahliae - 53
+number of CAZY genes identified:
+634
+number of Secreted CAZY genes identified:
+306
+V.dahliae - 58
+number of CAZY genes identified:
+627
+number of Secreted CAZY genes identified:
+301
+V.dahliae - 61
+number of CAZY genes identified:
+626
+number of Secreted CAZY genes identified:
+305
+```
+
+The number of LysM containing proteins were identified based upon annotation from
+CBM50.hmm models
+
+```bash
+for Cazy in $(ls gene_pred/CAZY/V.*/*/*_CAZY.out.dm); do
+Strain=$(echo $Cazy | rev | cut -f2 -d '/' | rev)
+Organism=$(echo $Cazy | rev | cut -f3 -d '/' | rev)
+echo "$Organism - $Strain"
+OutDir=$(dirname $Cazy)
+cat $Cazy | grep 'CBM50.hmm' | sed -r "s/ +/\t/g" | cut -f4 | sort | uniq > $OutDir/LysM_headers.txt
+cat $OutDir/LysM_headers.txt | wc -l
+cat $OutDir/"$Strain"_CAZY_secreted_headers.txt | grep -w -f $OutDir/LysM_headers.txt | wc -l
+done
+```
+
 
 ```bash
 for file in $(ls gene_pred/CAZY/V.*/*/onlinesigp_result.txt); do
@@ -1280,7 +1431,7 @@ Cols in yourfile.out.dm.ps:
 
 Small secreted cysteine rich proteins were identified within secretomes. These proteins may be identified by EffectorP, but this approach allows direct control over what constitutes a SSCP.
   ```bash
-  for Secretome in $(ls gene_pred/final_genes_signalp-4.1/*/12008/*_final_sp_no_trans_mem.aa); do
+  for Secretome in $(ls gene_pred/final_genes_signalp-4.1/*/*/*_final_sp_no_trans_mem.aa | grep -e '12008' -e '51' -e '53' -e '58' -e '61'); do
   Strain=$(echo $Secretome| rev | cut -f2 -d '/' | rev)
   Organism=$(echo $Secretome | rev | cut -f3 -d '/' | rev)
   echo "$Organism - $Strain"
@@ -1297,14 +1448,47 @@ Small secreted cysteine rich proteins were identified within secretomes. These p
   cat $OutDir/"$Strain"_sscp_headers.txt $EffectorP | cut -f1 | sort | uniq -d | wc -l
   done
   ```
-V.dahliae - 12008
-% cysteine content threshold set to:    1
-maximum length set to:  300
-No. short-cysteine rich proteins in input fasta:        300
+```V.dahliae - 12008
+% cysteine content threshold set to:	1
+maximum length set to:	300
+No. short-cysteine rich proteins in input fasta:	300
 Number of effectors predicted by EffectorP:
 187
 Number of SSCPs predicted by both effectorP and this approach
 149
+V.dahliae - 51
+% cysteine content threshold set to:	1
+maximum length set to:	300
+No. short-cysteine rich proteins in input fasta:	299
+Number of effectors predicted by EffectorP:
+190
+Number of SSCPs predicted by both effectorP and this approach
+149
+V.dahliae - 53
+% cysteine content threshold set to:	1
+maximum length set to:	300
+No. short-cysteine rich proteins in input fasta:	310
+Number of effectors predicted by EffectorP:
+196
+Number of SSCPs predicted by both effectorP and this approach
+156
+V.dahliae - 58
+% cysteine content threshold set to:	1
+maximum length set to:	300
+No. short-cysteine rich proteins in input fasta:	291
+Number of effectors predicted by EffectorP:
+186
+Number of SSCPs predicted by both effectorP and this approach
+142
+V.dahliae - 61
+% cysteine content threshold set to:	1
+maximum length set to:	300
+No. short-cysteine rich proteins in input fasta:	299
+Number of effectors predicted by EffectorP:
+189
+Number of SSCPs predicted by both effectorP and this approach
+147
+```
 
 ##E) AntiSMASH
 
@@ -1348,7 +1532,10 @@ Number of predicted genes in clusters:  251
 
 ##F)Identifying PHIbase homologs
 
-The PHIbase database was searched against the assembled genomes using tBLASTx. The default output location is analysis/blast_homology/V.dahliae/*/*_PHI_accessions.fa_homologs.csv
+The PHIbase database was searched against the assembled genomes using tBLASTx. The default output location is:
+```
+analysis/blast_homology/V.dahliae/*/*_PHI_accessions.fa_homologs.csv
+```
 
 ```bash
 # mkdir -p blast_homology/PHIbase
@@ -1361,15 +1548,14 @@ ProgDir=/home/fanron/git_repos/tools/pathogen/blast
 qsub $ProgDir/blast_pipe.sh $DbDir/PHI_accessions.fa protein $Assembly
 done
 ```
-cat analysis/blast_homology/V.dahliae/12008/12008_PHI_accessions.fa_homologs.csv | cut -f1,577- | less -S 
+cat analysis/blast_homology/V.dahliae/12008/12008_PHI_accessions.fa_homologs.csv | cut -f1,577- | less -S
 cat analysis/blast_homology/V.dahliae/12008/12008_PHI_accessions.fa_homologs.csv | cut -f1,575- > cat analysis/blast_homology/V.dahliae/12008/12008_PHI.csv
 
-Then download the 12008_PHI.csv and inport it to excel.
+Then download the 12008_PHI.csv and import it to excel.
 
 
 
 
 following blasting PHIbase to the genome, the hits were filtered by effect on virulence.
 
-First the a tab seperated file was made in the clusters core directory containing PHIbase. These commands were run as part of previous projects but have been included here for completeness.
-
+First the a tab separated file was made in the clusters core directory containing PHIbase. These commands were run as part of previous projects but have been included here for completeness.
