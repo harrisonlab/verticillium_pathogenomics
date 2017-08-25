@@ -5,7 +5,7 @@ Assembly stats were collected using quast
 
 ```bash
   ProgDir=/home/fanron/git_repos/tools/seq_tools/assemblers/assembly_qc/quast
-  for Assembly in $(ls assembly/merged_canu_spades/*/*/ensembl/*.dna.toplevel.fa); do
+  for Assembly in $(ls assembly/merged_canu_spades/*/*/ensembl/*.dna.toplevel.fa | grep 'Ls17'); do
     Strain=$(echo $Assembly | rev | cut -f3 -d '/' | rev)
     Organism=$(echo $Assembly | rev | cut -f4 -d '/' | rev)  
     OutDir=$(dirname $Assembly)
@@ -16,19 +16,19 @@ Assembly stats were collected using quast
 The gene space in published genomes was checked using BUSCO:
 
 ```bash
-  for Assembly in $(ls assembly/merged_canu_spades/*/*/ensembl/*.dna.toplevel.fa); do
+  for Assembly in $(ls assembly/merged_canu_spades/*/*/ensembl/*.dna.toplevel.fa | grep 'Ls17'); do
     Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
     Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
     echo "$Organism - $Strain"
     ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/busco
-    BuscoDB="Eukaryotic"
-    OutDir=gene_pred/busco/$Organism/$Strain/assembly
+    BuscoDB=$(ls -d /home/groups/harrisonlab/dbBusco/sordariomyceta_odb9)
+    OutDir=../tmp/gene_pred/busco/$Organism/$Strain/assembly
     qsub $ProgDir/sub_busco2.sh $Assembly $BuscoDB $OutDir
   done
 ```
 
 ```bash
-  for File in $(ls gene_pred/busco/*/*/assembly/*/short_summary_*.txt); do
+  for File in $(ls ../tmp/gene_pred/busco/*/*/assembly/*/short_summary_*.txt); do
   Strain=$(echo $File| rev | cut -d '/' -f4 | rev)
   Organism=$(echo $File | rev | cut -d '/' -f5 | rev)
   Complete=$(cat $File | grep "(C)" | cut -f2)
@@ -43,11 +43,17 @@ The gene space in published genomes was checked using BUSCO:
 
 
 
-The final number of genes per isolate was observed using:
+The final number of proteins per isolate was observed using:
 ```bash
-for DirPath in $(ls -d assembly/merged_canu_spades/V.dahliae/*/ensembl); do
+for DirPath in $(ls -d assembly/merged_canu_spades/V.*/*/ensembl | grep -v 'Ls17'); do
 echo $DirPath
 cat $DirPath/*.pep.all.fa | grep '>' | wc -l
+echo ""
+done
+
+for DirPath in $(ls -d assembly/merged_canu_spades/V.*/*/ensembl | grep 'Ls17'); do
+echo $DirPath
+cat $DirPath/*_protein.faa | grep '>' | wc -l
 echo ""
 done
 ```
@@ -57,7 +63,7 @@ assembly/merged_canu_spades/V.dahliae/JR2/ensembl
 assembly/merged_canu_spades/V.dahliae/Ls17/ensembl
 10535
 
-If parse the LS17 genome using our pepline, we can compare the home generated results with the public one.
+If parse the LS17 genome using our pipeline, we can compare the home generated results with the public one.
 ##)Interproscan
 ```bash
 screen -a
@@ -233,13 +239,13 @@ Required programs:
 Those genes that were predicted as secreted and tested positive by effectorP were identified:
 
 ```bash
-    for File in $(ls analysis/effectorP/V.*/VaMs102/*_EffectorP.txt); do
+    for File in $(ls analysis/effectorP/V.*/*/*_EffectorP.txt | grep -e 'JR2' -e 'Ls17' -e 'VaMs102'); do
     Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
     Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
     echo "$Organism - $Strain"
     Headers=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_headers.txt/g')
     cat $File | grep 'Effector' | cut -f1 -d ' ' > $Headers
-    Secretome=$(ls gene_pred/final_genes_signalp-4.1/V.*/VaMs102/*_final_sp_no_trans_mem.aa)
+    Secretome=$(ls gene_pred/final_genes_signalp-4.1/V.*/$Strain/*_final_sp_no_trans_mem.aa)
     OutFile=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted.aa/g')
     ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
     $ProgDir/extract_from_fasta.py --fasta $Secretome --headers $Headers > $OutFile
@@ -247,19 +253,16 @@ Those genes that were predicted as secreted and tested positive by effectorP wer
     cat $OutFile | grep '>' | tr -d '>' > $OutFileHeaders
     cat $OutFileHeaders | wc -l
     done
-      #Gff=$(ls gene_pred/codingquary1/V.dahliae/12008/*/final_genes_appended.gff3)
-    #EffectorP_Gff=$(echo "$File" | sed 's/_EffectorP.txt/_EffectorP_secreted.gff/g')
-    #ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
-    #$ProgDir/extract_gff_for_sigP_hits.pl $OutFileHeaders $Gff effectorP ID > $EffectorP_Gff
-  #done
-  #Note: the Gff part is to know the location of effectors in genome.
 ```
-
 V.alfafae - VaMs102
 169
-
+V.dahliae - JR2
+182
+V.dahliae - Ls17
+155
+<!--
 ```bash
-for File in $(ls analysis/effectorP/V.dahliae/JR2/*_EffectorP.txt); do
+for File in $(ls analysis/effectorP/V.*/*/*_EffectorP.txt | grep -e 'JR2'); do
 Test=$(echo "$File" | sed 's/_EffectorP.txt/_test.txt/'g)
 cat "$File" | cut -d' ' -f1,7 | awk -v OFS="\t" '$1=$1' | cut -d$'\t' -f1,3,4 > $Test
 Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
@@ -267,22 +270,21 @@ Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
 echo "$Organism - $Strain"
 Headers=$(echo "$Test" | sed 's/_test.txt/_EffectorP_headers.txt/g')
 cat $Test | grep 'Effector' | cut -f1 -d ' ' | awk -v OFS="\t" '$1=$1' | cut -d$'\t' -f1 > $Headers
-Secretome=$(ls gene_pred/final_genes_signalp-4.1/V.dahliae/JR2/*_final_sp_no_trans_mem.aa)
+Secretome=$(ls gene_pred/final_genes_signalp-4.1/V.*/$Strain/*_final_sp_no_trans_mem.aa)
 OutFile=$(echo "$Test" | sed 's/_test.txt/_EffectorP_secreted.aa/g')
 ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
 $ProgDir/extract_from_fasta.py --fasta $Secretome --headers $Headers > $OutFile
 OutFileHeaders=$(echo "$Test" | sed 's/_test.txt/_EffectorP_secreted_headers.txt/g')
 cat $OutFile | grep '>' | tr -d '>' > $OutFileHeaders
 cat $OutFileHeaders | wc -l
-Gff=$(ls assembly/merged_canu_spades/V.dahliae/JR2/ensembl/Verticillium_dahliaejr2.GCA_000400815.2.33.gff3)
+Gff=$(ls assembly/merged_canu_spades/V.*/$Strain/ensembl/Verticillium_dahliaejr2.GCA_000400815.2.33.gff3)
 EffectorP_Gff=$(sed 's/_test.txt/_EffectorP_secreted.gff/g')
 ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
 $ProgDir/extract_gff_for_sigP_hits.pl $OutFileHeaders $Gff effectorP ID > $EffectorP_Gff
 done
 ```
- |
-  V.dahliae - JR2
-182
+V.dahliae - JR2
+177
 
 ```bash
 for File in $(ls analysis/effectorP/V.dahliae/Ls17/*_EffectorP.txt); do
@@ -307,7 +309,7 @@ $ProgDir/extract_gff_for_sigP_hits.pl $OutFileHeaders $Gff effectorP ID > $Effec
 done
 ```
   V.dahliae - Ls17
-155
+155 -->
 
 ## C) CAZY proteins
 
@@ -315,7 +317,7 @@ Carbohydrte active enzymes were idnetified using CAZYfollowing recomendations
 at http://csbl.bmb.uga.edu/dbCAN/download/readme.txt :
 
 ```bash
-  for Proteome in $(ls assembly/merged_canu_spades/*/*/ensembl/*.pep.all.fa); do
+  for Proteome in $(ls assembly/merged_canu_spades/*/*/ensembl/*.pep.all.fa | grep -e 'JR2' -e 'Ls17' -e 'VaMs102'); do
     Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
     Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
     OutDir=gene_pred/CAZY/$Organism/$Strain
@@ -334,7 +336,7 @@ Those proteins with a signal peptide were extracted from the list and gff files
 representing these proteins made.
 
 ```bash
-  for File in $(ls gene_pred/CAZY/V.dahliae/JR2/*CAZY.out.dm); do
+  for File in $(ls gene_pred/CAZY/V.*/*/*CAZY.out.dm | grep -e 'JR2' -e 'Ls17' -e 'VaMs102'); do
       Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
       Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
       OutDir=$(dirname $File)
@@ -345,12 +347,30 @@ representing these proteins made.
       cat $OutDir/"$Strain"_CAZY.out.dm.ps | cut -f3 | sort | uniq > $CazyHeaders
       echo "number of CAZY genes identified:"
       cat $CazyHeaders | wc -l
-  done      
+      Secretome=$(ls gene_pred/final_genes_signalp-4.1/V.*/$Strain/*_final_sp_no_trans_mem.aa)
+      OutFile=$(echo $File | sed 's/.out.dm/_secreted.aa/g')
+      ProgDir=/home/fanron/git_repos/tools/gene_prediction/ORF_finder
+      $ProgDir/extract_from_fasta.py --fasta $Secretome --headers $CazyHeaders > $OutFile
+      OutFileHeaders=$(echo $File | sed 's/.out.dm/_secreted_headers.txt/g')
+      cat $OutFile | grep '>' | tr -d '>' > $OutFileHeaders
+      cat $OutFileHeaders | wc -l
+  done
 ```
+```
+V.alfafae - VaMs102
+number of CAZY genes identified:
+599
+263
 V.dahliae - JR2
 number of CAZY genes identified:
 606
-
+266
+V.dahliae - Ls17
+number of CAZY genes identified:
+623
+305
+```
+<!--
 ```bash
 for File in $(ls gene_pred/CAZY/V.dahliae/Ls17/*CAZY.out.dm); do
       Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
@@ -371,11 +391,12 @@ for File in $(ls gene_pred/CAZY/V.dahliae/Ls17/*CAZY.out.dm); do
       SecretedProts=$(ls gene_pred/final_genes_signalp-4.1/$Organism/$Strain/"$Strain"_final_sp_no_trans_mem.aa)
       SecretedHeaders=$(echo $SecretedProts | sed 's/.aa/_headers.txt/g')
       cat $SecretedProts | grep '>' | tr -d '>' > $SecretedHeaders
-      CazyGffSecreted=$OutDir/"$Strain"_CAZY_secreted.gff
-      $ProgDir/extract_gff_for_sigP_hits.pl $SecretedHeaders $CazyGff Secreted_CAZyme ID > $CazyGffSecreted
-      echo "number of Secreted CAZY genes identified:"
-      cat $CazyGffSecreted | grep -w 'mRNA' | cut -f9 | tr -d 'ID=' | cut -f1 -d ';' > $OutDir/"$Strain"_CAZY_secreted_headers.txt
-      cat $OutDir/"$Strain"_CAZY_secreted_headers.txt | wc -l
+
+      # CazyGffSecreted=$OutDir/"$Strain"_CAZY_secreted.gff
+      # $ProgDir/extract_gff_for_sigP_hits.pl $SecretedHeaders $CazyGff Secreted_CAZyme ID > $CazyGffSecreted
+      # echo "number of Secreted CAZY genes identified:"
+      # cat $CazyGffSecreted | grep -w 'mRNA' | cut -f9 | tr -d 'ID=' | cut -f1 -d ';' > $OutDir/"$Strain"_CAZY_secreted_headers.txt
+      # cat $OutDir/"$Strain"_CAZY_secreted_headers.txt | wc -l
     done
 ```
 V.dahliae - Ls17
@@ -411,62 +432,55 @@ for File in $(ls gene_pred/CAZY/*/VaMs102/*CAZY.out.dm); do
 ```
   V.alfafae - VaMs102
   number of CAZY genes identified:
-  599
+  599 -->
 
-  ## D) Identify Small secreted cysteine rich proteins
+## D) Identify Small secreted cysteine rich proteins
 
-  Small secreted cysteine rich proteins were identified within secretomes. These proteins may be identified by EffectorP, but this approach allows direct control over what constitutes a SSCP.
-  ```bash
-  for Secretome in $(ls gene_pred/final_genes_signalp-4.1/*/*/*_final_sp_no_trans_mem.aa); do
-  Strain=$(echo $Secretome| rev | cut -f2 -d '/' | rev)
-  Organism=$(echo $Secretome | rev | cut -f3 -d '/' | rev)
-  echo "$Organism - $Strain"
-  OutDir=analysis/sscp/$Organism/$Strain
-  mkdir -p $OutDir
-  ProgDir=/home/armita/git_repos/emr_repos/tools/pathogen/sscp
-  $ProgDir/sscp_filter.py --inp_fasta $Secretome --max_length 400 --threshold 1 --out_fasta $OutDir/"$Strain"_sscp_all_results.fa
-  cat $OutDir/"$Strain"_sscp_all_results.fa | grep 'Yes' > $OutDir/"$Strain"_sscp.fa
-  echo "Number of effectors predicted by EffectorP:"
-  EffectorP=$(ls analysis/effectorP/$Organism/$Strain/*_EffectorP_secreted_headers.txt)
-  cat $EffectorP | wc -l
-  echo "Number of SSCPs predicted by both effectorP and this approach"
-  cat $OutDir/"$Strain"_sscp.fa | grep '>' | tr -d '>' > $OutDir/"$Strain"_sscp_headers.txt
-  cat $OutDir/"$Strain"_sscp_headers.txt $EffectorP | cut -f1 | sort | uniq -d | wc -l
-  done
-  ```
+Small secreted cysteine rich proteins were identified within secretomes. These proteins may be identified by EffectorP, but this approach allows direct control over what constitutes a SSCP.
+```bash
+for Secretome in $(ls gene_pred/final_genes_signalp-4.1/*/*/*_final_sp_no_trans_mem.aa | grep -e 'JR2' -e 'Ls17' -e 'VaMs102'); do
+Strain=$(echo $Secretome| rev | cut -f2 -d '/' | rev)
+Organism=$(echo $Secretome | rev | cut -f3 -d '/' | rev)
+echo "$Organism - $Strain"
+OutDir=analysis/sscp/$Organism/$Strain
+mkdir -p $OutDir
+ProgDir=/home/armita/git_repos/emr_repos/tools/pathogen/sscp
+$ProgDir/sscp_filter.py --inp_fasta $Secretome --max_length 300 --threshold 1 --out_fasta $OutDir/"$Strain"_sscp_all_results.fa
+cat $OutDir/"$Strain"_sscp_all_results.fa | grep 'Yes' > $OutDir/"$Strain"_sscp.fa
+echo "Number of effectors predicted by EffectorP:"
+EffectorP=$(ls analysis/effectorP/$Organism/$Strain/*_EffectorP_secreted_headers.txt)
+cat $EffectorP | wc -l
+echo "Number of SSCPs predicted by both effectorP and this approach"
+cat $OutDir/"$Strain"_sscp.fa | grep '>' | tr -d '>' > $OutDir/"$Strain"_sscp_headers.txt
+cat $OutDir/"$Strain"_sscp_headers.txt $EffectorP | cut -f1 | sort | uniq -d | wc -l
+done
+```
+```
 V.alfafae - VaMs102
-% cysteine content threshold set to:    1
-maximum length set to:  300
-No. short-cysteine rich proteins in input fasta:        266
+% cysteine content threshold set to:	1
+maximum length set to:	300
+No. short-cysteine rich proteins in input fasta:	266
 Number of effectors predicted by EffectorP:
 169
 Number of SSCPs predicted by both effectorP and this approach
 129
-V.dahliae - 12008
-% cysteine content threshold set to:    1
-maximum length set to:  300
-No. short-cysteine rich proteins in input fasta:        300
-Number of effectors predicted by EffectorP:
-187
-Number of SSCPs predicted by both effectorP and this approach
-149
 V.dahliae - JR2
-% cysteine content threshold set to:    1
-maximum length set to:  300
-No. short-cysteine rich proteins in input fasta:        284
+% cysteine content threshold set to:	1
+maximum length set to:	300
+No. short-cysteine rich proteins in input fasta:	284
 Number of effectors predicted by EffectorP:
 177
 Number of SSCPs predicted by both effectorP and this approach
 148
 V.dahliae - Ls17
-% cysteine content threshold set to:    1
-maximum length set to:  300
-No. short-cysteine rich proteins in input fasta:        272
+% cysteine content threshold set to:	1
+maximum length set to:	300
+No. short-cysteine rich proteins in input fasta:	272
 Number of effectors predicted by EffectorP:
 155
 Number of SSCPs predicted by both effectorP and this approach
 120
-
+```
 
 ##E) AntiSMASH
 Do it in the website: http://antismash.secondarymetabolites.org/
