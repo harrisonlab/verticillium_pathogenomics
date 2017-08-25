@@ -199,8 +199,8 @@ GffFile=$(ls gene_pred/final_genes/V.dahliae/12008/final/final_genes_appended.gf
 Organism="Verticillium dahliae"
 Strain="12008"
 # ncbi_tbl_corrector script options:
-# SubmissionID is from the email that got when you registrated BioProject 
-SubmissionID="BJF96" 
+# SubmissionID is from the email that got when you registrated BioProject
+SubmissionID="BJF96"
 LabID="ArmitageEMR"
 # GeneSource='ab initio prediction:Braker:1.9, CodingQuary:2.0'
 # IDSource='similar to AA sequence:SwissProt:2016_07'
@@ -219,7 +219,7 @@ Gff and unique IDs should be given to all features in the file.
 # cat $GffFile | sed 's/transcript/mRNA/g' > $OutDir/GffMRNA.gff
 # $ProgDir/generate_tbl_file/exon_generator.pl $OutDir/GffMRNA.gff > $OutDir/corrected_exons.gff
 # $ProgDir/generate_tbl_file/gff_add_id.py --inp_gff $OutDir/corrected_exons.gff --out_gff $OutDir/corrected_exons_id.gff
-``` 
+```
 
 ## Generating .tbl file (GAG)
 
@@ -259,7 +259,7 @@ Note - all input files for tbl2asn need to be in the same directory and have the
 same basename.
 
 ```bash
-  cp $Assembly $OutDir/gag/round1/genome.fsa  
+  cp $Assembly $OutDir/gag/round1/genome.fsa
   cp $SbtFile $OutDir/gag/round1/genome.sbt
   mkdir -p $OutDir/tbl2asn/round1
   tbl2asn -p $OutDir/gag/round1/. -t $OutDir/gag/round1/genome.sbt -r $OutDir/tbl2asn/round1 -M n -Z discrep -j "[organism=$Organism] [strain=$Strain]"
@@ -397,14 +397,14 @@ mkdir -p $OutDir/gag/round1
 gag.py -f $Assembly -g $GffFile -a $OutDir/annie_corrected_output.csv --fix_start_stop -o $OutDir/gag/round1 2>&1 | tee $OutDir/gag_log1.txt
 sed -i 's/Dbxref/db_xref/g' $OutDir/gag/round1/genome.tbl
 
-cp $Assembly $OutDir/gag/round1/genome.fsa  
+cp $Assembly $OutDir/gag/round1/genome.fsa
 cp $SbtFile $OutDir/gag/round1/genome.sbt
 mkdir -p $OutDir/tbl2asn/round1
 
 tbl2asn -p $OutDir/gag/round1/. -t $OutDir/gag/round1/genome.sbt -r $OutDir/tbl2asn/round1 -M n -X E -Z $OutDir/gag/round1/discrep.txt -j "[organism=Verticillium dahliae] [strain=12008]"
 
 mkdir -p $OutDir/gag/edited
-$ProgDir/edit_tbl_file/ncbi_tbl_corrector.py --inp_tbl $OutDir/gag/round1/genome.tbl --inp_val $OutDir/tbl2asn/round1/genome.val --locus_tag $SubmissionID --lab_id $LabID --gene_id "remove" --edits stop pseudo unknown_UTR correct_partial --rename_genes "vAg" --remove_product_locus_tags "True" --out_tbl $OutDir/gag/edited/genome.tbl
+$ProgDir/edit_tbl_file/ncbi_tbl_corrector.py --inp_tbl $OutDir/gag/round1/genome.tbl --inp_val $OutDir/tbl2asn/round1/genome.val --locus_tag $SubmissionID --lab_id $LabID --gene_id "remove" --edits stop pseudo unknown_UTR correct_partial --rename_genes "g" --remove_product_locus_tags "True" --out_tbl $OutDir/gag/edited/genome.tbl
 printf "StructuredCommentPrefix\t##Genome-Annotation-Data-START##
 Annotation Provider\tHarrison Lab NIAB-EMR
 Annotation Date\tSEP-2016
@@ -463,6 +463,3 @@ Andy's
  http://www.ncbi.nlm.nih.gov/genbank/eukaryotic_genome_submission_annotation#Partialcodingregionsinincompletegenomes
  *SEQ_FEAT.ProteinNameEndsInBracket. These gene names include brackets for good
  reason
-
-
-
