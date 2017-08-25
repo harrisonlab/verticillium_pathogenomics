@@ -1,9 +1,9 @@
 
-This script was for functional annotation of public genomes using local pepline.
+This script was for functional annotation of public genomes using local pipeline.
 
 ## Effector genes
 
-Putative pathogenicity and effector related genes were identified within 
+Putative pathogenicity and effector related genes were identified within
 gene models using a number of approaches:
 
  * A) Identifying secreted proteins
