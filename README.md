@@ -86,6 +86,45 @@ Data quality was visualised once again following trimming:
     qsub $ProgDir/run_fastqc.sh $RawData
   done
 ```
+
+### Identifing read depth
+
+```bash
+  for Reads in $(ls raw_dna/pacbio/*/*/extracted/concatenated_pacbio.fastq); do
+    ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/dna_qc
+    OutDir=$(dirname $Reads)
+    qsub $ProgDir/sub_count_nuc.sh 35 $Reads $OutDir
+  done
+  for Reads in $(ls qc_dna/paired/*/*/*/*_trim.fq.gz); do
+    ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/dna_qc
+    OutDir=$(dirname $Reads)
+    qsub $ProgDir/sub_count_nuc.sh 35 $Reads $OutDir
+  done
+```
+
+The predicted coverage was calculated to be:
+
+```bash
+# For PacBio data:
+for StrainDir in $(ls -d raw_dna/pacbio/*/* ); do
+Strain=$(basename $StrainDir)
+printf "$Strain\t"
+for File in $(ls qc_dna/paired/*/"$Strain"/*/*.txt); do
+echo $(basename $File);
+cat $File | tail -n1 | rev | cut -f2 -d ' ' | rev;
+done | grep -v '.txt' | awk '{ SUM += $1} END { print SUM }'
+done
+# For illumina data
+for StrainDir in $(ls -d qc_dna/paired/*/* ); do
+Strain=$(basename $StrainDir)
+printf "$Strain\t"
+for File in $(ls qc_dna/paired/*/"$Strain"/*/*.txt); do
+echo $(basename $File);
+cat $File | tail -n1 | rev | cut -f2 -d ' ' | rev;
+done | grep -v '.txt' | awk '{ SUM += $1} END { print SUM }'
+done
+```
+
 ## Assembly
 
 ### Canu assembly
@@ -154,22 +193,6 @@ Checking PacBio coverage against Canu assembly
   ProgDir=/home/fanron/git_repos/tools/seq_tools/genome_alignment/bwa
   qsub $ProgDir/sub_bwa_pacbio.sh $Assembly $Reads $OutDir
 ```
-
-<!-- After investigation it was found that contig_17 should be split.
-
-```bash
-  ProgDir=~/git_repos/tools/seq_tools/assemblers/assembly_qc/remove_contaminants
-  touch tmp.csv
-  printf "contig_17\tmanual edit\tsplit\t780978\t780978\tcanu:missassembly\n" > tmp.csv
-  for Assembly in $(ls assembly/canu/F.oxysporum_fsp_cepae/Fus2/filtered_contigs/Fus2_canu_contigs_renamed.fasta); do
-    Organism=$(echo $Assembly | rev | cut -f4 -d '/' | rev)  
-    Strain=$(echo $Assembly | rev | cut -f3 -d '/' | rev)
-    OutDir=assembly/canu/$Organism/$Strain/edited_contigs
-    mkdir -p $OutDir
-    $ProgDir/remove_contaminants.py --inp $Assembly --out $OutDir/"$Strain"_canu_contigs_modified.fasta --coord_file tmp.csv
-  done
-  rm tmp.csv
-``` -->
 
 ### Spades Assembly
 
@@ -377,7 +400,7 @@ The number of bases masked by transposonPSI and Repeatmasker were summarised
 using the following commands:
 
 ```bash
-  for RepDir in $(ls -d repeat_masked/V.*/*/ncbi_filtered_contigs_repmask | grep '12008'); do
+  for RepDir in $(ls -d repeat_masked/V.*/*/ncbi*); do
     Strain=$(echo $RepDir | rev | cut -f2 -d '/' | rev)
     Organism=$(echo $RepDir | rev | cut -f3 -d '/' | rev)  
     RepMaskGff=$(ls $RepDir/*_contigs_hardmasked.gff)
@@ -392,11 +415,33 @@ using the following commands:
     echo
   done
 ```
-  V.dahliae       12008
-  The number of bases masked by RepeatMasker:     3014429
-  The number of bases masked by TransposonPSI:    859780
-  The total number of masked bases are:   3161584
+Results were as follows:
+```
+V.dahliae	12008
+The number of bases masked by RepeatMasker:	3280336
+The number of bases masked by TransposonPSI:	859780
+The total number of masked bases are:	3372268
 
+V.dahliae	51
+The number of bases masked by RepeatMasker:	1195031
+The number of bases masked by TransposonPSI:	310921
+The total number of masked bases are:	1377060
+
+V.dahliae	53
+The number of bases masked by RepeatMasker:	689605
+The number of bases masked by TransposonPSI:	221954
+The total number of masked bases are:	863683
+
+V.dahliae	58
+The number of bases masked by RepeatMasker:	1258760
+The number of bases masked by TransposonPSI:	360475
+The total number of masked bases are:	1418679
+
+V.dahliae	61
+The number of bases masked by RepeatMasker:	1574548
+The number of bases masked by TransposonPSI:	407135
+The total number of masked bases are:	1726438
+```
 
 ```bash
   for File in $(ls repeat_masked/*/*/ncbi_filtered_contigs_repmask/*_contigs_softmasked.fa); do
@@ -481,22 +526,23 @@ Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
 Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
 echo "$Organism - $Strain"
 ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/busco
-BuscoDB="Eukaryotic"
-OutDir=gene_pred/busco/$Organism/$Strain/assembly
+BuscoDB=$(ls -d /home/groups/harrisonlab/dbBusco/sordariomyceta_odb9)
+OutDir=../tmp/gene_pred/busco/$Organism/$Strain/assembly
 qsub $ProgDir/sub_busco2.sh $Assembly $BuscoDB $OutDir
 done
 ```
 
 ```bash
-  for File in $(ls gene_pred/busco/*/*/assembly/*/short_summary_*.txt); do
-  Strain=$(echo $File| rev | cut -d '/' -f4 | rev)
-  Organism=$(echo $File | rev | cut -d '/' -f5 | rev)
-  Complete=$(cat $File | grep "(C)" | cut -f2)
-  Fragmented=$(cat $File | grep "(F)" | cut -f2)
-  Missing=$(cat $File | grep "(M)" | cut -f2)
-  Total=$(cat $File | grep "Total" | cut -f2)
-  echo -e "$Organism\t$Strain\t$Complete\t$Fragmented\t$Missing\t$Total"
-  done
+for File in $(ls ../tmp/gene_pred/busco/*/*/assembly/*/short_summary_*.txt); do
+Strain=$(echo $File| rev | cut -d '/' -f4 | rev)
+Organism=$(echo $File | rev | cut -d '/' -f5 | rev)
+Complete=$(cat $File | grep "(C)" | cut -f2)
+Fragmented=$(cat $File | grep "(F)" | cut -f2)
+Duplicated=$(cat $File | grep "(D)" | cut -f2)
+Missing=$(cat $File | grep "(M)" | cut -f2)
+Total=$(cat $File | grep "Total" | cut -f2)
+echo -e "$Organism\t$Strain\t$Complete\t$Fragmented\t$Duplicated\t$Missing\t$Total"
+done
 ```
 
 
@@ -928,35 +974,26 @@ The final number of genes per isolate was observed using:
 
 
 ```bash
-  for DirPath in $(ls -d gene_pred/codingquary1/V.*/*/final); do
-  echo $DirPath;
-  cat $DirPath/final_genes_Braker.pep.fasta | grep '>' | wc -l;
-  cat $DirPath/final_genes_CodingQuary.pep.fasta | grep '>' | wc -l;
-  cat $DirPath/final_genes_combined.pep.fasta | grep '>' | wc -l;
-  echo "";
+  for DirPath in $(ls -d gene_pred/final_genes/V.*/*/final); do
+  Strain=$(echo $DirPath| rev | cut -d '/' -f2 | rev)
+  Organism=$(echo $DirPath | rev | cut -d '/' -f3 | rev)
+  Braker=$(cat $DirPath/final_genes_Braker.pep.fasta | grep '>' | wc -l);
+  CodingQuary=$(cat $DirPath/final_genes_CodingQuary.pep.fasta | grep '>' | wc -l);
+  TotalProteins=$(cat $DirPath/final_genes_combined.pep.fasta | grep '>' | wc -l);
+  TotalGenes=$(cat $DirPath/final_genes_combined.pep.fasta | grep '>' | cut -f1 -d '.' | sort | uniq | wc -l);
+  printf "$Organism\t$Strain\t$Braker\t$CodingQuary\t$TotalProteins\t$TotalGenes\n";
   done
 ```
-  gene_pred/codingquary1/V.dahliae/12008/final
-  Braker
-  9871
-  CodingQuary
-  759
-  Combined
-  10630
 
-
-<!--
-## Suplimenting gene models with known genes
-
-Additional gene models were consrtucted in braker / transfered from other isolates
-and were exported to the following locations:
-
-```bash
-  Fus2Six9=assembly/spades/F.oxysporum_fsp_cepae/Fus2_edited_v2/filtered_contigs/Fus2_edited_v2_contig_1090_six9.gff
+```
+V.dahliae	12008	9881	720	10601	10440
+V.dahliae	51	9655	732	10387	10296
+V.dahliae	53	9718	716	10434	10332
+V.dahliae	58	9458	545	10003	9925
+V.dahliae	61	9457	550	10007	9936
 ```
 
-These gene models were then edited with nano to give names and IDs to these genes. -->
-
+<!--
 ## ORF finder
 
 The genome was searched in six reading frames for any start codon and following
@@ -1001,6 +1038,7 @@ done
 gene_pred/ORF_finder/V.dahliae/12008
 ORF_finder
 329493
+-->
 
 #Functional annotation
 
