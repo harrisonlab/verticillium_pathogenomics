@@ -38,12 +38,12 @@ with open(conf.tsv_12008) as f:
     tsv_12008 = f.readlines()
 with open(conf.tsv_51) as f:
     tsv_51 = f.readlines()
-# with open(conf.tsv_53) as f:
-#     tsv_53 = f.readlines()
-# with open(conf.tsv_58) as f:
-#     tsv_58 = f.readlines()
-# with open(conf.tsv_61) as f:
-#     tsv_61 = f.readlines()
+with open(conf.tsv_53) as f:
+    tsv_53 = f.readlines()
+with open(conf.tsv_58) as f:
+    tsv_58 = f.readlines()
+with open(conf.tsv_61) as f:
+    tsv_61 = f.readlines()
 
 #-----------------------------------------------------
 # Step 2
@@ -58,6 +58,7 @@ for line in tsv_12008:
     old_name = re.sub('^.+?_', '', old_name, 1) # replaces first occurence
     new_name = split_line[1]
     new_name = re.sub('^.+?_', '', new_name, 1)
+    new_name = re.sub('^vAg', 'g', new_name)
     conversion_dict["12008|" + old_name] = "12008|" + new_name
 
 for line in tsv_51:
@@ -69,32 +70,32 @@ for line in tsv_51:
     new_name = re.sub('^.+?_', '', new_name, 1)
     conversion_dict["51|" + old_name] = "12251|" + new_name
 
-# for line in tsv_53:
-#     line = line.rstrip()
-#     split_line = line.split()
-#     old_name = split_line[0]
-#     old_name = re.sub('^.+?_', '', old_name, 1)
-#     new_name = split_line[1]
-#     new_name = re.sub('^.+?_', '', new_name, 1)
-#     conversion_dict["53|" + old_name] = "12253|" + new_name
-#
-# for line in tsv_58:
-#     line = line.rstrip()
-#     split_line = line.split()
-#     old_name = split_line[0]
-#     old_name = re.sub('^.+?_', '', old_name, 1)
-#     new_name = split_line[1]
-#     new_name = re.sub('^.+?_', '', new_name, 1)
-#     conversion_dict["58|" + old_name] = "12158|" + new_name
-#
-# for line in tsv_61:
-#     line = line.rstrip()
-#     split_line = line.split()
-#     old_name = split_line[0]
-#     old_name = re.sub('^.+?_', '', old_name, 1)
-#     new_name = split_line[1]
-#     new_name = re.sub('^.+?_', '', new_name, 1)
-#     conversion_dict["61|" + old_name] = "12161|" + new_name
+for line in tsv_53:
+    line = line.rstrip()
+    split_line = line.split()
+    old_name = split_line[0]
+    old_name = re.sub('^.+?_', '', old_name, 1)
+    new_name = split_line[1]
+    new_name = re.sub('^.+?_', '', new_name, 1)
+    conversion_dict["53|" + old_name] = "12253|" + new_name
+
+for line in tsv_58:
+    line = line.rstrip()
+    split_line = line.split()
+    old_name = split_line[0]
+    old_name = re.sub('^.+?_', '', old_name, 1)
+    new_name = split_line[1]
+    new_name = re.sub('^.+?_', '', new_name, 1)
+    conversion_dict["58|" + old_name] = "12158|" + new_name
+
+for line in tsv_61:
+    line = line.rstrip()
+    split_line = line.split()
+    old_name = split_line[0]
+    old_name = re.sub('^.+?_', '', old_name, 1)
+    new_name = split_line[1]
+    new_name = re.sub('^.+?_', '', new_name, 1)
+    conversion_dict["61|" + old_name] = "12161|" + new_name
 
 for line in orthogroup_lines:
     line = line.rstrip()
@@ -105,6 +106,6 @@ for line in orthogroup_lines:
         if conversion_dict[split_gene[0]]:
             split_gene[0] = conversion_dict[split_gene[0]]
             gene = ".".join(split_gene)
-            print gene
+            # print gene
         parsed_line.append(gene)
-    # print "\t".join(parsed_line)
+    print "\t".join(parsed_line)
