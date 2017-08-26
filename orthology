@@ -473,15 +473,15 @@ As such, gene models in the output table were renamed.
 ProgDir=/home/armita/git_repos/emr_repos/scripts/verticillium_pathogenomics
 Orthogroups=$(ls analysis/orthology/orthomcl/All_Strains/All_Strains_orthogroups.txt)
 conversions_12008=$(ls genome_submission/V.dahliae/12008/gag/edited/genome_gene_conversions.tsv)
-conversions_51=$(ls ../clocks/genome_submission/V.dahliae/51/gag/edited/genome_gene_conversions.tsv)
-conversions_53=$(ls ../clocks/genome_submission/V.dahliae/53/gag/edited/genome_gene_conversions.tsv)
-conversions_58=$(ls ../clocks/genome_submission/V.dahliae/58/gag/edited/genome_gene_conversions.tsv)
-conversions_61=$(ls ../clocks/genome_submission/V.dahliae/61/gag/edited/genome_gene_conversions.tsv)
+conversions_51=$(ls ../clocks/genome_submission/V.dahliae/51/gag/edited_AA/genome_gene_conversions.tsv)
+conversions_53=$(ls ../clocks/genome_submission/V.dahliae/53/gag/edited_AA/genome_gene_conversions.tsv)
+conversions_58=$(ls ../clocks/genome_submission/V.dahliae/58/gag/edited_AA/genome_gene_conversions.tsv)
+conversions_61=$(ls ../clocks/genome_submission/V.dahliae/61/gag/edited_AA/genome_gene_conversions.tsv)
 $ProgDir/rename_orthogroup_genes.py --orthogroups $Orthogroups \
 --tsv_12008 $conversions_12008 \
 --tsv_51 $conversions_51 \
 --tsv_53 $conversions_53 \
 --tsv_58 $conversions_58 \
 --tsv_61 $conversions_61 \
-| less -S
+> analysis/orthology/orthomcl/All_Strains/All_Strains_orthogroups_ncbi_gene_names.txt
 ```
