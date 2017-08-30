@@ -69,21 +69,30 @@ If parse the LS17 genome using our pipeline, we can compare the home generated r
 screen -a
   cd /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
   ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
-  for Genes in $(ls gene_pred/final_genes/*/*/*/final_genes_combined.pep.fasta); do
-  echo $Genes
-  $ProgDir/sub_interproscan.sh $Genes
+  # for Proteins in $(ls assembly/merged_canu_spades/V.*/*/ensembl/*.faa | grep 'Ls17'); do
+  for Proteins in $(ls assembly/merged_canu_spades/V.*/*/ensembl/*pep*.fa | grep '102'); do  
+  echo $Proteins
+  $ProgDir/sub_interproscan.sh $Proteins
   done 2>&1 | tee -a interproscan_submisison.log
   ```
 ```bash
 ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
-  for Proteins in $(ls assembly/merged_canu_spades/V.dahliae/Ls17/ensembl/GCA_000150675.2_ASM15067v2_protein.faa); do
+  for Proteins in $(ls assembly/merged_canu_spades/V.*/*/ensembl/*.faa | grep 'Ls17'); do
     Strain=$(echo $Proteins | rev | cut -d '/' -f3 | rev)
     Organism=$(echo $Proteins | rev | cut -d '/' -f4 | rev)
     echo "$Organism - $Strain"
     echo $Strain
     InterProRaw=gene_pred/interproscan/$Organism/$Strain/raw
     $ProgDir/append_interpro.sh $Proteins $InterProRaw
-      done
+  done
+  for Proteins in $(ls assembly/merged_canu_spades/V.*/*/ensembl/*pep*.fa | grep '102'); do
+    Strain=$(echo $Proteins | rev | cut -d '/' -f3 | rev)
+    Organism=$(echo $Proteins | rev | cut -d '/' -f4 | rev)
+    echo "$Organism - $Strain"
+    echo $Strain
+    InterProRaw=gene_pred/interproscan/$Organism/$Strain/raw
+    $ProgDir/append_interpro.sh $Proteins $InterProRaw
+  done
 ```
 
 
@@ -445,7 +454,7 @@ echo "$Organism - $Strain"
 OutDir=analysis/sscp/$Organism/$Strain
 mkdir -p $OutDir
 ProgDir=/home/armita/git_repos/emr_repos/tools/pathogen/sscp
-$ProgDir/sscp_filter.py --inp_fasta $Secretome --max_length 300 --threshold 1 --out_fasta $OutDir/"$Strain"_sscp_all_results.fa
+$ProgDir/sscp_filter.py --inp_fasta $Secretome --max_length 300 --threshold 3 --out_fasta $OutDir/"$Strain"_sscp_all_results.fa
 cat $OutDir/"$Strain"_sscp_all_results.fa | grep 'Yes' > $OutDir/"$Strain"_sscp.fa
 echo "Number of effectors predicted by EffectorP:"
 EffectorP=$(ls analysis/effectorP/$Organism/$Strain/*_EffectorP_secreted_headers.txt)
@@ -453,33 +462,42 @@ cat $EffectorP | wc -l
 echo "Number of SSCPs predicted by both effectorP and this approach"
 cat $OutDir/"$Strain"_sscp.fa | grep '>' | tr -d '>' > $OutDir/"$Strain"_sscp_headers.txt
 cat $OutDir/"$Strain"_sscp_headers.txt $EffectorP | cut -f1 | sort | uniq -d | wc -l
+echo "Total number of effector-like proteins:"
+cat $OutDir/"$Strain"_sscp_headers.txt $EffectorP | cut -f1 | sort | uniq > $OutDir/"$Strain"_sscp_effectorP_headers.txt
+cat $OutDir/"$Strain"_sscp_effectorP_headers.txt | wc -l
 done
 ```
 ```
 V.alfafae - VaMs102
-% cysteine content threshold set to:	1
+% cysteine content threshold set to:	3
 maximum length set to:	300
-No. short-cysteine rich proteins in input fasta:	266
+No. short-cysteine rich proteins in input fasta:	98
 Number of effectors predicted by EffectorP:
 169
 Number of SSCPs predicted by both effectorP and this approach
-129
+63
+Total number of effector-like proteins:
+204
 V.dahliae - JR2
-% cysteine content threshold set to:	1
+% cysteine content threshold set to:	3
 maximum length set to:	300
-No. short-cysteine rich proteins in input fasta:	284
+No. short-cysteine rich proteins in input fasta:	127
 Number of effectors predicted by EffectorP:
 177
 Number of SSCPs predicted by both effectorP and this approach
-148
+87
+Total number of effector-like proteins:
+217
 V.dahliae - Ls17
-% cysteine content threshold set to:	1
+% cysteine content threshold set to:	3
 maximum length set to:	300
-No. short-cysteine rich proteins in input fasta:	272
+No. short-cysteine rich proteins in input fasta:	112
 Number of effectors predicted by EffectorP:
 155
 Number of SSCPs predicted by both effectorP and this approach
-120
+70
+Total number of effector-like proteins:
+197
 ```
 
 ##E) AntiSMASH
@@ -519,8 +537,8 @@ done
 
 
 
-
-
+<!--
+These commands have been removed as they may count the same gene multiple times:
 
 number of LysM and NPP1 in verticillium strains
 cat ..interproscan..gff3 | grep 'LysM' | wc -l
@@ -530,6 +548,7 @@ cat ..interproscan..gff3 | grep 'LysM' | wc -l
 LysM  11     11   11     11    11  11  11  11
 
 NPP1   7     7    9      8     7   7   7    8
+-->
 
 
 
