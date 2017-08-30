@@ -443,6 +443,46 @@ cat analysis/orthology/orthomcl/All_Strains/NPP_orthogroups.txt | wc -l
 cat analysis/orthology/orthomcl/All_Strains/NPP_orthogroups.txt | grep -o 'VaMs102' | wc -l
 ```
 
+## Identify Effector-like genes in orthogroups:
+
+```bash
+for File in $(ls analysis/sscp/V.*/*/*_sscp_effectorP_headers.txt); do
+Strain=$(echo $File| rev | cut -f2 -d '/' | rev)
+Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
+CAZY=$(ls gene_pred/CAZY/$Organism/$Strain/*_CAZY_secreted_headers.txt)
+OutDir=analysis/orthology/orthomcl/All_Strains
+cat $File | sed -r "s/^/$Strain|/g"
+cat $CAZY | sed -r "s/^/$Strain|/g"
+done | sort | uniq > sscp_effectorP_CAZY_headers_appended.txt
+cat sscp_effectorP_CAZY_headers_appended.txt | wc -l
+Orthogroups=$(ls analysis/orthology/orthomcl/All_Strains/All_Strains_orthogroups.txt)
+cat $Orthogroups | grep -w -f sscp_effectorP_CAZY_headers_appended.txt > effector_orthogroups.txt
+cat effector_orthogroups.txt | wc -l
+
+# check if results are cocnsistent with table in paper:
+cat effector_orthogroups.txt \
+| grep -w -e 'orthogroup19' \
+-e 'orthogroup73' \
+-e 'orthogroup104' \
+-e 'orthogroup509' \
+-e 'orthogroup935' \
+-e 'orthogroup1387' \
+-e 'orthogroup631' \
+-e 'orthogroup567' \
+-e 'orthogroup8484' \
+-e 'orthogroup8547' \
+-e 'orthogroup8589' \
+-e 'orthogroup8712' \
+-e 'orthogroup8757' \
+-e 'orthogroup9016' \
+-e 'orthogroup8586' \
+-e 'orthogroup700' \
+-e 'orthogroup736' \
+-e 'orthogroup824' \
+| wc -l
+
+```
+
 
 
 ## 4.5.b Plot venn diagrams:
