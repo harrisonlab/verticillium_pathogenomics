@@ -1391,12 +1391,23 @@ CBM50.hmm models
 for Cazy in $(ls gene_pred/CAZY/V.*/*/*_CAZY.out.dm); do
 Strain=$(echo $Cazy | rev | cut -f2 -d '/' | rev)
 Organism=$(echo $Cazy | rev | cut -f3 -d '/' | rev)
-echo "$Organism - $Strain"
 OutDir=$(dirname $Cazy)
 cat $Cazy | grep 'CBM50.hmm' | sed -r "s/ +/\t/g" | cut -f4 | sort | uniq > $OutDir/LysM_headers.txt
-cat $OutDir/LysM_headers.txt | wc -l
-cat $OutDir/"$Strain"_CAZY_secreted_headers.txt | grep -w -f $OutDir/LysM_headers.txt | wc -l
+Lysm=$(cat $OutDir/LysM_headers.txt | wc -l)
+Secreted=$(cat $OutDir/"$Strain"_CAZY_secreted_headers.txt | grep -w -f $OutDir/LysM_headers.txt | wc -l)
+printf "$Organism\t$Strain\t$Lysm\t$Secreted\n"
 done
+```
+
+```
+V.alfafae	VaMs102	7	2
+V.dahliae	12008	7	4
+V.dahliae	51	7	3
+V.dahliae	53	7	3
+V.dahliae	58	7	3
+V.dahliae	61	7	3
+V.dahliae	JR2	7	4
+V.dahliae	Ls17	8	1
 ```
 
 
@@ -1430,64 +1441,79 @@ Cols in yourfile.out.dm.ps:
 ## D) Identify Small secreted cysteine rich proteins
 
 Small secreted cysteine rich proteins were identified within secretomes. These proteins may be identified by EffectorP, but this approach allows direct control over what constitutes a SSCP.
-  ```bash
-  for Secretome in $(ls gene_pred/final_genes_signalp-4.1/*/*/*_final_sp_no_trans_mem.aa | grep -e '12008' -e '51' -e '53' -e '58' -e '61'); do
-  Strain=$(echo $Secretome| rev | cut -f2 -d '/' | rev)
-  Organism=$(echo $Secretome | rev | cut -f3 -d '/' | rev)
-  echo "$Organism - $Strain"
-  OutDir=analysis/sscp/$Organism/$Strain
-  mkdir -p $OutDir
-  ProgDir=/home/armita/git_repos/emr_repos/tools/pathogen/sscp
-  $ProgDir/sscp_filter.py --inp_fasta $Secretome --max_length 300 --threshold 1 --out_fasta $OutDir/"$Strain"_sscp_all_results.fa
-  cat $OutDir/"$Strain"_sscp_all_results.fa | grep 'Yes' > $OutDir/"$Strain"_sscp.fa
-  echo "Number of effectors predicted by EffectorP:"
-  EffectorP=$(ls analysis/effectorP/$Organism/$Strain/*_EffectorP_secreted_headers.txt)
-  cat $EffectorP | wc -l
-  echo "Number of SSCPs predicted by both effectorP and this approach"
-  cat $OutDir/"$Strain"_sscp.fa | grep '>' | tr -d '>' > $OutDir/"$Strain"_sscp_headers.txt
-  cat $OutDir/"$Strain"_sscp_headers.txt $EffectorP | cut -f1 | sort | uniq -d | wc -l
-  done
-  ```
-```V.dahliae - 12008
-% cysteine content threshold set to:	1
+```bash
+for Secretome in $(ls gene_pred/final_genes_signalp-4.1/*/*/*_final_sp_no_trans_mem.aa | grep -e '12008' -e '51' -e '53' -e '58' -e '61'); do
+Strain=$(echo $Secretome| rev | cut -f2 -d '/' | rev)
+Organism=$(echo $Secretome | rev | cut -f3 -d '/' | rev)
+echo "$Organism - $Strain"
+OutDir=analysis/sscp/$Organism/$Strain
+mkdir -p $OutDir
+ProgDir=/home/armita/git_repos/emr_repos/tools/pathogen/sscp
+$ProgDir/sscp_filter.py --inp_fasta $Secretome --max_length 300 --threshold 3 --out_fasta $OutDir/"$Strain"_sscp_all_results.fa
+cat $OutDir/"$Strain"_sscp_all_results.fa | grep 'Yes' > $OutDir/"$Strain"_sscp.fa
+echo "Number of effectors predicted by EffectorP:"
+EffectorP=$(ls analysis/effectorP/$Organism/$Strain/*_EffectorP_secreted_headers.txt)
+cat $EffectorP | wc -l
+echo "Number of SSCPs predicted by both effectorP and this approach"
+cat $OutDir/"$Strain"_sscp.fa | grep '>' | tr -d '>' > $OutDir/"$Strain"_sscp_headers.txt
+cat $OutDir/"$Strain"_sscp_headers.txt $EffectorP | cut -f1 | sort | uniq -d | wc -l
+echo "Total number of effector-like proteins:"
+cat $OutDir/"$Strain"_sscp_headers.txt $EffectorP | cut -f1 | sort | uniq > $OutDir/"$Strain"_sscp_effectorP_headers.txt
+cat $OutDir/"$Strain"_sscp_effectorP_headers.txt | wc -l
+done
+```
+```
+V.dahliae - 12008
+% cysteine content threshold set to:	3
 maximum length set to:	300
-No. short-cysteine rich proteins in input fasta:	300
+No. short-cysteine rich proteins in input fasta:	134
 Number of effectors predicted by EffectorP:
 187
 Number of SSCPs predicted by both effectorP and this approach
-149
+88
+Total number of effector-like proteins:
+233
 V.dahliae - 51
-% cysteine content threshold set to:	1
+% cysteine content threshold set to:	3
 maximum length set to:	300
-No. short-cysteine rich proteins in input fasta:	299
+No. short-cysteine rich proteins in input fasta:	136
 Number of effectors predicted by EffectorP:
 190
 Number of SSCPs predicted by both effectorP and this approach
-149
+88
+Total number of effector-like proteins:
+238
 V.dahliae - 53
-% cysteine content threshold set to:	1
+% cysteine content threshold set to:	3
 maximum length set to:	300
-No. short-cysteine rich proteins in input fasta:	310
+No. short-cysteine rich proteins in input fasta:	140
 Number of effectors predicted by EffectorP:
 196
 Number of SSCPs predicted by both effectorP and this approach
-156
+93
+Total number of effector-like proteins:
+243
 V.dahliae - 58
-% cysteine content threshold set to:	1
+% cysteine content threshold set to:	3
 maximum length set to:	300
-No. short-cysteine rich proteins in input fasta:	291
+No. short-cysteine rich proteins in input fasta:	125
 Number of effectors predicted by EffectorP:
 186
 Number of SSCPs predicted by both effectorP and this approach
-142
+85
+Total number of effector-like proteins:
+226
 V.dahliae - 61
-% cysteine content threshold set to:	1
+% cysteine content threshold set to:	3
 maximum length set to:	300
-No. short-cysteine rich proteins in input fasta:	299
+No. short-cysteine rich proteins in input fasta:	126
 Number of effectors predicted by EffectorP:
 189
 Number of SSCPs predicted by both effectorP and this approach
-147
+87
+Total number of effector-like proteins:
+228
+
 ```
 
 ##E) AntiSMASH
