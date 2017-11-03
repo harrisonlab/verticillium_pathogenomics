@@ -909,7 +909,7 @@ Secondly, genes were predicted using CodingQuary:
 Then, additional transcripts were added to Braker gene models, when CodingQuary
 genes were predicted in regions of the genome, not containing Braker gene
 models:
-
+<!--
 ```bash
   # for BrakerGff in $(ls gene_pred/braker/F.*/*_braker_new/*/augustus.gff3 | grep -w -e 'Fus2'); do
   for BrakerGff in $(ls gene_pred/braker/V.*/12008_braker_sixth/*/augustus.gff3); do
@@ -974,7 +974,7 @@ The final number of genes per isolate was observed using:
 
 
 ```bash
-  for DirPath in $(ls -d gene_pred/final_genes/V.*/*/final); do
+  for DirPath in $(ls -d gene_pred/*/V.*/*/final); do
   Strain=$(echo $DirPath| rev | cut -d '/' -f2 | rev)
   Organism=$(echo $DirPath | rev | cut -d '/' -f3 | rev)
   Braker=$(cat $DirPath/final_genes_Braker.pep.fasta | grep '>' | wc -l);
@@ -991,7 +991,85 @@ V.dahliae	51	9655	732	10387	10296
 V.dahliae	53	9718	716	10434	10332
 V.dahliae	58	9458	545	10003	9925
 V.dahliae	61	9457	550	10007	9936
+``` -->
+
+
+Then, additional transcripts were added to Braker gene models, when CodingQuary
+genes were predicted in regions of the genome, not containing Braker gene
+models:
+
+Note - Ensure that the "TPSI_appended.fa" assembly file is correct.
+
+```bash
+for BrakerGff in $(ls gene_pred/braker/*/*/*_braker_sixth/augustus.gff3); do
+Strain=$(echo $BrakerGff| rev | cut -d '/' -f3 | rev | sed 's/_braker//g')
+Organism=$(echo $BrakerGff | rev | cut -d '/' -f4 | rev)
+echo "$Organism - $Strain"
+Assembly=$(ls repeat_masked/$Organism/$Strain/ncbi_filtered_contigs_repmask/*_softmasked_repeatmasker_TPSI_appended.fa)
+CodingQuaryGff=gene_pred/codingquary1/$Organism/$Strain/out/PredictedPass.gff3
+PGNGff=gene_pred/codingquary1/$Organism/$Strain/out/PGN_predictedPass.gff3
+AddDir=gene_pred/codingquary1/$Organism/$Strain/additional
+FinalDir=gene_pred/final/$Organism/$Strain/final
+AddGenesList=$AddDir/additional_genes.txt
+AddGenesGff=$AddDir/additional_genes.gff
+FinalGff=$AddDir/combined_genes.gff
+mkdir -p $AddDir
+mkdir -p $FinalDir
+
+bedtools intersect -v -a $CodingQuaryGff -b $BrakerGff | grep 'gene'| cut -f2 -d'=' | cut -f1 -d';' > $AddGenesList
+bedtools intersect -v -a $PGNGff -b $BrakerGff | grep 'gene'| cut -f2 -d'=' | cut -f1 -d';' >> $AddGenesList
+ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation
+$ProgDir/gene_list_to_gff.pl $AddGenesList $CodingQuaryGff CodingQuarry_v2.0 ID CodingQuary > $AddGenesGff
+$ProgDir/gene_list_to_gff.pl $AddGenesList $PGNGff PGNCodingQuarry_v2.0 ID CodingQuary >> $AddGenesGff
+ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/codingquary
+# -
+# This section is edited
+$ProgDir/add_CodingQuary_features.pl $AddGenesGff $Assembly > $AddDir/add_genes_CodingQuary_unspliced.gff3
+$ProgDir/correct_CodingQuary_splicing.py --inp_gff $AddDir/add_genes_CodingQuary_unspliced.gff3 > $FinalDir/final_genes_CodingQuary.gff3
+# -
+$ProgDir/gff2fasta.pl $Assembly $FinalDir/final_genes_CodingQuary.gff3 $FinalDir/final_genes_CodingQuary
+cp $BrakerGff $FinalDir/final_genes_Braker.gff3
+$ProgDir/gff2fasta.pl $Assembly $FinalDir/final_genes_Braker.gff3 $FinalDir/final_genes_Braker
+cat $FinalDir/final_genes_Braker.pep.fasta $FinalDir/final_genes_CodingQuary.pep.fasta | sed -r 's/\*/X/g' > $FinalDir/final_genes_combined.pep.fasta
+cat $FinalDir/final_genes_Braker.cdna.fasta $FinalDir/final_genes_CodingQuary.cdna.fasta > $FinalDir/final_genes_combined.cdna.fasta
+cat $FinalDir/final_genes_Braker.gene.fasta $FinalDir/final_genes_CodingQuary.gene.fasta > $FinalDir/final_genes_combined.gene.fasta
+cat $FinalDir/final_genes_Braker.upstream3000.fasta $FinalDir/final_genes_CodingQuary.upstream3000.fasta > $FinalDir/final_genes_combined.upstream3000.fasta
+
+
+GffBraker=$FinalDir/final_genes_Braker.gff3
+GffQuary=$FinalDir/final_genes_CodingQuary.gff3
+GffAppended=$FinalDir/final_genes_appended.gff3
+cat $GffBraker $GffQuary > $GffAppended
+done
 ```
+
+In preperation for submission to ncbi, gene models were renamed and duplicate gene features were identified and removed.
+ * no duplicate genes were identified
+
+
+```bash
+  for GffAppended in $(ls gene_pred/final/*/*/final/final_genes_appended.gff3); do
+    Strain=$(echo $GffAppended | rev | cut -d '/' -f3 | rev)
+    Organism=$(echo $GffAppended | rev | cut -d '/' -f4 | rev)
+    echo "$Organism - $Strain"
+    FinalDir=gene_pred/final/$Organism/$Strain/final
+    GffFiltered=$FinalDir/filtered_duplicates.gff
+    ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/codingquary
+    $ProgDir/remove_dup_features.py --inp_gff $GffAppended --out_gff $GffFiltered
+    GffRenamed=$FinalDir/final_genes_appended_renamed.gff3
+    LogFile=$FinalDir/final_genes_appended_renamed.log
+    ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/codingquary
+    $ProgDir/gff_rename_genes.py --inp_gff $GffFiltered --conversion_log $LogFile > $GffRenamed
+    rm $GffFiltered
+    Assembly=$(ls repeat_masked/$Organism/$Strain/ncbi_filtered_contigs_repmask/*_softmasked_repeatmasker_TPSI_appended.fa)
+    $ProgDir/gff2fasta.pl $Assembly $GffRenamed gene_pred/final/$Organism/$Strain/final/final_genes_appended_renamed
+    # The proteins fasta file contains * instead of Xs for stop codons, these should
+    # be changed
+    sed -i 's/\*/X/g' gene_pred/final/$Organism/$Strain/final/final_genes_appended_renamed.pep.fasta
+  done
+```
+
+
 
 <!--
 ## ORF finder
@@ -1057,8 +1135,9 @@ was redirected to a temporary output file named interproscan_submission.log .
 ```bash
   screen -a
   cd /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
-  ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
-  for Genes in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
+  ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
+  # for Genes in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
+  for Genes in $(ls gene_pred/final/*/*/final/final_genes_appended_renamed.pep.fasta); do
   echo $Genes
   $ProgDir/sub_interproscan.sh $Genes
   done 2>&1 | tee -a interproscan_submisison.log
@@ -1068,8 +1147,8 @@ Following interproscan annotation split files were combined using the following
 commands:
 
 ```bash
-  ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
-  for Proteins in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
+  ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
+  for Proteins in $(ls gene_pred/final/*/*/final/final_genes_appended_renamed.pep.fasta); do
     Strain=$(echo $Proteins | rev | cut -d '/' -f3 | rev)
     Organism=$(echo $Proteins | rev | cut -d '/' -f4 | rev)
     echo "$Organism - $Strain"
@@ -1100,39 +1179,20 @@ commands:
     -num_alignments 10
   done
 ``` -->
-```bash
-  qlogin
-  ProjDir=/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
-  cd $ProjDir
-  for Proteome in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
-    Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
-    Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
-    OutDir=$ProjDir/gene_pred/swissprot/$Organism/$Strain/
-    mkdir -p $OutDir
-    blastp \
-    -db /home/groups/harrisonlab/uniprot/swissprot/uniprot_sprot \
-    -query $ProjDir/$Proteome \
-    -out $OutDir/swissprot_v2015_10_hits.tbl \
-    -evalue 1e-100 \
-    -outfmt 6 \
-    -num_threads 16 \
-    -num_alignments 10
-  done
-```
 
 
 ```bash
-for Proteome in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
- Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
- Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
+for Proteome in $(ls gene_pred/final/*/*/final/final_genes_appended_renamed.pep.fasta); do
+  Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
+  Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
   OutDir=gene_pred/swissprot/$Organism/$Strain
-  SwissDbDir=../../../uniprot/swissprot
+  SwissDbDir=../../uniprot/swissprot
   SwissDbName=uniprot_sprot
-  ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/swissprot
+  ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation/swissprot
   qsub $ProgDir/sub_swissprot.sh $Proteome $OutDir $SwissDbDir $SwissDbName
-  done
+done
 ```
-
+<!--
 ```bash
 for SwissTable in $(ls gene_pred/swissprot/*/*/swissprot_v2015_10_hits.tbl); do
 # SwissTable=gene_pred/swissprot/Fus2/swissprot_v2015_10_hits.tbl
@@ -1143,7 +1203,7 @@ OutTable=gene_pred/swissprot/$Organism/$Strain/swissprot_v2015_tophit_parsed.tbl
 ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/swissprot
 $ProgDir/swissprot_parser.py --blast_tbl $SwissTable --blast_db_fasta ../../../uniprot/swissprot/uniprot_sprot.fasta > $OutTable
 done
-```
+``` -->
 ## Effector genes
 
 Putative pathogenicity and effector related genes were identified within Braker
@@ -1166,7 +1226,8 @@ gene models using a number of approaches:
   SplitfileDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/signal_peptides
   ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/signal_peptides
   CurPath=$PWD
-  for Proteome in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
+  # for Proteome in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
+  for Proteome in $(ls gene_pred/final/*/*/final/final_genes_appended_renamed.pep.fasta); do
     Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
     Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
     SplitDir=gene_pred/final_genes_split/$Organism/$Strain
@@ -1174,11 +1235,11 @@ gene models using a number of approaches:
     BaseName="$Organism""_$Strain"_final_preds
     $SplitfileDir/splitfile_500.py --inp_fasta $Proteome --out_dir $SplitDir --out_base $BaseName
     for File in $(ls $SplitDir/*_final_preds_*); do
-      Jobs=$(qstat | grep 'pred_sigP' | grep 'qw' | wc -l)
-      while [ $Jobs -gt 1 ]; do
+      Jobs=$(qstat | grep 'pred_sigP' | wc -l)
+      while [ $Jobs -gt 20 ]; do
         sleep 10
         printf "."
-        Jobs=$(qstat | grep 'pred_sigP' | grep 'qw' | wc -l)
+        Jobs=$(qstat | grep 'pred_sigP' | wc -l)
       done
       printf "\n"
       echo $File
@@ -1219,7 +1280,8 @@ gene models using a number of approaches:
  Proteins containing a transmembrane domain were identified:
 
  ```bash
-  for Proteome in $(ls gene_pred/codingquary1/*/*/*/final_genes_combined.pep.fasta); do
+  # for Proteome in $(ls gene_pred/codingquary1/*/*/*/final_genes_combined.pep.fasta); do
+  for Proteome in $(ls gene_pred/final/*/*/final/final_genes_appended_renamed.pep.fasta); do
     Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
     Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
     ProgDir=/home/fanron/git_repos/tools/seq_tools/feature_annotation/transmembrane_helices
