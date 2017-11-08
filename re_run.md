@@ -858,7 +858,7 @@ Secondly, genes were predicted using CodingQuary:
 ```
 
 Then, additional transcripts were added to Braker gene models, when CodingQuary genes were predicted in regions of the genome, not containing Braker gene models:
-```
+```bash
 for BrakerGff in $(ls gene_pred/braker/*/*/*/augustus.gff3 | grep -v '12008'); do
 Strain=$(echo $BrakerGff| rev | cut -d '/' -f3 | rev)
 Organism=$(echo $BrakerGff | rev | cut -d '/' -f4 | rev)
@@ -1062,30 +1062,40 @@ done
   In preperation for submission to ncbi, gene models were renamed and duplicate gene features were identified and removed.
    * no duplicate genes were identified
 
-  ```bash
-    for GffAppended in $(ls gene_pred/final/*/*/final/final_genes_appended.gff3); do
-      Strain=$(echo $GffAppended | rev | cut -d '/' -f3 | rev)
-      Organism=$(echo $GffAppended | rev | cut -d '/' -f4 | rev)
-      echo "$Organism - $Strain"
-      FinalDir=gene_pred/final/$Organism/$Strain/final
-      GffFiltered=$FinalDir/filtered_duplicates.gff
-      ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/codingquary
-      $ProgDir/remove_dup_features.py --inp_gff $GffAppended --out_gff $GffFiltered
-      GffRenamed=$FinalDir/final_genes_appended_renamed.gff3
-      LogFile=$FinalDir/final_genes_appended_renamed.log
-      ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/codingquary
-      $ProgDir/gff_rename_genes.py --inp_gff $GffFiltered --conversion_log $LogFile > $GffRenamed
-      rm $GffFiltered
-      Assembly=$(ls repeat_masked/$Organism/$Strain/ncbi_filtered_contigs_repmask/*_softmasked_repeatmasker_TPSI_appended.fa)
-      $ProgDir/gff2fasta.pl $Assembly $GffRenamed gene_pred/final/$Organism/$Strain/final/final_genes_appended_renamed
-      # The proteins fasta file contains * instead of Xs for stop codons, these should
-      # be changed
-      sed -i 's/\*/X/g' gene_pred/final/$Organism/$Strain/final/final_genes_appended_renamed.pep.fasta
-    done
-  ```
+Augustus was noted to predict a gene within another gene on the reverse strand.
+
+ As such this gene was removed manually:
+
+ ```bash
+ GffAppended=$(ls gene_pred/final/*/*/final/final_genes_appended.gff3 | grep '12008')
+ cp $GffAppended tmp.gff
+ cat tmp.gff | grep -v -w 'g570' > $GffAppended
+ ```
+
+```bash
+  for GffAppended in $(ls gene_pred/final/*/*/final/final_genes_appended.gff3 | grep '12008'); do
+    Strain=$(echo $GffAppended | rev | cut -d '/' -f3 | rev)
+    Organism=$(echo $GffAppended | rev | cut -d '/' -f4 | rev)
+    echo "$Organism - $Strain"
+    FinalDir=gene_pred/final/$Organism/$Strain/final
+    GffFiltered=$FinalDir/filtered_duplicates.gff
+    ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/codingquary
+    $ProgDir/remove_dup_features.py --inp_gff $GffAppended --out_gff $GffFiltered
+    GffRenamed=$FinalDir/final_genes_appended_renamed.gff3
+    LogFile=$FinalDir/final_genes_appended_renamed.log
+    ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/codingquary
+    $ProgDir/gff_rename_genes.py --inp_gff $GffFiltered --conversion_log $LogFile > $GffRenamed
+    rm $GffFiltered
+    Assembly=$(ls repeat_masked/$Organism/$Strain/ncbi_filtered_contigs_repmask/*_softmasked_repeatmasker_TPSI_appended.fa)
+    $ProgDir/gff2fasta.pl $Assembly $GffRenamed gene_pred/final/$Organism/$Strain/final/final_genes_appended_renamed
+    # The proteins fasta file contains * instead of Xs for stop codons, these should
+    # be changed
+    sed -i 's/\*/X/g' gene_pred/final/$Organism/$Strain/final/final_genes_appended_renamed.pep.fasta
+  done
+```
 
 
-
+<!--
 ## ORF finder
 
   The genome was searched in six reading frames for any start codon and following
@@ -1100,7 +1110,7 @@ done
   for Genome in $(ls repeat_masked/*/*/ncbi*/*_contigs_unmasked.fa | grep -e '51' -e '53' -e '58' -e '61'); do
     qsub $ProgDir/run_ORF_finder.sh $Genome
     OutDir=gene_pred/ORF_Finder
-     done
+  done
 ```
 The Gff files from the the ORF finder are not in true Gff3 format. These were
 corrected using the following commands:
@@ -1144,7 +1154,7 @@ corrected using the following commands:
 
   gene_pred/ORF_finder/V.dahliae/61
   314552
-
+ -->
 
 
 #Functional annotation
@@ -1175,7 +1185,7 @@ models were copied into this project directory:
   cd /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
   ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
   # for Genes in $(ls gene_pred/codingquary1/V.*/*/*/final_genes_combined.pep.fasta); do
-  for Genes in $(ls gene_pred/final/*/*/final/final_genes_appended_renamed.pep.fasta | grep -v '12008'); do
+  for Genes in $(ls gene_pred/final/*/*/final/final_genes_appended_renamed.pep.fasta | grep -w '12008'); do
   echo $Genes
   $ProgDir/sub_interproscan.sh $Genes
   done 2>&1 | tee -a interproscan_submisison.log
@@ -1186,7 +1196,7 @@ commands:
 
 ```bash
 ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
-for Proteins in $(ls gene_pred/final/*/*/final/final_genes_appended_renamed.pep.fasta); do
+for Proteins in $(ls gene_pred/final/*/*/final/final_genes_appended_renamed.pep.fasta | grep -w '12008'); do
     Strain=$(echo $Proteins | rev | cut -d '/' -f3 | rev)
     Organism=$(echo $Proteins | rev | cut -d '/' -f4 | rev)
     echo "$Organism - $Strain"
@@ -1207,10 +1217,29 @@ for InterPro in $(ls gene_pred/interproscan/*/*/*_interproscan.tsv); do
 done
 ```
 
+```
+V.alfafae - VaMs102
+8
+V.dahliae - 12008
+14
+V.dahliae - 51
+14
+V.dahliae - 53
+14
+V.dahliae - 58
+14
+V.dahliae - 61
+16
+V.dahliae - JR2
+7
+V.dahliae - Ls17
+9
+```
+
 ## B) SwissProt
 
 ```bash
-for Proteome in $(ls gene_pred/final/*/*/final/final_genes_appended_renamed.pep.fasta | grep -v '12008'); do
+for Proteome in $(ls gene_pred/final/*/*/final/final_genes_appended_renamed.pep.fasta | grep '12008'); do
   Strain=$(echo $Proteome | rev | cut -f3 -d '/' | rev)
   Organism=$(echo $Proteome | rev | cut -f4 -d '/' | rev)
   OutDir=gene_pred/swissprot/$Organism/$Strain
