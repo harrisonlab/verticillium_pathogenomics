@@ -683,7 +683,7 @@ if run the commands in a node other than cluster, using the script:
 qlogin -pe smp 8 -l virtual_free=1G
 ```
 ```bash
-for Assembly in $(ls /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics/repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+for Assembly in $(ls /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics/repeat_masked/*/*/*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa | grep '12008'); do
 Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
 Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
 echo "$Organism - $Strain"
@@ -833,7 +833,7 @@ cp /home/armita/prog/genemark/gm_key_64 ~/.gm_key
 Braker predictiction was performed using softmasked genome, not unmasked one.
 
 ```bash
-  for Assembly in $(ls repeat_masked/*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
+  for Assembly in $(ls repeat_masked/*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa | grep '12008'); do
   Jobs=$(qstat | grep 'tophat' | grep -w 'r' | wc -l)
   while [ $Jobs -gt 1 ]; do
   sleep 10
@@ -845,14 +845,14 @@ Braker predictiction was performed using softmasked genome, not unmasked one.
   Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
   echo "$Organism - $Strain"
   OutDir=gene_pred/braker/$Organism/"$Strain"_braker_sixth
-  AcceptedHits=ncbi_alignment/$Organism/$Strain/concatenated/concatenated.bam
+  AcceptedHits=alignment/$Organism/$Strain/concatenated/concatenated.bam
   mkdir -p ncbi_alignment/$Organism/$Strain/concatenated
-  samtools merge -f $AcceptedHits \
-  alignment/repeat_masked/12008CD_accurate/accepted_hits.bam \
-  alignment/repeat_masked/12008PDA_accurate/accepted_hits.bam
+  # samtools merge -f $AcceptedHits \
+  #   alignment/$Organism/$Strain/*CD/accepted_hits.bam \
+  #   alignment/$Organism/$Strain/*PDA/accepted_hits.bam
   GeneModelName="$Organism"_"$Strain"_braker_sixth
-  rm -r /home/fanron/prog/augustus-3.1/config/species/"$Organism"_"$Strain"_braker_sixth
-  ProgDir=/home/fanron/git_repos/tools/gene_prediction/braker1
+  rm -r /home/armita/prog/augustus-3.1/config/species/$GeneModelName
+  ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/braker1
   qsub $ProgDir/sub_braker_fungi.sh $Assembly $OutDir $AcceptedHits $GeneModelName
   done
 ```
@@ -860,7 +860,7 @@ Braker predictiction was performed using softmasked genome, not unmasked one.
 Amino acid sequences and gff files were extracted from Braker1 output.
 
 ```bash
-  for File in $(ls gene_pred/braker/V.dahliae/12008_braker_sixth/*/augustus.gff); do
+  for File in $(ls gene_pred/braker/V.dahliae/12008_publication/*/augustus.gff); do
   getAnnoFasta.pl $File
   OutDir=$(dirname $File)
   echo "##gff-version 3" > $OutDir/augustus_extracted.gff
@@ -1001,8 +1001,8 @@ models:
 Note - Ensure that the "TPSI_appended.fa" assembly file is correct.
 
 ```bash
-for BrakerGff in $(ls gene_pred/braker/*/*/*_braker_sixth/augustus.gff3); do
-Strain=$(echo $BrakerGff| rev | cut -d '/' -f3 | rev | sed 's/_braker//g')
+for BrakerGff in $(ls gene_pred/braker/*/*/*_publication/augustus.gff3 | grep '12008'); do
+Strain=$(echo $BrakerGff| rev | cut -d '/' -f3 | rev | sed 's/_publication//g')
 Organism=$(echo $BrakerGff | rev | cut -d '/' -f4 | rev)
 echo "$Organism - $Strain"
 Assembly=$(ls repeat_masked/$Organism/$Strain/ncbi_filtered_contigs_repmask/*_softmasked_repeatmasker_TPSI_appended.fa)
