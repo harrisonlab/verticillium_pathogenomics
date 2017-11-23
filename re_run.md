@@ -618,7 +618,7 @@ Data quality was visualised using fastqc:
 ```
 #### Aligning
 
-Insert sizes of the RNA seq library were unknown until a draft alignment could
+<!-- Insert sizes of the RNA seq library were unknown until a draft alignment could
 be made. To do this tophat and cufflinks were run, aligning the reads against a
 single genome. The fragment length and stdev were printed to stdout while
 cufflinks was running.
@@ -765,6 +765,43 @@ Then Rnaseq data was aligned to each genome assembly:
 
   mv -r 12008CD/* 12008CD_accurate/
 ```
+-->
+
+
+```bash
+for Assembly in $(ls repeat_masked/*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa | grep '12008'); do
+Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
+Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
+echo "$Organism - $Strain"
+for FileF in $(ls qc_rna/paired/*/*/F/*_trim.fq.gz); do
+FileR=$(echo $FileF | sed 's&/F/&/R/&g' | sed 's/R1/R2/g')
+echo $FileF
+echo $FileR
+Prefix=$(echo $FileF | rev | cut -f3 -d '/' | rev)
+# Timepoint=$(echo $FileF | rev | cut -f2 -d '/' | rev)
+Timepoint="treatment"
+#echo "$Timepoint"
+OutDir=alignment/star/$Organism/$Strain/$Timepoint/$Prefix
+ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/RNAseq
+qsub $ProgDir/sub_star.sh $Assembly $FileF $FileR $OutDir
+done
+done
+```
+
+Accepted hits .bam file were concatenated and indexed for use for gene model training:
+
+```bash
+for OutDir in $(ls -d alignment/star/*/* | grep '12008'); do
+  Strain=$(echo $OutDir | rev | cut -d '/' -f1 | rev)
+  Organism=$(echo $OutDir | rev | cut -d '/' -f2 | rev)
+  echo "$Organism - $Strain"
+  # For all alignments
+  BamFiles=$(ls $OutDir/treatment/*/*.sortedByCoord.out.bam | tr -d '\n' | sed 's/.bam/.bam /g')
+  mkdir -p $OutDir/treatment/concatenated
+  samtools merge -f $OutDir/treatment/concatenated/concatenated.bam $BamFiles
+done
+```
+
 ### Braker prediction
 
 Before braker predictiction was performed, I double checked that I had the genemark key in my user area and copied it over from the genemark install directory:
@@ -776,33 +813,30 @@ cp /home/armita/prog/genemark/gm_key_64 ~/.gm_key
 Braker predictiction was performed using softmasked genome, not unmasked one.
 
 ```bash
-  for Assembly in $(ls repeat_masked/*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa); do
-  Jobs=$(qstat | grep 'tophat' | grep -w 'r' | wc -l)
-  while [ $Jobs -gt 1 ]; do
-  sleep 10
-  printf "."
-  Jobs=$(qstat | grep 'tophat' | grep -w 'r' | wc -l)
-  done
-  printf "\n"
-  Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
-  Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
-  echo "$Organism - $Strain"
-  OutDir=gene_pred/braker/$Organism/$Strain/"$Strain"_braker_six
-  AcceptedHits=alignment/$Organism/$Strain/concatenated/concatenated.bam
-  samtools merge -f $AcceptedHits \
-  alignment/$Organism/$Strain/12008CD/accepted_hits.bam \
-  alignment/$Organism/$Strain/12008PDA/accepted_hits.bam
-  GeneModelName="$Organism"_"$Strain"_braker_six
-  rm -r /home/fanron/prog/augustus-3.1/config/species/"$Organism"_"$Strain"_braker_six
-  ProgDir=/home/fanron/git_repos/tools/gene_prediction/braker1
-  qsub $ProgDir/sub_braker_fungi.sh $Assembly $OutDir $AcceptedHits $GeneModelName
-  done
+for Assembly in $(ls repeat_masked/*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa | grep '12008'); do
+Jobs=$(qstat | grep 'tophat' | grep -w 'r' | wc -l)
+while [ $Jobs -gt 1 ]; do
+sleep 10
+printf "."
+Jobs=$(qstat | grep 'tophat' | grep -w 'r' | wc -l)
+done
+printf "\n"
+Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
+Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
+echo "$Organism - $Strain"
+OutDir=gene_pred/braker/$Organism/"$Strain"_publication
+AcceptedHits=$(ls alignment/star//$Organism/$Strain/treatment/concatenated/concatenated.bam)
+GeneModelName="$Organism"_"$Strain"_publication
+rm -r /home/armita/prog/augustus-3.1/config/species/$GeneModelName
+ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/braker1
+qsub $ProgDir/sub_braker_fungi.sh $Assembly $OutDir $AcceptedHits $GeneModelName
+done
 ```
 
 ####Amino acid sequences and gff files were extracted from Braker1 output.
 
 ```bash
-  for File in $(ls gene_pred/braker/V.dahliae/12008/12008_braker_sixth/augustus.gff); do
+  for File in $(ls gene_pred/braker/V.dahliae/12008_publication/*/augustus.gff); do
   getAnnoFasta.pl $File
   OutDir=$(dirname $File)
   echo "##gff-version 3" > $OutDir/augustus_extracted.gff
@@ -1017,8 +1051,8 @@ done
   Note - Ensure that the "TPSI_appended.fa" assembly file is correct.
 
   ```bash
-  for BrakerGff in $(ls gene_pred/braker/*/*/*_braker_sixth/augustus.gff3); do
-  Strain=$(echo $BrakerGff| rev | cut -d '/' -f3 | rev | sed 's/_braker//g')
+  for BrakerGff in $(ls gene_pred/braker/*/*/*_publication/augustus.gff3 | grep '12008'); do
+  Strain=$(echo $BrakerGff| rev | cut -d '/' -f3 | rev | sed 's/_publication//g')
   Organism=$(echo $BrakerGff | rev | cut -d '/' -f4 | rev)
   echo "$Organism - $Strain"
   Assembly=$(ls repeat_masked/$Organism/$Strain/ncbi_filtered_contigs_repmask/*_softmasked_repeatmasker_TPSI_appended.fa)
@@ -1065,12 +1099,13 @@ done
 Augustus was noted to predict a gene within another gene on the reverse strand.
 
  As such this gene was removed manually:
-
+<!--
  ```bash
  GffAppended=$(ls gene_pred/final/*/*/final/final_genes_appended.gff3 | grep '12008')
  cp $GffAppended tmp.gff
  cat tmp.gff | grep -v -w 'g570' > $GffAppended
  ```
+ -->
 
 ```bash
   for GffAppended in $(ls gene_pred/final/*/*/final/final_genes_appended.gff3 | grep '12008'); do
@@ -1195,8 +1230,8 @@ Following interproscan annotation split files were combined using the following
 commands:
 
 ```bash
-ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
-for Proteins in $(ls gene_pred/final/*/*/final/final_genes_appended_renamed.pep.fasta | grep -w '12008'); do
+  ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
+  for Proteins in $(ls gene_pred/final/*/*/final/final_genes_appended_renamed.pep.fasta | grep -w '12008'); do
     Strain=$(echo $Proteins | rev | cut -d '/' -f3 | rev)
     Organism=$(echo $Proteins | rev | cut -d '/' -f4 | rev)
     echo "$Organism - $Strain"
@@ -1209,7 +1244,7 @@ for Proteins in $(ls gene_pred/final/*/*/final/final_genes_appended_renamed.pep.
 The number of NPP-like proteins
 
 ```bash
-for InterPro in $(ls gene_pred/interproscan/*/*/*_interproscan.tsv); do
+for InterPro in $(ls gene_pred/interproscan/*/*/*_interproscan.tsv | grep -w '12008'); do
   Organism=$(echo $InterPro | rev | cut -d '/' -f3 | rev)
   Strain=$(echo $InterPro | rev | cut -d '/' -f2 | rev)
   echo "$Organism - $Strain"
