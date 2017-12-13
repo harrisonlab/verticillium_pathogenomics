@@ -16,14 +16,16 @@ Assembly stats were collected using quast
 The gene space in published genomes was checked using BUSCO:
 
 ```bash
-  for Assembly in $(ls assembly/merged_canu_spades/*/*/ensembl/*.dna.toplevel.fa | grep 'Ls17'); do
+  for Assembly in $(ls assembly/merged_canu_spades/*/*/ensembl/*.dna.toplevel.fa); do
     Strain=$(echo $Assembly| rev | cut -d '/' -f3 | rev)
     Organism=$(echo $Assembly | rev | cut -d '/' -f4 | rev)
     echo "$Organism - $Strain"
     ProgDir=/home/armita/git_repos/emr_repos/tools/gene_prediction/busco
     BuscoDB=$(ls -d /home/groups/harrisonlab/dbBusco/sordariomyceta_odb9)
-    OutDir=../tmp/gene_pred/busco/$Organism/$Strain/assembly
-    qsub $ProgDir/sub_busco2.sh $Assembly $BuscoDB $OutDir
+    OutDir=gene_pred/busco/$Organism/$Strain/assembly_ncbi
+    # OutDir=../tmp/gene_pred/busco/$Organism/$Strain/assembly
+    # qsub $ProgDir/sub_busco2.sh $Assembly $BuscoDB $OutDir
+    qsub $ProgDir/sub_busco3.sh $Assembly $BuscoDB $OutDir
   done
 ```
 
@@ -40,6 +42,47 @@ The gene space in published genomes was checked using BUSCO:
 ```
 
 
+
+##Repeatmasking
+
+Repeat masking was performed and used the following programs:
+  Repeatmasker
+  Repeatmodeler
+
+The best assemblies were used to perform repeatmasking
+
+```bash
+  ProgDir=~/git_repos/emr_repos/tools/seq_tools/repeat_masking
+  for BestAss in $(ls assembly/merged_canu_spades/*/*/ensembl/*.dna.toplevel.fa); do
+    Organism=$(echo $BestAss | rev | cut -d "/" -f4 | rev)
+    Strain=$(echo $BestAss | rev | cut -d "/" -f3 | rev)
+    OutDir=repeat_masked/$Organism/$Strain/ncbi_filtered_contigs_repmask
+    qsub $ProgDir/rep_modeling.sh $BestAss $OutDir
+    qsub $ProgDir/transposonPSI.sh $BestAss $OutDir
+  done
+```
+
+
+The number of bases masked by transposonPSI and Repeatmasker were summarised
+using the following commands:
+
+
+```bash
+  for RepDir in $(ls -d repeat_masked/V.*/*/ncbi*); do
+    Strain=$(echo $RepDir | rev | cut -f2 -d '/' | rev)
+    Organism=$(echo $RepDir | rev | cut -f3 -d '/' | rev)  
+    RepMaskGff=$(ls $RepDir/*_contigs_hardmasked.gff)
+    TransPSIGff=$(ls $RepDir/*_contigs_unmasked.fa.TPSI.allHits.chains.gff3)
+    printf "$Organism\t$Strain\n"
+    printf "The number of bases masked by RepeatMasker:\t"
+    sortBed -i $RepMaskGff | bedtools merge | awk -F'\t' 'BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}'
+    printf "The number of bases masked by TransposonPSI:\t"
+    sortBed -i $TransPSIGff | bedtools merge | awk -F'\t' 'BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}'
+    printf "The total number of masked bases are:\t"
+    cat $RepMaskGff $TransPSIGff | sortBed | bedtools merge | awk -F'\t' 'BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}'
+    echo
+  done
+```
 
 
 
@@ -68,24 +111,16 @@ If parse the LS17 genome using our pipeline, we can compare the home generated r
 ```bash
 screen -a
   cd /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
-  ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
-  # for Proteins in $(ls assembly/merged_canu_spades/V.*/*/ensembl/*.faa | grep 'Ls17'); do
-  for Proteins in $(ls assembly/merged_canu_spades/V.*/*/ensembl/*pep*.fa | grep '102'); do  
+  ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
+  for Proteins in $(ls assembly/merged_canu_spades/V.*/*/ensembl/*.faa assembly/merged_canu_spades/V.*/*/ensembl/*pep*.fa); do
   echo $Proteins
   $ProgDir/sub_interproscan.sh $Proteins
   done 2>&1 | tee -a interproscan_submisison.log
-  ```
+```
+
 ```bash
-ProgDir=/home/gomeza/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
-  for Proteins in $(ls assembly/merged_canu_spades/V.*/*/ensembl/*.faa | grep 'Ls17'); do
-    Strain=$(echo $Proteins | rev | cut -d '/' -f3 | rev)
-    Organism=$(echo $Proteins | rev | cut -d '/' -f4 | rev)
-    echo "$Organism - $Strain"
-    echo $Strain
-    InterProRaw=gene_pred/interproscan/$Organism/$Strain/raw
-    $ProgDir/append_interpro.sh $Proteins $InterProRaw
-  done
-  for Proteins in $(ls assembly/merged_canu_spades/V.*/*/ensembl/*pep*.fa | grep '102'); do
+ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/feature_annotation/interproscan
+  for Proteins in $(ls assembly/merged_canu_spades/V.*/*/ensembl/*.faa assembly/merged_canu_spades/V.*/*/ensembl/*pep*.fa); do
     Strain=$(echo $Proteins | rev | cut -d '/' -f3 | rev)
     Organism=$(echo $Proteins | rev | cut -d '/' -f4 | rev)
     echo "$Organism - $Strain"
