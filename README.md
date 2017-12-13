@@ -1389,6 +1389,7 @@ representing these proteins made.
   done
 ```
 
+```bash
 for File in $(ls gene_pred/CAZY/*/12008/*CAZY.out.dm); do
       Strain=$(echo $File | rev | cut -f2 -d '/' | rev)
       Organism=$(echo $File | rev | cut -f3 -d '/' | rev)
@@ -1415,7 +1416,7 @@ for File in $(ls gene_pred/CAZY/*/12008/*CAZY.out.dm); do
       cat $CazyGffSecreted | grep -w 'mRNA' | cut -f9 | tr -d 'ID=' | cut -f1 -d ';' > $OutDir/"$Strain"_CAZY_secreted_headers.txt
       cat $OutDir/"$Strain"_CAZY_secreted_headers.txt | wc -l
     done
-
+```
 V.dahliae - 12008
 number of CAZY genes identified:
 620
