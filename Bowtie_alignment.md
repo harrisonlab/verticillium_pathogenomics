@@ -24,17 +24,56 @@ done
 Identify read coverage over each bp
 
 ```bash
-  for Bam in $(ls analysis/genome_alignment/bowtie/V.dahliae/*/vs_12008unmasked/12008_contigs_unmasked.fa_aligned_sorted.bam | grep -v '/12008/'); do
+  for Bam in $(ls analysis/genome_alignment/bowtie/V.dahliae/*/vs_12008unmasked/*_aligned_sorted.bam); do
     Strain=$(echo $Bam | rev | cut -f3 -d '/' | rev)
     Organism=$(echo $Bam | rev | cut -f4 -d '/' | rev)
     echo "$Organism - $Strain"
     OutDir=$(dirname $Bam)
-    samtools depth -aa $Bam > $OutDir/${Organism}_${Strain}_vs_12008_depth.tsv
+    # samtools depth -aa $Bam > $OutDir/${Organism}_${Strain}_vs_12008_depth.tsv
+    ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/genome_alignment/coverage_analysis
+    $ProgDir/cov_by_window.py --cov $OutDir/${Organism}_${Strain}_vs_12008_depth.tsv > $OutDir/${Organism}_${Strain}_vs_12008_depth_10kb.tsv
+    sed -i "s/$/\t$Strain/g" $OutDir/${Organism}_${Strain}_vs_12008_depth_10kb.tsv
   done
   OutDir=analysis/genome_alignment/bowtie/grouped
   mkdir -p $OutDir
-  paste analysis/genome_alignment/bowtie/V.dahliae/*/vs_12008unmasked/*_vs_12008_depth.tsv | cut -f 1,2,3,6,9,12,15 > $OutDir/vs_12008_grouped_depth.tsv
+  cat analysis/genome_alignment/bowtie/*/*/*vs_12008unmasked/*_*_vs_12008_depth_10kb.tsv > analysis/genome_alignment/bowtie/grouped/vs_12008_grouped_depth.tsv
 ```
+
+
+
+```R
+library(readr)
+appended_df <- read_delim("~/Downloads/Vd/vs_12008_grouped_depth.tsv",
+     "\t", escape_double = FALSE, col_names = FALSE,
+     trim_ws = TRUE)
+colnames(appended_df) <- c("contig","position", "depth", "strain")
+# appended_df$contig <- paste("Chr", appended_df$contig, sep = "")
+appended_df$strain[appended_df$strain == "51"] <- "12251"
+appended_df$strain[appended_df$strain == "53"] <- "12253"
+appended_df$strain[appended_df$strain == "58"] <- "12158"
+appended_df$strain[appended_df$strain == "61"] <- "12161"
+appended_df$strain <- factor(appended_df$strain, levels = c("12008", "12251", "12253", "12158", "12161"))
+
+
+# install.packages("ggplot2")
+library(ggplot2)
+require(scales)
+
+for (i in 1:103){
+  contig = paste("contig", i, sep = "_")
+  p0 <- ggplot(data=appended_df[appended_df$contig == contig, ], aes(x=`position`, y=`depth`, group=1)) +
+    geom_line() +
+    labs(x = "Position (bp)", y = "Coverage") +
+    scale_y_continuous(breaks=seq(0,150,25), limits=c(0,150)) +
+    facet_wrap(~strain, nrow = 5, ncol = 1, strip.position = "left")
+  outfile = paste("contig", i, "cov.tiff", sep = "_")
+  ggsave(outfile , plot = p0, device = 'tiff', path = NULL,
+    scale = 1, width = 250, height = 100, units = 'mm',
+    dpi = 150, limitsize = TRUE)
+  }
+```
+
+
 
 
 ### Vs the hardmasked genome
@@ -68,12 +107,33 @@ Identify read coverage over each bp
     Organism=$(echo $Bam | rev | cut -f4 -d '/' | rev)
     echo "$Organism - $Strain"
     OutDir=$(dirname $Bam)
-    samtools depth -aa $Bam > $OutDir/${Organism}_${Strain}_vs_12008_depth.tsv
+    # samtools depth -aa $Bam > $OutDir/${Organism}_${Strain}_vs_12008_depth.tsv
+    ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/genome_alignment/coverage_analysis
+    $ProgDir/cov_by_window.py --cov $OutDir/${Organism}_${Strain}_vs_12008_depth.tsv > $OutDir/${Organism}_${Strain}_vs_JR2_depth_10kb.tsv
+    sed -i "s/$/\t$Strain/g" $OutDir/${Organism}_${Strain}_vs_12008_depth_10kb.tsv
   done
   OutDir=analysis/genome_alignment/bowtie/grouped
   mkdir -p $OutDir
-  paste analysis/genome_alignment/bowtie/V.dahliae/*/vs_12008unmasked/*_vs_12008_depth.tsv | cut -f 1,2,3,6,9,12,15 > $OutDir/vs_12008_grouped_depth.tsv
+  cat analysis/genome_alignment/bowtie/*/*/*vs_12008_hardmasked/*_*_vs_12008_depth_10kb.tsv > analysis/genome_alignment/bowtie/grouped/vs_12008_grouped_depth.tsv
+  # paste analysis/genome_alignment/bowtie/V.dahliae/*/vs_12008unmasked/*_vs_12008_depth.tsv | cut -f 1,2,3,6,9,12,15 > $OutDir/vs_12008_grouped_depth.tsv
 ```
+
+
+```bash
+  for Bam in $(ls analysis/genome_alignment/bowtie/*/*/*vs_JR2/*_sorted.bam); do
+    Strain=$(echo $Bam | rev | cut -f3 -d '/' | rev)
+    Organism=$(echo $Bam | rev | cut -f4 -d '/' | rev)
+    echo "$Organism - $Strain"
+    OutDir=$(dirname $Bam)
+    # samtools depth -aa $Bam > $OutDir/${Organism}_${Strain}_vs_JR2_depth.tsv
+    ProgDir=/home/armita/git_repos/emr_repos/tools/seq_tools/genome_alignment/coverage_analysis
+    $ProgDir/cov_by_window.py --cov $OutDir/${Organism}_${Strain}_vs_JR2_depth.tsv > $OutDir/${Organism}_${Strain}_vs_JR2_depth_10kb.tsv
+    sed -i "s/$/\t$Strain/g" $OutDir/${Organism}_${Strain}_vs_JR2_depth_10kb.tsv
+  done
+  cat analysis/genome_alignment/bowtie/*/*/*vs_JR2/*_*_vs_JR2_depth_10kb.tsv > analysis/genome_alignment/bowtie/grouped/vs_JR2_grouped_depth.tsv
+```
+
+
 
 ```R
 library(readr)
