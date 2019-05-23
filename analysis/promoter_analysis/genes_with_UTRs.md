@@ -26,7 +26,7 @@ Assembly=$(ls $OldProjDir/repeat_masked/V.*/*/ncbi*/*_contigs_softmasked_repeatm
 Organism="V.dahliae"
 Strain="12008"
 
-OutDir=/oldhpc/data/scratch/armita/fusarium_venenatum/fusarium_venenatum/gene_pred/braker/F.venenatum/WT_braker_UTR
+OutDir=$OldProjDir/gene_pred/braker/$Organism/${Strain}_UTR
 AcceptedHits=$(ls $OldProjDir/alignment/star/V.dahliae/12008/treatment/concatenated/concatenated.bam)
 GeneModelName="$Organism"_"$Strain"_braker
 CurDir=$PWD
@@ -48,9 +48,81 @@ braker.pl \
   --genome="assembly.fa" \
   --bam="alignedRNA.bam"
 
-mkdir -p $CurDir/$OutDir
-cp -r braker/* $CurDir/$OutDir/.
+mkdir -p $OutDir
+cp -r braker/* $OutDir/.
 
 rm -r $WorkDir
 
+```
+
+
+```bash
+cd /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
+```
+
+Fasta and gff files were extracted from Braker1 output.
+
+```bash
+for File in $(ls gene_pred/braker/*/*_UTR/*/augustus.hints.gff3); do
+	Strain=$(echo $File | rev | cut -d '/' -f3 | rev | sed 's/_UTR//g')
+	Organism=$(echo $File | rev | cut -d '/' -f4 | rev)
+	echo "$Organism - $Strain"
+	echo "number of genes:"
+	cat $File | grep -v '#' | grep -w 'gene' | wc -l
+	echo "number of genes with predicted UTRs"
+	cat ${File%.gff3}_utr.gff | grep -v '#' | grep -w 'gene' | wc -l
+
+	getAnnoFasta.pl $File
+	OutDir=$(dirname $File)
+	echo "##gff-version 3" > $OutDir/augustus_extracted.gff
+	cat $File | grep -v '#' >> $OutDir/augustus_extracted.gff
+done
+```
+
+```
+  V.dahliae - 12008
+  number of genes:
+  9602
+  number of genes with predicted UTRs
+  9196
+```
+
+
+## Antismash secmet prediction with Cassis
+
+Log into the new cluster:
+
+```bash
+screen -a
+ssh compute03
+WorkDir=~/tmp/antismash_Vd
+mkdir $WorkDir
+cd $WorkDir
+OldProjDir=/oldhpc/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
+Assembly=$(ls $OldProjDir/repeat_masked/V.*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa | grep '12008')
+Organism="V.dahliae"
+Strain="12008"
+Genes=$(ls $OldProjDir/gene_pred/final/$Organism/$Strain/final/final_genes_appended_renamed.gff3)
+conda activate emboss
+seqret -sequence $Assembly -feature -fformat gff -fopenfile $Genes -osformat genbank -auto -outseq Fv_genes.gbk
+conda deactivate
+
+conda activate antismash
+antismash \
+  --cpus 40 \
+  --taxon fungi \
+  --transatpks_da \
+  --clusterblast \
+  --subclusterblast \
+  --knownclusterblast \
+  --smcogs \
+  --inclusive \
+  --cassis \
+  --borderpredict \
+  --full-hmmer \
+  --asf \
+  --tta \
+  --outputfolder Fv_antismash \
+  --verbose \
+  Fv_genes.gbk
 ```
