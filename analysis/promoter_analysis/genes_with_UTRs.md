@@ -23,6 +23,7 @@ WorkDir=$HOME/tmp/braker_Vd
 OldProjDir=/oldhpc/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
 
 Assembly=$(ls $OldProjDir/repeat_masked/V.*/*/ncbi*/*_contigs_softmasked_repeatmasker_TPSI_appended.fa | grep '12008')
+RelatedProteins=$(ls $OldProjDir/public_genomes/V.dahliae/JR2/Verticillium_dahliaejr2.GCA_000400815.2.pep.all.fa)
 Organism="V.dahliae"
 Strain="12008"
 
@@ -36,6 +37,9 @@ cd $WorkDir
 
 cp $Assembly assembly.fa
 cp $AcceptedHits alignedRNA.bam
+cat $RelatedProteins | cut -f1 -d ' ' > related_prots.fa
+
+rm -r /home/armita/prog/augustus/Augustus/config/species/V.dahliae_12008_braker
 
 braker.pl \
   --cores 40 \
@@ -46,13 +50,14 @@ braker.pl \
   --softmasking on \
   --species=$GeneModelName \
   --genome="assembly.fa" \
+  # --prot_seq="related_prots.fa" \
+  # --prg=gth \
   --bam="alignedRNA.bam"
 
 mkdir -p $OutDir
 cp -r braker/* $OutDir/.
 
 rm -r $WorkDir
-
 ```
 
 
