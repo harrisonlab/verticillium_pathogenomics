@@ -18,7 +18,185 @@ $ProgDir/extract_promoters_JR2.py --gff $Gff --fasta $Assembly --prefix $OutDir/
 ls $OutDir
 ```
 
-## Transcription factors
+
+## WC-1 characterised genes
+
+Motif were identified in the promoters of key groups of DEGs.
+
+DEGs were first selected by:
+* eye from heatmaps of DEGs under different conditions
+* based on cluster analysis.
+
+
+### Selected genes:
+
+Attempt to identify common elements in manually selected groups of similarly regulated transcription factors.
+
+```bash
+screen -a
+qlogin
+
+
+ProjDir=/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
+cd $ProjDir
+ProjDir=$(ls -d /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics)
+Promoters=$(ls $ProjDir/analysis/promoters/V.dahliae/JR2/JR2_promoters.fa)
+OutDir=analysis/promoters/motifs/V.dahliae/JR2/WC-1/selected_genes/selected
+mkdir -p $OutDir/meme
+
+# Transcription factors each showing decresed expression in frq knock outs
+
+GeneList="VDAG_JR2_Chr2g00510 VDAG_JR2_Chr2g08700 VDAG_JR2_Chr2g10990 VDAG_JR2_Chr5g01930 VDAG_JR2_Chr3g13030 VDAG_JR2_Chr2g10850 VDAG_JR2_Chr1g24030 VDAG_JR2_Chr3g06490 VDAG_JR2_Chr3g06100 VDAG_JR2_Chr2g03270 VDAG_JR2_Chr5g01890 VDAG_JR2_Chr8g07070 VDAG_JR2_Chr4g04620 VDAG_JR2_Chr8g07580 VDAG_JR2_Chr1g27370 VDAG_JR2_Chr1g03770 VDAG_JR2_Chr3g12060 VDAG_JR2_Chr2g00520 VDAG_JR2_Chr8g00200 VDAG_JR2_Chr1g26850 VDAG_JR2_Chr1g12350 VDAG_JR2_Chr2g10410 VDAG_JR2_Chr6g02190 VDAG_JR2_Chr7g07100 VDAG_JR2_Chr5g05720 VDAG_JR2_Chr2g01990 VDAG_JR2_Chr8g01630 VDAG_JR2_Chr5g00990 VDAG_JR2_Chr1g23950 VDAG_JR2_Chr2g07860 VDAG_JR2_Chr5g11380 VDAG_JR2_Chr2g07010 VDAG_JR2_Chr1g27300 VDAG_JR2_Chr5g05660 VDAG_JR2_Chr3g09510 VDAG_JR2_Chr2g00700 VDAG_JR2_Chr1g07150 VDAG_JR2_Chr3g08070 VDAG_JR2_Chr3g08730 VDAG_JR2_Chr2g04990
+VDAG_JR2_Chr1g08930 VDAG_JR2_Chr1g08230 VDAG_JR2_Chr2g05130 VDAG_JR2_Chr3g04790 VDAG_JR2_Chr1g05210 VDAG_JR2_Chr7g10270 VDAG_JR2_Chr3g03860 VDAG_JR2_Chr8g11340 VDAG_JR2_Chr6g09990 VDAG_JR2_Chr1g09490 VDAG_JR2_Chr1g18820 VDAG_JR2_Chr2g11140 VDAG_JR2_Chr5g04520 VDAG_JR2_Chr6g07650 VDAG_JR2_Chr1g17310"
+ListLen=$(echo $GeneList | grep -o 'g' | wc -l)
+SubPromoters=$OutDir/promoters_${ListLen}.fa
+
+for GeneID in $GeneList; do
+cat $Promoters | sed -n "/^>${GeneID}_/,/^>/p" | grep -v "^$" | head -n -1
+done > $SubPromoters
+
+GeneList="VDAG_JR2_Chr3g10380 VDAG_JR2_Chr1g12450 VDAG_JR2_Chr1g15260 VDAG_JR2_Chr3g07640 VDAG_JR2_Chr2g01990 VDAG_JR2_Chr1g17210"
+
+
+ListLen=$(echo $GeneList | grep -o 'g' | wc -l)
+SubPromoters=$OutDir/promoters_${ListLen}.fa
+
+for GeneID in $GeneList; do
+cat $Promoters | sed -n "/^>${GeneID}_/,/^>/p" | grep -v "^$" | head -n -1
+done > $SubPromoters
+
+
+meme $SubPromoters -dna -mod anr -nmotifs 5 -minw 6 -maxw 12 -revcomp -evt 1.0e+005 -oc $OutDir/meme_${ListLen}
+
+cat $OutDir/meme_${ListLen}/meme.txt | grep -C2 'regular expression'
+
+#---
+# Running MAST
+#---
+
+mast $OutDir/meme_${ListLen}/meme.xml $SubPromoters -oc $OutDir/mast_${ListLen}
+ls $OutDir/mast_${ListLen}/mast.txt
+
+#---
+# Running FIMO
+#---
+Thresh=0.00006 #CASSIS (trained for secmet clusters)
+# Thresh=1e-4 #Default
+fimo -thresh $Thresh -oc $OutDir/fimo_${ListLen} $OutDir/meme_${ListLen}/meme.html $OutDir/promoters_50.fa
+for Motif in $(cat $OutDir/fimo_${ListLen}/fimo.tsv | grep 'TSS' | cut -f1 | sort | uniq); do
+  echo $Motif
+  echo "Promoters containing motif:"
+  cat $OutDir/fimo_${ListLen}/fimo.tsv | grep "^$Motif" | cut -f3 | sort | uniq | wc -l
+  echo "Total number found in these promoters:"
+  cat $OutDir/fimo_${ListLen}/fimo.tsv | grep "^$Motif" | cut -f3 | sort | wc -l
+  echo "this covers the following genes:"
+  cat $OutDir/fimo_${ListLen}/fimo.tsv | grep "^$Motif" | cut -f3 | sort | uniq | grep -o -P "g.*?\.t\d" > $OutDir/fimo_${ListLen}/gene_containing_motifs.txt
+  cat $OutDir/fimo_${ListLen}/gene_containing_motifs.txt | wc -l
+done
+```
+
+## WC-1 Transcription factors
+
+Motif were identified in the promoters of key groups of DEGs.
+
+DEGs were first selected by:
+* eye from heatmaps of DEGs under different conditions
+* based on cluster analysis.
+
+
+### Selected genes:
+
+Attempt to identify common elements in manually selected groups of similarly regulated transcription factors.
+
+```bash
+screen -a
+qlogin
+
+
+ProjDir=/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
+cd $ProjDir
+ProjDir=$(ls -d /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics)
+Promoters=$(ls $ProjDir/analysis/promoters/V.dahliae/JR2/JR2_promoters.fa)
+OutDir=analysis/promoters/motifs/V.dahliae/JR2/WC-1/transcription_factors/selected
+mkdir -p $OutDir/meme
+
+# Transcription factors each showing decresed expression in frq knock outs
+
+GeneList="VDAG_JR2_Chr2g00510 VDAG_JR2_Chr2g08700 VDAG_JR2_Chr2g10990 VDAG_JR2_Chr5g01930 VDAG_JR2_Chr3g13030 VDAG_JR2_Chr2g10850 VDAG_JR2_Chr1g24030 VDAG_JR2_Chr3g06490 VDAG_JR2_Chr3g06100 VDAG_JR2_Chr2g03270 VDAG_JR2_Chr5g01890 VDAG_JR2_Chr8g07070 VDAG_JR2_Chr4g04620 VDAG_JR2_Chr8g07580 VDAG_JR2_Chr1g27370 VDAG_JR2_Chr1g03770 VDAG_JR2_Chr3g12060 VDAG_JR2_Chr2g00520 VDAG_JR2_Chr8g00200 VDAG_JR2_Chr1g26850 VDAG_JR2_Chr1g12350 VDAG_JR2_Chr2g10410 VDAG_JR2_Chr6g02190 VDAG_JR2_Chr7g07100 VDAG_JR2_Chr5g05720 VDAG_JR2_Chr2g01990 VDAG_JR2_Chr8g01630 VDAG_JR2_Chr5g00990 VDAG_JR2_Chr1g23950 VDAG_JR2_Chr2g07860 VDAG_JR2_Chr5g11380 VDAG_JR2_Chr2g07010 VDAG_JR2_Chr1g27300 VDAG_JR2_Chr5g05660 VDAG_JR2_Chr3g09510 VDAG_JR2_Chr2g00700 VDAG_JR2_Chr1g07150 VDAG_JR2_Chr3g08070 VDAG_JR2_Chr3g08730 VDAG_JR2_Chr2g04990
+VDAG_JR2_Chr1g08930 VDAG_JR2_Chr1g08230 VDAG_JR2_Chr2g05130 VDAG_JR2_Chr3g04790 VDAG_JR2_Chr1g05210 VDAG_JR2_Chr7g10270 VDAG_JR2_Chr3g03860 VDAG_JR2_Chr8g11340 VDAG_JR2_Chr6g09990 VDAG_JR2_Chr1g09490 VDAG_JR2_Chr1g18820 VDAG_JR2_Chr2g11140 VDAG_JR2_Chr5g04520 VDAG_JR2_Chr6g07650 VDAG_JR2_Chr1g17310"
+ListLen=$(echo $GeneList | grep -o 'g' | wc -l)
+SubPromoters=$OutDir/promoters_${ListLen}.fa
+
+for GeneID in $GeneList; do
+cat $Promoters | sed -n "/^>${GeneID}_/,/^>/p" | grep -v "^$" | head -n -1
+done > $SubPromoters
+
+GeneList="VDAG_JR2_Chr6g09990 VDAG_JR2_Chr1g09490 VDAG_JR2_Chr1g18820 VDAG_JR2_Chr2g11140 VDAG_JR2_Chr5g04520 VDAG_JR2_Chr6g07650 VDAG_JR2_Chr1g17310"
+
+
+ListLen=$(echo $GeneList | grep -o 'g' | wc -l)
+SubPromoters=$OutDir/promoters_${ListLen}.fa
+
+for GeneID in $GeneList; do
+cat $Promoters | sed -n "/^>${GeneID}_/,/^>/p" | grep -v "^$" | head -n -1
+done > $SubPromoters
+
+
+meme $SubPromoters -dna -mod anr -nmotifs 5 -minw 6 -maxw 12 -revcomp -evt 1.0e+005 -oc $OutDir/meme_${ListLen}
+
+cat $OutDir/meme_${ListLen}/meme.txt | grep -C2 'regular expression'
+
+#---
+# Running MAST
+#---
+
+mast $OutDir/meme_${ListLen}/meme.xml $SubPromoters -oc $OutDir/mast_${ListLen}
+ls $OutDir/mast_${ListLen}/mast.txt
+
+#---
+# Running FIMO
+#---
+Thresh=0.00006 #CASSIS (trained for secmet clusters)
+# Thresh=1e-4 #Default
+fimo -thresh $Thresh -oc $OutDir/fimo_${ListLen} $OutDir/meme_${ListLen}/meme.html $OutDir/promoters_50.fa
+for Motif in $(cat $OutDir/fimo_${ListLen}/fimo.tsv | grep 'TSS' | cut -f1 | sort | uniq); do
+  echo $Motif
+  echo "Promoters containing motif:"
+  cat $OutDir/fimo_${ListLen}/fimo.tsv | grep "^$Motif" | cut -f3 | sort | uniq | wc -l
+  echo "Total number found in these promoters:"
+  cat $OutDir/fimo_${ListLen}/fimo.tsv | grep "^$Motif" | cut -f3 | sort | wc -l
+  echo "this covers the following genes:"
+  cat $OutDir/fimo_${ListLen}/fimo.tsv | grep "^$Motif" | cut -f3 | sort | uniq | grep -o -P "g.*?\.t\d" > $OutDir/fimo_${ListLen}/gene_containing_motifs.txt
+  cat $OutDir/fimo_${ListLen}/gene_containing_motifs.txt | wc -l
+done
+```
+
+```
+ATTCDTTCATG
+Promoters containing motif:
+4
+Total number found in these promoters:
+5
+this covers the following genes:
+0
+CAAGWGACA
+Promoters containing motif:
+11
+Total number found in these promoters:
+16
+this covers the following genes:
+0
+CTKTCSACGAC
+Promoters containing motif:
+12
+Total number found in these promoters:
+17
+this covers the following genes:
+0
+```
+
+
+## Frq Transcription factors
 
 Motif were identified in the promoters of key groups of DEGs.
 
