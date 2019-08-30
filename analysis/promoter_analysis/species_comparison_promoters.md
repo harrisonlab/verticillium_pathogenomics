@@ -39,7 +39,7 @@ wget ftp://ftp.ensemblgenomes.org/pub/fungi/release-43/gff3/botrytis_cinerea/*.g
 gunzip *.gz
 cd $ProjDir
 Assembly=$(ls assembly/external_groups/B.cinerea/BO5_10/Botrytis_cinerea.ASM83294v1.dna.toplevel.fa)
-Gff=$(ls assembly/external_groups/B.cinerea/BO5_10/Botrytis_cinerea.ASM83294v1.dna.toplevel.fa)
+Gff=$(ls assembly/external_groups/B.cinerea/BO5_10/Botrytis_cinerea.ASM83294v1.43.gff3)
 
 # M. oryzae
 Organism="M.oryzae"
@@ -125,20 +125,64 @@ Gff=$(ls assembly/external_groups/Z.tritici/MYCGR_v2/Zymoseptoria_tritici.MG2.44
 
 ```
 
-## Frq
+## Extract promoters
+
+
+### Clock organisms
 
 Firstly, promoter sequences were extracted from the genome using
 published gene models
 
 ```bash
 # Assembly=$(ls ../clocks/public_genomes/JR2/Verticillium_dahliaejr2.GCA_000400815.2.dna.toplevel_parsed.fa)
-Assembly=$(ls ../clocks/public_genomes/JR2/Verticillium_dahliaejr2.GCA_000400815.2.dna.toplevel.fa)
-Gff=$(ls ../clocks/public_genomes/JR2/Verticillium_dahliaejr2.GCA_000400815.2.33.gff3)
+Assembly=$(ls assembly/external_groups/N.crassa/OR74A/GCF_000182925.2_NC12_genomic.fna)
+cat $Assembly | cut -f1 -d ' '> ${Assembly%.fna}_parsed.fa
 
-OutDir=analysis/promoters/V.dahliae/JR2
+Gff=$(ls assembly/external_groups/N.crassa/OR74A/GCF_000182925.2_NC12_genomic.gff)
+Organism=$(echo $Assembly | rev | cut -f3 -d '/' | rev)
+Strain=$(echo $Assembly | rev | cut -f2 -d '/' | rev)
+OutDir=analysis/promoters/$Organism/$Strain
 mkdir -p $OutDir
-ProgDir=/home/armita/git_repos/emr_repos/scripts/verticillium_pathogenomics/analysis/promoter_analysis
-$ProgDir/extract_promoters_JR2.py --gff $Gff --fasta $Assembly --prefix $OutDir/JR2_promoters
+Dist=3000
+# ProgDir=/home/armita/git_repos/emr_repos/scripts/verticillium_pathogenomics/analysis/promoter_analysis
+# $ProgDir/extract_promoters_ensembl.py --fasta ${Assembly%.fa}_parsed.fa --gff $Gff --prefix $OutDir/${Organism}_promoters_${Dist} --distance $Dist
 
 ls $OutDir
 ```
+
+```bash
+# Assembly=$(ls ../clocks/public_genomes/JR2/Verticillium_dahliaejr2.GCA_000400815.2.dna.toplevel_parsed.fa)
+Assembly=$(ls assembly/external_groups/B.cinerea/BO5_10/Botrytis_cinerea.ASM83294v1.dna.toplevel.fa)
+cat $Assembly | cut -f1 > ${Assembly%.fa}_parsed.fa
+
+Gff=$(ls assembly/external_groups/B.cinerea/BO5_10/Botrytis_cinerea.ASM83294v1.43.gff3)
+Organism=$(echo $Assembly | rev | cut -f3 -d '/' | rev)
+Strain=$(echo $Assembly | rev | cut -f2 -d '/' | rev)
+OutDir=analysis/promoters/$Organism/$Strain
+mkdir -p $OutDir
+Dist=3000
+ProgDir=/home/armita/git_repos/emr_repos/scripts/verticillium_pathogenomics/analysis/promoter_analysis
+$ProgDir/extract_promoters_ensembl.py --fasta ${Assembly%.fa}_parsed.fa --gff $Gff --prefix $OutDir/${Organism}_promoters_${Dist} --distance $Dist
+
+ls $OutDir
+```
+
+```bash
+# Assembly=$(ls ../clocks/public_genomes/JR2/Verticillium_dahliaejr2.GCA_000400815.2.dna.toplevel_parsed.fa)
+Assembly=$(ls assembly/external_groups/B.cinerea/BO5_10/Botrytis_cinerea.ASM83294v1.dna.toplevel.fa)
+cat $Assembly | cut -f1 > ${Assembly%.fa}_parsed.fa
+
+Gff=$(ls assembly/external_groups/B.cinerea/BO5_10/Botrytis_cinerea.ASM83294v1.43.gff3)
+Organism=$(echo $Assembly | rev | cut -f3 -d '/' | rev)
+Strain=$(echo $Assembly | rev | cut -f2 -d '/' | rev)
+OutDir=analysis/promoters/$Organism/$Strain
+mkdir -p $OutDir
+Dist=3000
+ProgDir=/home/armita/git_repos/emr_repos/scripts/verticillium_pathogenomics/analysis/promoter_analysis
+$ProgDir/extract_promoters_ensembl.py --fasta ${Assembly%.fa}_parsed.fa --gff $Gff --prefix $OutDir/${Organism}_promoters_${Dist} --distance $Dist
+
+ls $OutDir
+```
+
+
+## Frq
