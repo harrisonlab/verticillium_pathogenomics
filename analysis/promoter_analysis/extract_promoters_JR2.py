@@ -2,19 +2,19 @@
 
 '''
 UTR regions are publicaly available for the JR2 genome.
-This script extracts -1000/+50 of the start of 5'-UTR or the 1500 bp
+This script extracts -dist/+50 of the start of 5'-UTR or the 1500 bp
 upstream of a gene if a UTR feature is missing.
-If another gene is within 1000 bp then a shortened sequence
+If another gene is within dist bp then a shortened sequence
 is predicted.
 '''
 
 # for feature in gff if gene then extract start/stop
 # if followed by UTR region then extract start/stop
 # make a dictionary of gene boundaries and contig boundaries.
-# for each gene extract the sequence -1000/+50 of TSS
-#     or -1000+0 of gene start site
-# If another gene is within 1000bp identify this by selecting a range of
-# 1000 values less than the TSS and see if they are in the dictionary of
+# for each gene extract the sequence -dist/+50 of TSS
+#     or -dist+0 of gene start site
+# If another gene is within distbp identify this by selecting a range of
+# dist values less than the TSS and see if they are in the dictionary of
 # gene boundaries (reverse the list).
 # Adjust to the number in the dictionary +1.
 # reverse complement the sequence if gene is on the reverse strand.
@@ -38,6 +38,7 @@ ap = argparse.ArgumentParser()
 ap.add_argument('--gff',required=True,type=str,help='input gff file')
 ap.add_argument('--fasta', required = False, type=str, default = False, help = 'File name to store converted gene names if required')
 ap.add_argument('--prefix', required = False, type=str, default = False, help = 'outfile prefix')
+ap.add_argument('--distance', required = False, type=int, default = False, help = 'distance extracted upstream of TSS (+430 if no UTR predicted5)')
 conf = ap.parse_args() #sys.argv
 
 # with open(conf.fasta) as f:
@@ -50,6 +51,7 @@ with open(conf.gff) as f:
     gff_lines = f.readlines()
 
 prefix = conf.prefix
+dist = conf.distance
 
 #-----------------------------------------------------
 # Step 2
@@ -124,6 +126,7 @@ class Gff_obj(object):
 
 prev_id = ""
 obj_dict = defaultdict(list)
+obj_dict_keys = []
 for line in gff_lines:
     if line.startswith('#'):
         continue
@@ -157,6 +160,7 @@ for line in gff_lines:
         gene_obj = Feature_obj()
         obj_dict[this_gene] = gene_obj
         obj_dict[this_gene].feature_dict[feature].append(feat_obj)
+        obj_dict_keys.append(this_gene)
 
 gene_mRNA_objs = obj_dict[this_gene].feature_dict['CDS']
 gene_mRNA_obj = gene_mRNA_objs[0]
@@ -198,7 +202,11 @@ for key in record_dict.keys():
 
 gff_outlines = ['#gff3']
 fasta_outlines = []
-for key in obj_dict.keys():
+prev_contig = ''
+prev_start = 0
+prev_stop = 0
+
+for key in obj_dict_keys:
     gene_obj = obj_dict[key]
     if gene_obj.feature_dict['five_prime_UTR']:
         feat_obj = gene_obj.feature_dict["five_prime_UTR"][0]
@@ -206,10 +214,11 @@ for key in obj_dict.keys():
         start = int(feat_obj.start)
         stop = int(feat_obj.stop)
         contig = feat_obj.contig
+        name = key
 
         if feat_obj.strand == "+":
             promoter_start = int(start)
-            for i in reversed(range(start - 1000, start, 1)):
+            for i in reversed(range(start - dist, start, 1)):
                 if str(i) in gene_boundary_dict[contig]:
                     # print("monkeys")
                     break
@@ -218,7 +227,7 @@ for key in obj_dict.keys():
             seq = record_dict[contig].seq[promoter_start:promoter_stop]
         elif feat_obj.strand == "-":
             promoter_stop = int(stop)
-            for i in range(stop, stop + 1000, 1):
+            for i in range(stop, stop + dist, 1):
                 if str(i) in gene_boundary_dict[contig]:
                     # print("monkeys")
                     break
@@ -228,11 +237,30 @@ for key in obj_dict.keys():
             seq = record_dict[contig].seq[promoter_start:promoter_stop]
             # print seq
             seq.reverse_complement()
-
-        gff_outlines.append("\t".join([contig, "extract_promoters", "promoter", str(promoter_start), str(promoter_stop), '.', strand, '.', 'ID=' + key]))
+        # gff_outlines.append("\t".join([contig, "extract_promoters", "promoter", str(promoter_start), str(promoter_stop), '.', strand, '.', 'ID=' + key]))
         # print("\t".join(["TSS", key, str(start), str(stop), contig, strand, str(promoter_start), str(promoter_stop)]))
-        if len(seq) != 0:
-            fasta_outlines.append("\n".join([">" + key + "_TSS_-1000_+50", str(seq)]))
+        # if len(seq) != 0:
+        #     fasta_outlines.append("\n".join([">" + key + "_TSS_-dist_+50", str(seq)]))
+        if contig == prev_contig and any(int(prev_start) <= int(x) <= int(prev_stop) for x in range(promoter_start, promoter_stop, 1)):
+            # print("monkeys")
+            # print(name + "\t" + str(prev_start) + "\t" + str(prev_stop) + "\t" + str(promoter_start) + "\t" + str(promoter_stop))
+            prev_gff = gff_outlines[-1]
+            prev_name = prev_gff.split("=")[-1]
+            new_start = min(prev_start, promoter_start)
+            new_stop = max(prev_stop, promoter_stop)
+            outline = "\t".join([contig, "extract_promoters", "promoter", str(new_start), str(new_stop), '.', '.', '.', 'ID=' + prev_name + "_" + name])
+            gff_outlines[-1] = outline
+            seq = record_dict[contig].seq[new_start-1:new_stop]
+            if len(seq) != 0:
+                fasta_outlines[-1] = "\n".join([">" + prev_name + '_' + name + "_merged_-" + str(dist), str(seq)])
+        else:
+            gff_outlines.append("\t".join([contig, "extract_promoters", "promoter", str(promoter_start), str(promoter_stop), '.', strand, '.', 'ID=' + name]))
+            # print("\t".join(["TSS", key, str(start), str(stop), contig, strand, str(promoter_start), str(promoter_stop)]))
+            if len(seq) != 0:
+                fasta_outlines.append("\n".join([">" + name + "_TSS_-" + str(dist) + "_+50", str(seq)]))
+        prev_contig = contig
+        prev_start = promoter_start
+        prev_stop = promoter_stop
     # If TSS not present for gene
     else:
         # print key
@@ -248,7 +276,7 @@ for key in obj_dict.keys():
 
         if feat_obj.strand == "+":
             promoter_start = int(start)
-            for i in reversed(range(start - 1500, start, 1)):
+            for i in reversed(range(start - (dist + 415), start, 1)):
                 if str(i) in gene_boundary_dict[contig]:
                     # print("monkeys")
                     break
@@ -257,7 +285,7 @@ for key in obj_dict.keys():
             seq = record_dict[contig].seq[promoter_start:promoter_stop]
         elif feat_obj.strand == "-":
             promoter_stop = int(stop)
-            for i in range(stop, stop + 1500, 1):
+            for i in range(stop, stop + (dist + 415), 1):
                 if str(i) in gene_boundary_dict[contig]:
                     # print("monkeys")
                     break
@@ -265,9 +293,30 @@ for key in obj_dict.keys():
             promoter_start = stop
             seq = record_dict[contig].seq[promoter_start:promoter_stop]
             seq.reverse_complement()
-        gff_outlines.append("\t".join([contig, "extract_promoters", "promoter", str(promoter_start), str(promoter_stop), '.', strand, '.', 'ID=' + key]))
-        if len(seq) != 0:
-            fasta_outlines.append("\n".join([">" + key + "_CDS_-1500", str(seq)]))
+        # gff_outlines.append("\t".join([contig, "extract_promoters", "promoter", str(promoter_start), str(promoter_stop), '.', strand, '.', 'ID=' + key]))
+        # if len(seq) != 0:
+        #     fasta_outlines.append("\n".join([">" + key + "_SC_-" + str(dist + 415) + "_+365", str(seq)]))
+        if contig == prev_contig and any(int(prev_start) <= int(x) <= int(prev_stop) for x in range(promoter_start, promoter_stop, 1)):
+            # print("monkeys")
+            # print(name + "\t" + str(prev_start) + "\t" + str(prev_stop) + "\t" + str(promoter_start) + "\t" + str(promoter_stop))
+            prev_gff = gff_outlines[-1]
+            prev_name = prev_gff.split("=")[-1]
+            new_start = min(prev_start, promoter_start)
+            new_stop = max(prev_stop, promoter_stop)
+            outline = "\t".join([contig, "extract_promoters", "promoter", str(new_start), str(new_stop), '.', '.', '.', 'ID=' + prev_name + "_" + name])
+            gff_outlines[-1] = outline
+            seq = record_dict[contig].seq[new_start-1:new_stop]
+            if len(seq) != 0:
+                fasta_outlines[-1] = "\n".join([">" + prev_name + '_' + name + "_merged_-" + str(dist), str(seq)])
+        else:
+            gff_outlines.append("\t".join([contig, "extract_promoters", "promoter", str(promoter_start), str(promoter_stop), '.', strand, '.', 'ID=' + name]))
+            # print("\t".join(["TSS", key, str(start), str(stop), contig, strand, str(promoter_start), str(promoter_stop)]))
+            if len(seq) != 0:
+                fasta_outlines.append("\n".join([">" + key + "_SC_-" + str(dist + 415) + "_+365", str(seq)]))
+        prev_contig = contig
+        prev_start = promoter_start
+        prev_stop = promoter_stop
+
 # print "\n".join(gff_outlines)
 outgff = ".".join([prefix, "gff"])
 f = open(outgff,"w")
