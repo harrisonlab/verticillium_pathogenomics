@@ -1673,3 +1673,18 @@ done 2>&1 | tee analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/selected
 
 cat analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/selected/promoters_meme_unmasked.log | grep -e '_IG_regions_' -e 'Motif' | grep -B1 'Motif'| less -S
 ```
+
+```
+/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics/analysis/promoters/N.crassa/OR74A/OR74A_IG_regions_3500.fa
+        Motif GGTAG MEME-1 regular expression
+--
+/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics/analysis/promoters/N.crassa/OR74A/OR74A_IG_regions_5000.fa
+        Motif GATCGAGA MEME-1 regular expression
+--
+/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics/analysis/promoters/N.crassa/OR74A/OR74A_IG_regions_6000.fa
+        Motif CBACSACSACS MEME-1 regular expression
+4A/WC-1/Smith2010/selected/promoters_meme_unmasked.log | grep -e '_IG_regions_' -e 'Motif' | grep -B1 'Motif'omoters/motifs/N.crassa/OR7
+        Motif CMCSMYCVCC MEME-1 regular expression
+        Motif GAGA MEME-2 regular expression
+        Motif CHGMTCG MEME-1 regular expression
+```
