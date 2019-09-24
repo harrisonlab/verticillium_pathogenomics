@@ -186,7 +186,11 @@ gene_boundary_dict = defaultdict(set)
 for key in obj_dict.keys():
     gene_obj = obj_dict[key]
     if gene_obj.feature_dict["CDS"]:
+        # print gene_obj.feature_dict["CDS"][0].name
         for feat_obj in gene_obj.feature_dict["CDS"]:
+            if feat_obj.name == 'XP_965723.1':
+                # Excluding the final CDS in the reverse strand UTR of cry from the boundary dictionary
+                continue
             gene_boundary_dict[feat_obj.contig].add(feat_obj.start)
             gene_boundary_dict[feat_obj.contig].add(feat_obj.stop)
     # if gene_obj.feature_dict["CDS"]:
