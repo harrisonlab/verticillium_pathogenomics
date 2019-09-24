@@ -219,17 +219,6 @@ for key in obj_dict.keys():
         start = int(feat_obj.start)
         stop = int(feat_obj.stop)
         contig = feat_obj.contig
-        # TSS not present for gene
-        # print key
-        # print(gene_obj.feature_dict.keys())
-        # if gene_obj.feature_dict['five_prime_UTR']:
-            # print gene_obj.feature_dict['five_prime_UTR']
-            # print "monkeys"
-        feat_obj = gene_obj.feature_dict["gene"][0]
-        strand = feat_obj.strand
-        start = int(feat_obj.start)
-        stop = int(feat_obj.stop)
-        contig = feat_obj.contig
         name = gene_obj.feature_dict["gene"][0].name
         # print name
         if feat_obj.strand == "+":
