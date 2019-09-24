@@ -1172,7 +1172,7 @@ for Promoters in $(ls $ProjDir/analysis/promoters/N.crassa/OR74A/OR74A_IG_region
   echo $Promoters
   PromLgth=$(echo $Promoters | rev | cut -f1 -d '_' | rev | sed 's/.fa//g')
   echo $PromLgth  
-  OutDir=analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/selected/${PromLgth}_intergenic_unmasked/meme
+  OutDir=analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/selected/${PromLgth}_intergenic_unmasked/meme_manual
   mkdir -p $OutDir
 
   GeneList=$(cat analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/gene_list_selected.txt)
@@ -1193,9 +1193,9 @@ for Promoters in $(ls $ProjDir/analysis/promoters/N.crassa/OR74A/OR74A_IG_region
   fasta-get-markov -m 2 $Promoters $OutDir/background_model.txt
 
   mkdir $OutDir/meme
-  meme -objfun de -neg $ControlPromoters -bfile $OutDir/background_model.txt -dna -mod anr -nmotifs 5 -minw 4 -maxw 12 -revcomp -evt 0.05 -oc $OutDir/meme $SubPromoters
+  # meme -objfun de -neg $ControlPromoters -bfile $OutDir/background_model.txt -dna -mod anr -nmotifs 5 -minw 4 -maxw 12 -revcomp -evt 0.05 -oc $OutDir/meme $SubPromoters
   # meme -objfun se -neg $ControlPromoters -bfile $OutDir/background_model.txt -dna -mod anr -nmotifs 5 -minw 4 -maxw 12 -revcomp -evt 0.05 -oc $OutDir/meme $SubPromoters
-  # meme -neg -dna -mod anr -nmotifs 5 -minw 4 -maxw 12 -revcomp -evt 0.05 -oc $OutDir/meme $SubPromoters
+  meme -objfun se -bfile $OutDir/background_model.txt -dna -mod anr -nmotifs 5 -minw 4 -maxw 12 -revcomp -evt 0.05 -oc $OutDir/meme $SubPromoters
 
   cat $OutDir/meme/meme.txt | grep -C2 'regular expression'
 
@@ -1301,8 +1301,8 @@ for Promoters in $(ls $ProjDir/analysis/promoters/N.crassa/OR74A/OR74A_IG_region
   fasta-get-markov -m 2 $Promoters $OutDir/background_model.txt
 
   mkdir $OutDir/meme
-  # meme -objfun de -neg $ControlPromoters -bfile $OutDir/background_model.txt -dna -mod anr -nmotifs 5 -minw 4 -maxw 12 -revcomp -evt 0.05 -oc $OutDir/meme $SubPromoters
-  meme -objfun se -neg $ControlPromoters -bfile $OutDir/background_model.txt -dna -mod anr -nmotifs 5 -minw 4 -maxw 12 -revcomp -evt 0.05 -oc $OutDir/meme2 $SubPromoters
+  meme -objfun de -neg $ControlPromoters -bfile $OutDir/background_model.txt -dna -mod anr -nmotifs 5 -minw 4 -maxw 12 -revcomp -evt 0.05 -oc $OutDir/meme $SubPromoters
+  # meme -objfun se -neg $ControlPromoters -bfile $OutDir/background_model.txt -dna -mod anr -nmotifs 5 -minw 4 -maxw 12 -revcomp -evt 0.05 -oc $OutDir/meme2 $SubPromoters
   # meme -neg -dna -mod anr -nmotifs 5 -minw 4 -maxw 12 -revcomp -evt 0.05 -oc $OutDir/meme $SubPromoters
 
   cat $OutDir/meme/meme.txt | grep -C2 'regular expression'
@@ -1498,7 +1498,7 @@ qlogin
 ProjDir=$(ls -d /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics)
 cd $ProjDir
 
-for Promoters in $(ls $ProjDir/analysis/promoters/N.crassa/OR74A/OR74A_IG_regions_*.fa); do
+for Promoters in $(ls analysis/promoters/N.crassa/OR74A/OR74A_IG_regions_*.fa | grep '5000'); do
   echo $Promoters
   PromLgth=$(echo $Promoters | rev | cut -f1 -d '_' | rev | sed 's/.fa//g')
   echo $PromLgth  
@@ -1566,14 +1566,55 @@ The Smith 2010 motif was only identified in the 5000 bp dataset:
 
 ```
 /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics/analysis/promoters/N.crassa/OR74A/OR74A_IG_regions_3500.fa
-        Motif GGTAG MEME-1 regular expression
---
-/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics/analysis/promoters/N.crassa/OR74A/OR74A_IG_regions_5000.fa
-        Motif GATCGAGA MEME-1 regular expression
---
-/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics/analysis/promoters/N.crassa/OR74A/OR74A_IG_regions_6000.fa
-        Motif CBACSACSACS MEME-1 regular expression
+        Motif TCTTYYTC MEME-1 regular expression
 ```
+
+
+Gapped motif and short DREME motif identification was also performed using IG regions:
+
+
+```bash
+screen -a
+qlogin
+
+ProjDir=$(ls -d /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics)
+cd $ProjDir
+
+for Promoters in $(ls analysis/promoters/N.crassa/OR74A/OR74A_IG_regions_*.fa); do
+echo $Promoters
+PromLgth=$(echo $Promoters | rev | cut -f1 -d '_' | rev | sed 's/.fa//g')
+echo $PromLgth
+OutDir=analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/selected/${PromLgth}_intergenic_unmasked/dreme
+
+mkdir -p $OutDir
+
+
+SubPromoters=$(ls $OutDir/../meme/promoters_OR74A_Smith2010_highpeaks.fa)
+ControlPromoters=$(ls $OutDir/../meme/promoters_OR74A_Smith2010_-ves.fa)
+
+glam2 -O $OutDir/glam n $SubPromoters
+dreme -oc $OutDir/dreme -p $SubPromoters
+dreme -oc $OutDir/dreme_control  -n $ControlPromoters -p $SubPromoters
+
+echo "Dreme reshuffled"
+cat $OutDir/dreme/dreme.txt | grep -C2 'MOTIF'
+echo "Dreme with controls"
+cat $OutDir/dreme_control/dreme.txt | grep -C2 'MOTIF'
+
+#---
+# Running MAST
+#---
+mast $OutDir/dreme/dreme.xml $SubPromoters -oc $OutDir/mast
+mast $OutDir/dreme_control/dreme.xml $SubPromoters -oc $OutDir/mast_control
+# ls $OutDir/mast_${ListLen}/mast.txt
+# done > analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/meme_unmasked2.log
+
+
+done 2>&1 | tee analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/selected/intergenic_dreme_unmasked.log
+
+cat analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/selected/intergenic_dreme_unmasked.log | grep -e '_intergenic_unmasked' -e 'Best RE' -e 'MOTIF'
+```
+
 
 ## Iterations through different promoter region lengths
 
@@ -1590,7 +1631,7 @@ mkdir -p $OutDir
 ProgDir=/home/armita/git_repos/emr_repos/scripts/verticillium_pathogenomics/analysis/promoter_analysis
 for Dist in $(seq 500 500 6000); do
   echo $Dist
-  $ProgDir/extract_promoters_OR74A.py --gff $Gff --fasta $Assembly --prefix $OutDir/OR74A_promoters2_${Dist} --distance $Dist
+  $ProgDir/extract_promoters_OR74A.py --gff $Gff --fasta $Assembly --prefix $OutDir/OR74A_promoters_${Dist} --distance $Dist
 done
 
 ls $OutDir
@@ -1614,11 +1655,11 @@ qlogin
 ProjDir=$(ls -d /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics)
 cd $ProjDir
 
-for Promoters in $(ls $ProjDir/analysis/promoters/N.crassa/OR74A/OR74A_promoters2_*.fa); do
+for Promoters in $(ls $ProjDir/analysis/promoters/N.crassa/OR74A/OR74A_promoters_*.fa); do
   echo $Promoters
   PromLgth=$(echo $Promoters | rev | cut -f1 -d '_' | rev | sed 's/.fa//g')
   echo $PromLgth
-  OutDir=analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/selected/${PromLgth}_promoters/meme_de
+  OutDir=analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/selected/${PromLgth}_promoters/meme
   mkdir -p $OutDir
 
   GeneList=$(cat analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/gene_list_selected.txt | sed "s/$/ /g" | tr -d '\n')
@@ -1638,7 +1679,6 @@ for Promoters in $(ls $ProjDir/analysis/promoters/N.crassa/OR74A/OR74A_promoters
 
   fasta-get-markov -m 2 $Promoters $OutDir/background_model.txt
 
-  mkdir $OutDir/meme
   meme -objfun de -neg $ControlPromoters -bfile $OutDir/background_model.txt -dna -mod anr -nmotifs 5 -minw 4 -maxw 12 -revcomp -evt 0.05 -oc $OutDir/meme $SubPromoters
 
   # meme $SubPromoters -dna -mod anr -nmotifs 5 -minw 6 -maxw 12 -revcomp -evt 0.05 -oc $OutDir/meme
@@ -1659,7 +1699,7 @@ for Promoters in $(ls $ProjDir/analysis/promoters/N.crassa/OR74A/OR74A_promoters
   # Thresh=0.00006 #CASSIS (trained for secmet clusters)
   Thresh=1e-4 #Default
   fimo -thresh $Thresh -oc $OutDir/fimo $OutDir/meme/meme.html $Promoters
-  for Motif in $(cat $OutDir/fimo/fimo.tsv | grep 'MEME-1' | cut -f1 | sort | uniq); do
+  for Motif in $(cat $OutDir/fimo/fimo.tsv | grep 'MEME-' | cut -f1 | sort | uniq); do
     echo $Motif
     echo "Promoters containing motif:"
     cat $OutDir/fimo/fimo.tsv | grep "^$Motif" | cut -f3 | sort | uniq | wc -l
@@ -1671,20 +1711,191 @@ for Promoters in $(ls $ProjDir/analysis/promoters/N.crassa/OR74A/OR74A_promoters
   done
 done 2>&1 | tee analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/selected/promoters_meme_unmasked.log
 
-cat analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/selected/promoters_meme_unmasked.log | grep -e '_IG_regions_' -e 'Motif' | grep -B1 'Motif'| less -S
+cat analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/selected/promoters_meme_unmasked.log | grep -e '_promoters' -e 'Motif' | grep -B1 'Motif'
 ```
 
 ```
-/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics/analysis/promoters/N.crassa/OR74A/OR74A_IG_regions_3500.fa
-        Motif GGTAG MEME-1 regular expression
---
-/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics/analysis/promoters/N.crassa/OR74A/OR74A_IG_regions_5000.fa
-        Motif GATCGAGA MEME-1 regular expression
---
-/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics/analysis/promoters/N.crassa/OR74A/OR74A_IG_regions_6000.fa
-        Motif CBACSACSACS MEME-1 regular expression
-4A/WC-1/Smith2010/selected/promoters_meme_unmasked.log | grep -e '_IG_regions_' -e 'Motif' | grep -B1 'Motif'omoters/motifs/N.crassa/OR7
-        Motif CMCSMYCVCC MEME-1 regular expression
-        Motif GAGA MEME-2 regular expression
-        Motif CHGMTCG MEME-1 regular expression
+Writing results to output directory 'analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/selected/5000_promoters/meme/meme'.
+	Motif TCGA MEME-1 regular expression
+```
+
+Gapped motif identification was also performed using promoters:
+
+
+```bash
+screen -a
+qlogin
+
+ProjDir=$(ls -d /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics)
+cd $ProjDir
+
+for Promoters in $(ls $ProjDir/analysis/promoters/N.crassa/OR74A/OR74A_promoters_*.fa); do
+echo $Promoters
+PromLgth=$(echo $Promoters | rev | cut -f1 -d '_' | rev | sed 's/.fa//g')
+echo $PromLgth
+OutDir=analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/selected/${PromLgth}_promoters/dreme
+mkdir -p $OutDir
+
+
+SubPromoters=$(ls $OutDir/../meme/promoters_OR74A_Smith2010_highpeaks.fa)
+ControlPromoters=$(ls $OutDir/../meme/promoters_OR74A_Smith2010_-ves.fa)
+
+glam2 -O $OutDir/glam n $SubPromoters
+dreme -oc $OutDir/dreme -p $SubPromoters
+dreme -oc $OutDir/dreme_control  -n $ControlPromoters -p $SubPromoters
+
+echo "Dreme reshuffled"
+cat $OutDir/dreme/dreme.txt | grep -C2 'MOTIF'
+echo "Dreme with controls"
+cat $OutDir/dreme_control/dreme.txt | grep -C2 'MOTIF'
+
+#---
+# Running MAST
+#---
+mast $OutDir/dreme/dreme.xml $SubPromoters -oc $OutDir/mast
+mast $OutDir/dreme_control/dreme.xml $SubPromoters -oc $OutDir/mast_control
+# ls $OutDir/mast_${ListLen}/mast.txt
+# done > analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/meme_unmasked2.log
+
+
+done 2>&1 | tee analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/selected/promoters_dreme_unmasked.log
+
+cat analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/selected/promoters_dreme_unmasked.log | grep -e '_promoters2' -e 'Motif' | grep -B1 'Motif'
+```
+
+
+# Final RSAT analysis:
+
+
+```bash
+scp -r cluster:/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics/analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/selected/*_promoters /Users/armita/Downloads/aug_27th/Nc/.
+```
+
+RSAT had been run at 1000 to 6000bp promoter regions (500bp spacing), with
+best results achieved at 1500bp.
+
+Results of the 1500bp promoter regions were downloaded to my local computer and
+then copied onto the cluster:
+
+```bash
+scp -r /Volumes/GGB/Harrison/Projects/BBSRC\ IPA\ Clocks/Science/WP1.\ WCC\ and\ development/Obj1.\ Light\ inducible\ genes/promoter_analysis/Sept_2019_predictions/Nc_meme_RSAT/1500_promoters/RSAT_final cluster:/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics/analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/selected/1500_promoters/.
+```
+
+From this, motifs were converted from transfac format to meme format and run on
+original input sequences.
+
+
+```bash
+  cd /home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics
+  for Dist in 1500; do
+    echo $Dist
+    WorkDir=$(ls -d analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/selected/${Dist}_promoters/RSAT_final)
+    Promoters=$(ls analysis/promoters/N.crassa/OR74A/OR74A_promoters_${Dist}.fa)
+    SubPromoters=$(ls $WorkDir/../meme/promoters_OR74A_Smith2010_highpeaks.fa)
+    Transfac=$(ls $WorkDir/*count_matrices.tf.txt)
+    transfac2meme $Transfac > $WorkDir/motifs.meme
+
+    # mkdir $WorkDir/mast
+    # $WorkDir/fimo
+
+    mast $WorkDir/motifs.meme $SubPromoters -oc $WorkDir/mast
+
+    #---
+    # Running FIMO
+    #---
+    # Thresh=0.00006 #CASSIS (trained for secmet clusters)
+    Thresh=1e-4 #Default
+    fimo -thresh $Thresh -oc $WorkDir/fimo $WorkDir/motifs.meme $Promoters
+    for Motif in $(cat $WorkDir/fimo/fimo.tsv | grep 'assembly_' | cut -f1 | sort | uniq); do
+    echo $Motif
+    # echo "Promoters containing motif:"
+    cat $WorkDir/fimo/fimo.tsv | grep "^$Motif" | cut -f3 | sort | uniq | wc -l
+    # echo "Total number found in these promoters:"
+    cat $WorkDir/fimo/fimo.tsv | grep "^$Motif" | cut -f3 | sort | wc -l
+    # echo "this covers the following genes:"
+    cat $WorkDir/fimo/fimo.tsv | grep "^$Motif" | cut -f3 | sort | uniq > $WorkDir/fimo/gene_containing_motifs.txt
+    cat $WorkDir/fimo/gene_containing_motifs.txt | sed -r "s/_NCU/\nNCU/g" | wc -l
+    echo
+    done
+
+    # mcast --bfile $WorkDir/../meme/background_model.txt --oc $WorkDir/mcast $WorkDir/motifs.meme $SubPromoters
+
+    for Header in $(cat analysis/promoters/motifs/N.crassa/OR74A/WC-1/Smith2010/gene_list_selected.txt); do
+    echo $Header
+    cat $WorkDir/fimo/fimo.tsv | grep "$Header" | cut -f1 | sort | uniq -c | sed  "s/^ *//g"
+    done
+  done
+```
+
+Counts of FIMO results
+Note that a palindromic sequence may appear at a site twice.
+
+```
+assembly_1
+Promoters containing motif:
+979
+Total number found in these promoters:
+2154
+this covers the following genes:
+1310
+
+assembly_2
+Promoters containing motif:
+1228
+Total number found in these promoters:
+2818
+this covers the following genes:
+1645
+
+assembly_3
+Promoters containing motif:
+1923
+Total number found in these promoters:
+2391
+this covers the following genes:
+2589
+
+assembly_4
+Promoters containing motif:
+1884
+Total number found in these promoters:
+2278
+this covers the following genes:
+2519
+
+assembly_5
+Promoters containing motif:
+2844
+Total number found in these promoters:
+5771
+this covers the following genes:
+3761
+
+assembly_6
+Promoters containing motif:
+3761
+Total number found in these promoters:
+6463
+this covers the following genes:
+4884
+
+assembly_7
+Promoters containing motif:
+2474
+Total number found in these promoters:
+3349
+this covers the following genes:
+3278
+```
+
+
+Fimo files were edited from my local computer before importing into geneious
+
+
+```bash
+scp cluster:/home/groups/harrisonlab/project_files/verticillium_dahliae/pathogenomics/analysis/promoters/N.crassa/OR74A/OR74A_promoters_1500.fa /Users/armita/Downloads/aug_27th/selected/1500_promoters/OR74A_promoters_1500.fa
+
+cat /Users/armita/Downloads/aug_27th/selected/1500_promoters/OR74A_promoters_1500.fa | sed "s/_[+|-]/_/g" > /Users/armita/Downloads/aug_27th/selected/1500_promoters/OR74A_promoters_1500_edited.fa
+
+cat /Volumes/GGB/Harrison/Projects/BBSRC\ IPA\ Clocks/Science/WP1.\ WCC\ and\ development/Obj1.\ Light\ inducible\ genes/promoter_analysis/Sept_2019_predictions/Nc_meme_RSAT/1500_promoters/RSAT_final/fimo/fimo.gff | sed "s/_[+|-]/_/g" > /Volumes/GGB/Harrison/Projects/BBSRC\ IPA\ Clocks/Science/WP1.\ WCC\ and\ development/Obj1.\ Light\ inducible\ genes/promoter_analysis/Sept_2019_predictions/Nc_meme_RSAT/1500_promoters/RSAT_final/fimo/fimo_edited.gff
 ```
