@@ -177,9 +177,9 @@ gene_boundary_dict = defaultdict(set)
 for key in obj_dict.keys():
     gene_obj = obj_dict[key]
     if gene_obj.feature_dict["CDS"]:
-        feat_obj = gene_obj.feature_dict["CDS"][0]
-        gene_boundary_dict[feat_obj.contig].add(feat_obj.start)
-        gene_boundary_dict[feat_obj.contig].add(feat_obj.stop)
+        for feat_obj in gene_obj.feature_dict["CDS"]:
+            gene_boundary_dict[feat_obj.contig].add(feat_obj.start)
+            gene_boundary_dict[feat_obj.contig].add(feat_obj.stop)
     # if gene_obj.feature_dict["CDS"]:
     #     feat_obj = gene_obj.feature_dict["CDS"][0]
     #     gene_boundary_dict[feat_obj.contig].add(feat_obj.start)
@@ -224,17 +224,16 @@ for key in obj_dict_keys:
                     break
                 promoter_start = i
             promoter_stop = start + 50
-            seq = record_dict[contig].seq[promoter_start:promoter_stop]
+            seq = record_dict[contig].seq[promoter_start-1:promoter_stop]
         elif feat_obj.strand == "-":
             promoter_stop = int(stop)
-            for i in range(stop, stop + dist, 1):
+            for i in range(stop + 1, stop + (1 + dist), 1):
                 if str(i) in gene_boundary_dict[contig]:
-                    # print("monkeys")
                     break
                 promoter_stop = i
             promoter_start = stop - 50
             # print contig
-            seq = record_dict[contig].seq[promoter_start:promoter_stop]
+            seq = record_dict[contig].seq[promoter_start-1:promoter_stop]
             # print seq
             seq.reverse_complement()
         # gff_outlines.append("\t".join([contig, "extract_promoters", "promoter", str(promoter_start), str(promoter_stop), '.', strand, '.', 'ID=' + key]))
@@ -273,6 +272,7 @@ for key in obj_dict_keys:
         start = int(feat_obj.start)
         stop = int(feat_obj.stop)
         contig = feat_obj.contig
+        name = key
 
         if feat_obj.strand == "+":
             promoter_start = int(start)
@@ -282,17 +282,18 @@ for key in obj_dict_keys:
                     break
                 promoter_start = i
             promoter_stop = start
-            seq = record_dict[contig].seq[promoter_start:promoter_stop]
+            seq = record_dict[contig].seq[promoter_start-1:promoter_stop]
         elif feat_obj.strand == "-":
             promoter_stop = int(stop)
-            for i in range(stop, stop + (dist + 415), 1):
+            for i in range(stop + 1, stop + (1 + dist + 415), 1):
                 if str(i) in gene_boundary_dict[contig]:
                     # print("monkeys")
                     break
                 promoter_stop = i
-            promoter_start = stop
-            seq = record_dict[contig].seq[promoter_start:promoter_stop]
+            promoter_start = stop + 1
+            seq = record_dict[contig].seq[promoter_start-1:promoter_stop]
             seq.reverse_complement()
+            # print("\t".join(["gene", key, str(start), str(stop), contig, strand, str(promoter_start), str(promoter_stop)]))
         # gff_outlines.append("\t".join([contig, "extract_promoters", "promoter", str(promoter_start), str(promoter_stop), '.', strand, '.', 'ID=' + key]))
         # if len(seq) != 0:
         #     fasta_outlines.append("\n".join([">" + key + "_SC_-" + str(dist + 415) + "_+365", str(seq)]))
